@@ -42,19 +42,21 @@ function fromDisplaySize(sizeDisplay) {
     return sizeDisplay / canvasScale;
 }
 
+// Calculate scale factor based on actual canvas size
+function updateCanvasScale() {
+    if (!canvas) canvas = document.getElementById('design-canvas');
+    if (!canvas) return;
+    const canvasRect = canvas.getBoundingClientRect();
+    // Scale to fit while maintaining aspect ratio
+    const scaleX = canvasRect.width / CANVAS_WIDTH;
+    const scaleY = canvasRect.height / CANVAS_HEIGHT;
+    canvasScale = Math.min(scaleX, scaleY);
+}
+
 // Initialize Interact.js when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     canvas = document.getElementById('design-canvas');
     if (!canvas || typeof interact === 'undefined') return;
-    
-    // Calculate scale factor based on actual canvas size
-    function updateCanvasScale() {
-        const canvasRect = canvas.getBoundingClientRect();
-        // Scale to fit while maintaining aspect ratio
-        const scaleX = canvasRect.width / CANVAS_WIDTH;
-        const scaleY = canvasRect.height / CANVAS_HEIGHT;
-        canvasScale = Math.min(scaleX, scaleY);
-    }
     
     // Update scale on load and resize
     updateCanvasScale();
@@ -80,13 +82,21 @@ function addTextElement() {
     if (!canvas) canvas = document.getElementById('design-canvas');
     const elementId = `element-${elementIdCounter++}`;
     
-    const canvasRect = canvas.getBoundingClientRect();
-    const initialWidth = 150;
-    const initialHeight = 50;
+    updateCanvasScale(); // Ensure scale is up to date
     
-    // Center position in pixels
-    const centerX = (canvasRect.width / 2) - (initialWidth / 2);
-    const centerY = (canvasRect.height / 2) - (initialHeight / 2);
+    // Element size in 1080p coordinates
+    const initialWidth = 300; // Width in 1080p pixels
+    const initialHeight = 100; // Height in 1080p pixels
+    
+    // Center position in 1080p coordinates
+    const centerX1080p = CANVAS_WIDTH / 2 - initialWidth / 2;
+    const centerY1080p = CANVAS_HEIGHT / 2 - initialHeight / 2;
+    
+    // Convert to display coordinates for rendering
+    const centerX = toDisplayX(centerX1080p);
+    const centerY = toDisplayY(centerY1080p);
+    const displayWidth = toDisplaySize(initialWidth);
+    const displayHeight = toDisplaySize(initialHeight);
     
     const element = document.createElement('div');
     element.id = elementId;
