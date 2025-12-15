@@ -209,6 +209,9 @@
                     } else if (data.type === 'design_update') {
                         // Live update design elements
                         console.log('[OBS] Design update received');
+                        console.log('[OBS] Design data type:', typeof data.designData);
+                        console.log('[OBS] Design data:', data.designData);
+                        // Pass the design data string to loadDesignElements
                         loadDesignElements(data.designData);
                     }
                 } catch (error) {
@@ -313,15 +316,9 @@
             let designElements = [];
             
             try {
-                // First, try to get from window variable (set by server)
-                if (window.__OBS_DESIGN_DATA__) {
-                    designElements = Array.isArray(window.__OBS_DESIGN_DATA__) 
-                        ? window.__OBS_DESIGN_DATA__ 
-                        : JSON.parse(window.__OBS_DESIGN_DATA__);
-                    console.log('[OBS] Loaded design elements from window variable:', designElements.length);
-                }
-                // If no data from window variable, try the provided string
-                else if (designDataStr && designDataStr !== '{{DESIGN_DATA}}' && designDataStr !== '[]' && designDataStr.trim() !== '') {
+                // If designDataStr is provided (from WebSocket update), use it first
+                // Otherwise, fall back to window variable (from initial page load)
+                if (designDataStr && designDataStr !== '{{DESIGN_DATA}}' && designDataStr !== '[]' && designDataStr.trim() !== '') {
                     // Decode HTML entities if needed (handles &quot; etc.)
                     let decoded = designDataStr;
                     try {
@@ -337,7 +334,14 @@
                     } else {
                         designElements = Array.isArray(decoded) ? decoded : [];
                     }
-                    console.log('[OBS] Loaded design elements from string:', designElements.length);
+                    console.log('[OBS] Loaded design elements from WebSocket update:', designElements.length);
+                } 
+                // Fall back to window variable (from initial page load) if no WebSocket data
+                else if (window.__OBS_DESIGN_DATA__) {
+                    designElements = Array.isArray(window.__OBS_DESIGN_DATA__) 
+                        ? window.__OBS_DESIGN_DATA__ 
+                        : JSON.parse(window.__OBS_DESIGN_DATA__);
+                    console.log('[OBS] Loaded design elements from window variable:', designElements.length);
                 } else {
                     console.log('[OBS] No design data found');
                 }

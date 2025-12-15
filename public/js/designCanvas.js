@@ -302,11 +302,15 @@ function setupInteract(element, elementData) {
                     target.setAttribute('data-x', x);
                     target.setAttribute('data-y', y);
                     
-                    // Update element data
-                    elementData.width = event.rect.width;
-                    elementData.height = event.rect.height;
-                    elementData.x = (x / canvasRect.width) * 100;
-                    elementData.y = (y / canvasRect.height) * 100;
+                    // Update element data (store in 1080p coordinates)
+                    elementData.width = fromDisplaySize(event.rect.width);
+                    elementData.height = fromDisplaySize(event.rect.height);
+                    elementData.x = fromDisplayX(x);
+                    elementData.y = fromDisplayY(y);
+                    
+                    // Constrain to 1080p bounds
+                    elementData.x = Math.max(0, Math.min(elementData.x, CANVAS_WIDTH - elementData.width));
+                    elementData.y = Math.max(0, Math.min(elementData.y, CANVAS_HEIGHT - elementData.height));
                     
                     updatePropertiesPanel();
                 }
@@ -371,11 +375,25 @@ function updatePropertiesPanel() {
     const canvasRect = canvas.getBoundingClientRect();
     
     // Get actual pixel position from data attributes (more accurate)
-    const xPx = parseFloat(element.getAttribute('data-x')) || ((selectedElement.x / 100) * canvasRect.width);
-    const yPx = parseFloat(element.getAttribute('data-y')) || ((selectedElement.y / 100) * canvasRect.height);
+    // Handle both old percentage format and new 1080p format
+    let xPx, yPx, widthPx, heightPx;
     
-    document.getElementById('prop-x').value = Math.round(xPx);
-    document.getElementById('prop-y').value = Math.round(yPx);
+    if (selectedElement.x > 100) {
+        // New format: 1080p coordinates
+        xPx = toDisplayX(selectedElement.x);
+        yPx = toDisplayY(selectedElement.y);
+        widthPx = toDisplaySize(selectedElement.width);
+        heightPx = toDisplaySize(selectedElement.height);
+    } else {
+        // Old format: percentages (convert for display)
+        xPx = parseFloat(element.getAttribute('data-x')) || ((selectedElement.x / 100) * canvasRect.width);
+        yPx = parseFloat(element.getAttribute('data-y')) || ((selectedElement.y / 100) * canvasRect.height);
+        widthPx = selectedElement.width || 100;
+        heightPx = selectedElement.height || 50;
+    }
+    
+    document.getElementById('prop-x').value = Math.round(selectedElement.x > 100 ? selectedElement.x : xPx);
+    document.getElementById('prop-y').value = Math.round(selectedElement.y > 100 ? selectedElement.y : yPx);
     document.getElementById('prop-width').value = Math.round(selectedElement.width || 100);
     document.getElementById('prop-height').value = Math.round(selectedElement.height || 50);
     document.getElementById('prop-rotation').value = selectedElement.rotation || 0;
@@ -417,50 +435,70 @@ function updateElementProperty(prop, value) {
     let currentY = parseFloat(element.getAttribute('data-y')) || 0;
     const currentRotation = selectedElement.rotation || 0;
     
+    updateCanvasScale(); // Ensure scale is current
+    
     switch(prop) {
         case 'x':
-            let xPx = parseFloat(value);
-            // Constrain to canvas bounds
-            const elementWidth = selectedElement.width || element.getBoundingClientRect().width;
-            xPx = Math.max(0, Math.min(xPx, canvasRect.width - elementWidth));
-            selectedElement.x = (xPx / canvasRect.width) * 100;
-            element.style.transform = `translate(${xPx}px, ${currentY}px) rotate(${currentRotation}deg)`;
-            element.setAttribute('data-x', xPx);
-            currentX = xPx;
+            // Value is in 1080p coordinates
+            const x1080p = parseFloat(value);
+            // Constrain to 1080p bounds
+            const elementWidth1080p = selectedElement.width || 100;
+            const constrainedX1080p = Math.max(0, Math.min(x1080p, CANVAS_WIDTH - elementWidth1080p));
+            selectedElement.x = constrainedX1080p;
+            
+            // Convert to display coordinates for rendering
+            const xDisplay = toDisplayX(constrainedX1080p);
+            element.style.transform = `translate(${xDisplay}px, ${currentY}px) rotate(${currentRotation}deg)`;
+            element.setAttribute('data-x', xDisplay);
+            currentX = xDisplay;
             break;
         case 'y':
-            let yPx = parseFloat(value);
-            // Constrain to canvas bounds
-            const elementHeight = selectedElement.height || element.getBoundingClientRect().height;
-            yPx = Math.max(0, Math.min(yPx, canvasRect.height - elementHeight));
-            selectedElement.y = (yPx / canvasRect.height) * 100;
-            element.style.transform = `translate(${currentX}px, ${yPx}px) rotate(${currentRotation}deg)`;
-            element.setAttribute('data-y', yPx);
-            currentY = yPx;
+            // Value is in 1080p coordinates
+            const y1080p = parseFloat(value);
+            // Constrain to 1080p bounds
+            const elementHeight1080p = selectedElement.height || 50;
+            const constrainedY1080p = Math.max(0, Math.min(y1080p, CANVAS_HEIGHT - elementHeight1080p));
+            selectedElement.y = constrainedY1080p;
+            
+            // Convert to display coordinates for rendering
+            const yDisplay = toDisplayY(constrainedY1080p);
+            element.style.transform = `translate(${currentX}px, ${yDisplay}px) rotate(${currentRotation}deg)`;
+            element.setAttribute('data-y', yDisplay);
+            currentY = yDisplay;
             break;
         case 'width':
-            const newWidth = parseFloat(value);
-            selectedElement.width = newWidth;
-            element.style.width = newWidth + 'px';
+            // Value is in 1080p coordinates
+            const newWidth1080p = parseFloat(value);
+            selectedElement.width = newWidth1080p;
+            
+            // Convert to display coordinates for rendering
+            const widthDisplay = toDisplaySize(newWidth1080p);
+            element.style.width = widthDisplay + 'px';
+            
             // Re-constrain position if element goes out of bounds
-            const maxX = canvasRect.width - newWidth;
-            if (currentX > maxX) {
-                currentX = maxX;
+            const maxX1080p = CANVAS_WIDTH - newWidth1080p;
+            if (selectedElement.x > maxX1080p) {
+                selectedElement.x = maxX1080p;
+                currentX = toDisplayX(maxX1080p);
                 element.setAttribute('data-x', currentX);
-                selectedElement.x = (currentX / canvasRect.width) * 100;
             }
             element.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${currentRotation}deg)`;
             break;
         case 'height':
-            const newHeight = parseFloat(value);
-            selectedElement.height = newHeight;
-            element.style.height = newHeight + 'px';
+            // Value is in 1080p coordinates
+            const newHeight1080p = parseFloat(value);
+            selectedElement.height = newHeight1080p;
+            
+            // Convert to display coordinates for rendering
+            const heightDisplay = toDisplaySize(newHeight1080p);
+            element.style.height = heightDisplay + 'px';
+            
             // Re-constrain position if element goes out of bounds
-            const maxY = canvasRect.height - newHeight;
-            if (currentY > maxY) {
-                currentY = maxY;
+            const maxY1080p = CANVAS_HEIGHT - newHeight1080p;
+            if (selectedElement.y > maxY1080p) {
+                selectedElement.y = maxY1080p;
+                currentY = toDisplayY(maxY1080p);
                 element.setAttribute('data-y', currentY);
-                selectedElement.y = (currentY / canvasRect.height) * 100;
             }
             element.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${currentRotation}deg)`;
             break;
