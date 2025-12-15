@@ -44,12 +44,21 @@ router.get('/', requireAuth, async (req, res) => {
     const twitchUsername = req.session.username || '';
     const userId = req.session.userId || '';
     const profileImageUrl = req.session.profileImageUrl || '';
-    const userInitial = displayName.charAt(0).toUpperCase();
+    const userInitial = displayName && displayName.length > 0 ? displayName.charAt(0).toUpperCase() : 'U';
+    
+    // Debug logging
+    console.log('[Dashboard] User info:', { 
+      displayName, 
+      twitchUsername, 
+      userId, 
+      profileImageUrl: profileImageUrl ? 'present' : 'missing',
+      userInitial 
+    });
     
     dashboardHtml = dashboardHtml.replace(/\{\{USERNAME\}\}/g, displayName);
     dashboardHtml = dashboardHtml.replace(/\{\{TWITCH_USERNAME\}\}/g, twitchUsername);
     dashboardHtml = dashboardHtml.replace(/\{\{USER_ID\}\}/g, userId);
-    dashboardHtml = dashboardHtml.replace(/\{\{PROFILE_IMAGE_URL\}\}/g, profileImageUrl);
+    dashboardHtml = dashboardHtml.replace(/\{\{PROFILE_IMAGE_URL\}\}/g, profileImageUrl || '');
     dashboardHtml = dashboardHtml.replace(/\{\{USER_INITIAL\}\}/g, userInitial);
     
     res.send(dashboardHtml);

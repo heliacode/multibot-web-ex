@@ -13,7 +13,21 @@ const __dirname = path.dirname(__filename);
  */
 router.get('/', async (req, res) => {
   try {
-    const { token, showFeedback } = req.query;
+    // Get token from query - Express automatically decodes URL-encoded values
+    let { token, showFeedback } = req.query;
+    
+    // If token is still URL encoded (double-encoded), decode it
+    if (token) {
+      try {
+        const decoded = decodeURIComponent(token);
+        // Only use decoded if it's different (was actually encoded)
+        if (decoded !== token) {
+          token = decoded;
+        }
+      } catch (e) {
+        // decodeURIComponent failed, use original token
+      }
+    }
     
     if (!token) {
       // Check if user is logged in - if so, try to auto-generate token
@@ -168,6 +182,32 @@ router.get('/', async (req, res) => {
       `);
     }
 
+    // Get user from token to load their design
+    // Note: We don't validate the token here - that happens in WebSocket authentication
+    // We just try to load design elements if the token is valid
+    const { getObsTokenByToken } = await import('../models/obsToken.js');
+    const { getDesignElementsByTwitchId } = await import('../models/designElement.js');
+    
+    let designData = null;
+    try {
+      // Decode token in case it's URL encoded
+      const decodedToken = decodeURIComponent(token);
+      const tokenData = await getObsTokenByToken(decodedToken);
+      
+      if (tokenData && tokenData.twitch_user_id) {
+        const design = await getDesignElementsByTwitchId(tokenData.twitch_user_id);
+        if (design && design.design_data) {
+          designData = typeof design.design_data === 'string' 
+            ? design.design_data 
+            : JSON.stringify(design.design_data);
+        }
+      }
+    } catch (error) {
+      // Log but don't fail - design loading is optional
+      // Token validation happens in WebSocket authentication
+      console.error('Error loading design for OBS source (non-critical):', error.message);
+    }
+
     // Read the OBS source HTML file
     const fs = await import('fs');
     let obsHtml = fs.readFileSync(
@@ -181,6 +221,40 @@ router.get('/', async (req, res) => {
     // Replace showFeedback placeholder (default to true if not specified)
     const shouldShowFeedback = showFeedback !== 'false' && showFeedback !== '0';
     obsHtml = obsHtml.replace(/\{\{SHOW_FEEDBACK\}\}/g, shouldShowFeedback ? 'true' : 'false');
+    
+    // Replace design data placeholder
+    // Embed design data as a JavaScript variable that can be accessed
+    let designDataJson = '[]';
+    if (designData) {
+      try {
+        // Ensure we have a valid JSON string
+        const parsed = typeof designData === 'string' ? JSON.parse(designData) : designData;
+        designDataJson = JSON.stringify(parsed);
+      } catch (e) {
+        console.error('Error processing design data:', e);
+        designDataJson = '[]';
+      }
+    }
+    
+    // Embed as a script variable before the main script runs
+    // This way it's available when loadDesignElements() is called
+    const designDataScript = `
+        <script>
+            // Design data embedded by server
+            window.__OBS_DESIGN_DATA__ = ${designDataJson};
+        </script>
+    `;
+    
+    // Insert the design data script right before the closing </head> tag
+    obsHtml = obsHtml.replace('</head>', designDataScript + '</head>');
+    
+    // Also replace the placeholder in case it's used elsewhere
+    // Escape for JavaScript string context if needed
+    const escapedForJS = designDataJson
+      .replace(/\\/g, '\\\\')  // Escape backslashes
+      .replace(/'/g, "\\'")     // Escape single quotes  
+      .replace(/"/g, '\\"');    // Escape double quotes
+    obsHtml = obsHtml.replace(/\{\{DESIGN_DATA\}\}/g, escapedForJS);
     
     res.send(obsHtml);
   } catch (error) {

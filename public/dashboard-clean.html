@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiBot Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="/css/dashboard.css">
+    
+    <!-- External JavaScript Modules (load in order) -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/navigation.js"></script>
+    
+</head>
+<body class="gradient-bg">
+    <div class="drawer lg:drawer-open">
+        <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+        
+        <!-- Page content -->
+        <div class="drawer-content flex flex-col">
+            <!-- Mobile Navbar -->
+            <div class="navbar glass-effect w-full shadow-lg lg:hidden">
+                <div class="flex-none">
+                    <label for="drawer-toggle" class="btn btn-square btn-ghost text-white">
+                        <i class="fas fa-bars text-xl"></i>
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <a class="btn btn-ghost text-xl text-white">
+                        <i class="fab fa-twitch"></i>
+                        <span class="ml-2">MultiBot</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <main class="flex-1 p-6 min-h-screen">
+                <!-- Dashboard Header -->
+                <div class="mb-6">
+                    <h1 class="text-4xl font-bold text-white mb-2">Dashboard</h1>
+                    <p class="text-white/90">Manage your Twitch bot features</p>
+                </div>
+
+                <!-- Content Sections -->
+                <div id="content-area" class="space-y-6">
+                    <!-- Text-to-Speech Bot Section -->
+                    <div id="tts-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-volume-up text-white/80"></i>
+                                Text-to-Speech Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure your text-to-speech bot settings</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Text-to-Speech Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Commands Bot Section -->
+                    <div id="audio-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <div class="flex items-center justify-between mb-6 responsive-header">
+                                <div>
+                                    <h2 class="card-title text-2xl text-white mb-2">
+                                        <i class="fas fa-music text-white/80"></i>
+                                        Audio Commands Bot
+                                    </h2>
+                                    <p class="text-white/80">Manage your custom audio commands (Max 500KB per file)</p>
+                                </div>
+                                <button class="btn btn-primary text-white" onclick="showAddAudioCommandModal()">
+                                    <i class="fas fa-plus"></i>
+                                    Add Command
+                                </button>
+                            </div>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- Audio Commands List -->
+                            <div id="audio-commands-list" class="space-y-4">
+                                <div class="text-center py-12 text-white/60">
+                                    <i class="fas fa-music text-6xl mb-4 animate-float"></i>
+                                    <p>No audio commands yet. Click "Add Command" to create one.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add/Edit Audio Command Modal -->
+                    <dialog id="audio-command-modal" class="modal">
+                        <div class="modal-box glass-card max-w-2xl">
+                            <h3 class="font-bold text-2xl text-white mb-4">
+                                <i class="fas fa-music"></i>
+                                <span id="modal-title">Add Audio Command</span>
+                            </h3>
+                            
+                            <form id="audio-command-form" onsubmit="saveAudioCommand(event)">
+                                <!-- Command Input -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90">Command Trigger</span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="command-input" 
+                                        class="input input-bordered bg-white/10 text-white border-white/20" 
+                                        placeholder="!sound" 
+                                        required
+                                        pattern="^![a-zA-Z0-9_]+$"
+                                        title="Command must start with ! and contain only letters, numbers, and underscores"
+                                    />
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Command must start with ! (e.g., !sound)</span>
+                                    </label>
+                                </div>
+
+                                <!-- File Upload Methods Tabs -->
+                                <div class="tabs tabs-boxed bg-white/10 mb-4">
+                                    <a class="tab tab-active text-white" onclick="switchUploadMethod('file')">Upload File</a>
+                                    <a class="tab text-white" onclick="switchUploadMethod('url')">From URL</a>
+                                </div>
+
+                                <!-- File Upload Section -->
+                                <div id="file-upload-section" class="mb-4" style="display: block;">
+                                    <!-- Drag and Drop Zone -->
+                                    <div 
+                                        id="drop-zone" 
+                                        class="border-2 border-dashed border-white/30 rounded-xl p-8 text-center cursor-pointer hover:border-white/50 transition-colors bg-white/5"
+                                        ondrop="handleDrop(event)" 
+                                        ondragover="handleDragOver(event)"
+                                        ondragleave="handleDragLeave(event)"
+                                        onclick="document.getElementById('file-input').click()"
+                                    >
+                                        <i class="fas fa-cloud-upload-alt text-4xl text-white/60 mb-2"></i>
+                                        <p class="text-white/80 mb-1">Drag and drop MP3 file here</p>
+                                        <p class="text-white/60 text-sm">or click to browse</p>
+                                        <p class="text-white/50 text-xs mt-2">Max file size: 500KB</p>
+                                    </div>
+                                    <input 
+                                        type="file" 
+                                        id="file-input" 
+                                        class="hidden" 
+                                        accept="audio/mpeg,audio/mp3,.mp3"
+                                        onchange="handleFileSelect(event)"
+                                    />
+                                    <div id="file-info" class="mt-2 p-3 glass-card rounded-lg hidden">
+                                        <div class="flex items-center justify-between responsive-file-info">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <i class="fas fa-file-audio text-white/80"></i>
+                                                <span id="file-name" class="text-white/90 break-words"></span>
+                                                <span id="file-size" class="text-white/60 text-sm"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-ghost text-white" onclick="clearFile()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- URL Input Section -->
+                                <div id="url-upload-section" class="mb-4 hidden" style="display: none;">
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text text-white/90">Audio File URL</span>
+                                        </label>
+                                        <input 
+                                            type="url" 
+                                            id="url-input" 
+                                            class="input input-bordered bg-white/10 text-white border-white/20" 
+                                            placeholder="https://example.com/sound.mp3"
+                                        />
+                                        <label class="label">
+                                            <span class="label-text-alt text-white/60">Enter a direct URL to an MP3 file</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Volume Slider -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90">Volume</span>
+                                        <span id="volume-value" class="text-white/90">50%</span>
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        id="volume-slider" 
+                                        min="0" 
+                                        max="100" 
+                                        value="50" 
+                                        class="range range-primary"
+                                        oninput="updateVolumeDisplay(this.value)"
+                                    />
+                                    <div class="w-full flex justify-between text-xs px-2 text-white/60">
+                                        <span>0%</span>
+                                        <span>50%</span>
+                                        <span>100%</span>
+                                    </div>
+                                </div>
+
+                                <!-- Audio Preview -->
+                                <div id="audio-preview-section" class="mb-4 hidden">
+                                    <div class="glass-card rounded-lg p-4">
+                                        <div class="flex items-center gap-4 responsive-audio-controls">
+                                            <audio id="audio-preview" controls class="flex-1"></audio>
+                                            <div class="flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-success text-white" onclick="playPreview()">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-error text-white" onclick="stopPreview()">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal Actions -->
+                                <div class="modal-action responsive-buttons">
+                                    <button type="button" class="btn btn-ghost text-white" onclick="closeAudioCommandModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-primary text-white">
+                                        <i class="fas fa-save"></i>
+                                        Save Command
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <form method="dialog" class="modal-backdrop">
+                            <button onclick="closeAudioCommandModal()">close</button>
+                        </form>
+                    </dialog>
+
+                    <!-- Jump Scare Bot Section -->
+                    <div id="jumpscare-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-ghost text-white/80"></i>
+                                Jump Scare Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure jump scare triggers and sounds</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Jump Scare Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Studio Audience Bot Section -->
+                    <div id="audience-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-users text-white/80"></i>
+                                Live Studio Audience Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Manage crowd reactions and audience effects</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Live Studio Audience Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Celebration Bot Section -->
+                    <div id="celebration-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-fireworks text-white/80"></i>
+                                Celebration Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure celebration effects and triggers</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Celebration Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculator Bot Section -->
+                    <div id="calculator-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-calculator text-white/80"></i>
+                                Calculator Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Manage calculator bot settings</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Calculator Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Debug Section -->
+                    <div id="chat-debug-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <div class="flex items-center justify-between mb-4 responsive-header">
+                                <div>
+                                    <h2 class="card-title text-2xl text-white mb-2">
+                                        <i class="fas fa-comments text-white/80"></i>
+                                        Chat Debug
+                                    </h2>
+                                    <p class="text-white/80">Monitor Twitch chat messages in real-time</p>
+                                </div>
+                                <div class="flex gap-2 responsive-buttons">
+                                    <button id="chat-connect-btn" class="btn btn-success text-white" onclick="connectToChat()">
+                                        <i class="fas fa-play"></i>
+                                        Connect
+                                    </button>
+                                    <button id="chat-disconnect-btn" class="btn btn-error text-white" onclick="disconnectFromChat()" style="display: none;">
+                                        <i class="fas fa-stop"></i>
+                                        Disconnect
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- Connection Status -->
+                            <div id="chat-status" class="mb-4 p-4 glass-card rounded-xl">
+                                <div class="flex items-center gap-2">
+                                    <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-500"></div>
+                                    <span id="status-text" class="text-white/80">Not connected</span>
+                                </div>
+                            </div>
+
+                            <!-- Chat Messages -->
+                            <div class="bg-black/30 rounded-xl p-4 h-96 overflow-y-auto" id="chat-messages">
+                                <div class="text-center text-white/50 py-8">
+                                    <i class="fas fa-comments text-4xl mb-2"></i>
+                                    <p>No messages yet. Click Connect to start monitoring chat.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Design Your Stream Section -->
+                    <div id="design-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-palette text-white/80"></i>
+                                Design Your Stream
+                            </h2>
+                            <p class="text-white/80 mb-4">Drag and drop elements to design your browser source overlay</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                                <!-- Element Library & Layers -->
+                                <div class="lg:col-span-1 space-y-6">
+                                    <!-- Add Elements -->
+                                    <div>
+                                        <h3 class="text-sm text-white mb-2 font-semibold">Elements</h3>
+                                        <div class="grid grid-cols-4 gap-1">
+                                            <button 
+                                                class="btn btn-xs btn-outline text-white border-white/30 hover:bg-white/20 p-1"
+                                                onclick="addTextElement()"
+                                                title="Add Text"
+                                            >
+                                                <i class="fas fa-font text-xs"></i>
+                                            </button>
+                                            <button 
+                                                class="btn btn-xs btn-outline text-white border-white/30 hover:bg-white/20 p-1"
+                                                onclick="addShapeElement('circle')"
+                                                title="Add Circle"
+                                            >
+                                                <i class="fas fa-circle text-xs"></i>
+                                            </button>
+                                            <button 
+                                                class="btn btn-xs btn-outline text-white border-white/30 hover:bg-white/20 p-1"
+                                                onclick="addShapeElement('square')"
+                                                title="Add Square"
+                                            >
+                                                <i class="fas fa-square text-xs"></i>
+                                            </button>
+                                            <button 
+                                                class="btn btn-xs btn-outline text-white border-white/30 hover:bg-white/20 p-1"
+                                                onclick="showImageSelector()"
+                                                title="Add Image"
+                                            >
+                                                <i class="fas fa-image text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Layers/Hierarchy Panel -->
+                                    <div>
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg text-white font-semibold">Layers</h3>
+                                            <span id="layer-count" class="text-xs text-white/60">0</span>
+                                        </div>
+                                        <div id="layers-list" class="glass-card rounded-xl p-2 max-h-64 overflow-y-auto">
+                                            <div class="text-center py-8 text-white/40 text-sm">
+                                                <i class="fas fa-layer-group text-2xl mb-2"></i>
+                                                <p>No elements yet</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Selected Element Properties -->
+                                    <div id="element-properties" class="mt-6 p-4 glass-card rounded-xl hidden">
+                                        <h4 class="text-white mb-3 font-semibold">Properties</h4>
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="label">
+                                                    <span class="label-text text-white/90 text-sm">X Position</span>
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    id="prop-x" 
+                                                    class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                    onchange="updateElementProperty('x', this.value)"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="label">
+                                                    <span class="label-text text-white/90 text-sm">Y Position</span>
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    id="prop-y" 
+                                                    class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                    onchange="updateElementProperty('y', this.value)"
+                                                />
+                                            </div>
+                                            <div id="prop-size-group">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="label">
+                                                            <span class="label-text text-white/90 text-sm">Width</span>
+                                                        </label>
+                                                        <input 
+                                                            type="number" 
+                                                            id="prop-width" 
+                                                            class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                            min="20"
+                                                            onchange="updateElementProperty('width', this.value)"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label class="label">
+                                                            <span class="label-text text-white/90 text-sm">Height</span>
+                                                        </label>
+                                                        <input 
+                                                            type="number" 
+                                                            id="prop-height" 
+                                                            class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                            min="20"
+                                                            onchange="updateElementProperty('height', this.value)"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="label">
+                                                    <span class="label-text text-white/90 text-sm">Rotation</span>
+                                                </label>
+                                                <input 
+                                                    type="range" 
+                                                    id="prop-rotation" 
+                                                    class="range range-primary range-sm"
+                                                    min="0"
+                                                    max="360"
+                                                    value="0"
+                                                    oninput="updateRotationSlider(this.value)"
+                                                />
+                                                <div class="flex justify-between text-xs text-white/60 px-2">
+                                                    <span>0°</span>
+                                                    <span id="rotation-value">0°</span>
+                                                    <span>360°</span>
+                                                </div>
+                                            </div>
+                                            <div id="prop-text-group">
+                                                <div>
+                                                    <label class="label">
+                                                        <span class="label-text text-white/90 text-sm">Text Content</span>
+                                                    </label>
+                                                    <input 
+                                                        type="text" 
+                                                        id="prop-text" 
+                                                        class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                        onchange="updateElementProperty('text', this.value)"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="label">
+                                                        <span class="label-text text-white/90 text-sm">Font Size</span>
+                                                    </label>
+                                                    <input 
+                                                        type="number" 
+                                                        id="prop-fontsize" 
+                                                        class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                        min="12"
+                                                        max="200"
+                                                        onchange="updateElementProperty('fontSize', this.value)"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="label">
+                                                    <span class="label-text text-white/90 text-sm">Color</span>
+                                                </label>
+                                                <input 
+                                                    type="color" 
+                                                    id="prop-color" 
+                                                    class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full h-10"
+                                                    onchange="updateElementProperty('color', this.value)"
+                                                />
+                                            </div>
+                                            <button 
+                                                class="btn btn-sm btn-error btn-block text-white mt-4"
+                                                onclick="deleteSelectedElement()"
+                                            >
+                                                <i class="fas fa-trash"></i>
+                                                Delete Element
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Image Selector Modal -->
+                                <dialog id="image-selector-modal" class="modal">
+                                    <div class="modal-box glass-card max-w-3xl">
+                                        <h3 class="font-bold text-2xl text-white mb-4">
+                                            <i class="fas fa-images"></i>
+                                            Select or Upload Image
+                                        </h3>
+                                        
+                                        <!-- Upload Section -->
+                                        <div class="mb-6">
+                                            <h4 class="text-lg text-white mb-3 font-semibold">Upload New Image</h4>
+                                            <div 
+                                                id="image-drop-zone" 
+                                                class="border-2 border-dashed border-white/30 rounded-xl p-6 text-center cursor-pointer hover:border-white/50 transition-colors bg-white/5"
+                                                ondrop="handleImageDrop(event)" 
+                                                ondragover="handleImageDragOver(event)"
+                                                ondragleave="handleImageDragLeave(event)"
+                                                onclick="document.getElementById('image-file-input').click()"
+                                            >
+                                                <i class="fas fa-cloud-upload-alt text-3xl text-white/60 mb-2"></i>
+                                                <p class="text-white/80 mb-1">Drag and drop image here</p>
+                                                <p class="text-white/60 text-sm">or click to browse</p>
+                                                <p class="text-white/50 text-xs mt-2">Max file size: 5MB (JPEG, PNG, GIF, WebP)</p>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                id="image-file-input" 
+                                                class="hidden" 
+                                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                                onchange="handleImageFileSelect(event)"
+                                            />
+                                        </div>
+                                        
+                                        <!-- Image Gallery -->
+                                        <div class="mb-4">
+                                            <h4 class="text-lg text-white mb-3 font-semibold">Your Images</h4>
+                                            <div id="image-gallery" class="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto p-2">
+                                                <div class="text-center py-8 text-white/40 text-sm col-span-3">
+                                                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                                    <p>Loading images...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Modal Actions -->
+                                        <div class="modal-action">
+                                            <button type="button" class="btn btn-ghost text-white" onclick="closeImageSelector()">Cancel</button>
+                                        </div>
+                                    </div>
+                                    <form method="dialog" class="modal-backdrop">
+                                        <button onclick="closeImageSelector()">close</button>
+                                    </form>
+                                </dialog>
+                                
+                                <!-- Design Canvas -->
+                                <div class="lg:col-span-4">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg text-white font-semibold">Canvas Preview</h3>
+                                        <div class="flex gap-2">
+                                            <button 
+                                                class="btn btn-sm btn-outline text-white border-white/30 hover:bg-white/20"
+                                                onclick="clearCanvas()"
+                                            >
+                                                <i class="fas fa-trash"></i>
+                                                Clear All
+                                            </button>
+                                            <button 
+                                                class="btn btn-sm btn-primary text-white"
+                                                onclick="saveDesign()"
+                                            >
+                                                <i class="fas fa-save"></i>
+                                                Save Design
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Canvas Container -->
+                                    <div 
+                                        id="design-canvas" 
+                                        class="relative bg-black/50 rounded-xl border-2 border-white/20 overflow-hidden"
+                                        style="width: 100%; aspect-ratio: 16/9; min-height: 400px;"
+                                    >
+                                        <!-- Canvas will be populated with draggable elements -->
+                                        <div class="absolute inset-0 flex items-center justify-center text-white/30 pointer-events-none">
+                                            <div class="text-center">
+                                                <i class="fas fa-mouse-pointer text-4xl mb-2"></i>
+                                                <p>Drag elements here</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Position Display -->
+                                    <div class="mt-4 p-3 glass-card rounded-lg">
+                                        <div class="flex items-center gap-4 text-sm text-white/80">
+                                            <span id="selected-element-info" class="text-white/60">No element selected</span>
+                                            <span id="element-count" class="ml-auto">0 elements</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OBS Setup Section -->
+                    <div id="obs-setup-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-desktop text-white/80"></i>
+                                OBS Browser Source Setup
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure your OBS browser source to play audio commands</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- Token Management -->
+                            <div class="mb-6">
+                                <h3 class="text-xl text-white mb-4">Your OBS Browser Source URL</h3>
+                                
+                                <div id="obs-token-loading" class="text-center py-8 text-white/60">
+                                    <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
+                                    <p>Loading token...</p>
+                                </div>
+
+                                <div id="obs-token-content" class="hidden">
+                                    <div class="glass-card rounded-xl p-4 mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90 font-semibold">Copy this URL to use in OBS:</span>
+                                        </label>
+                                        <div class="flex gap-2 responsive-input-group">
+                                            <input 
+                                                type="text" 
+                                                id="obs-url-input" 
+                                                class="input input-bordered flex-1 bg-white/10 text-white border-white/20" 
+                                                readonly
+                                            />
+                                            <button class="btn btn-primary text-white" onclick="copyObsUrl()">
+                                                <i class="fas fa-copy"></i>
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <label class="label mt-2">
+                                            <span class="label-text-alt text-white/60">
+                                                <i class="fas fa-info-circle"></i>
+                                                Add this URL as a Browser Source in OBS Studio
+                                            </span>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Visual Feedback Option -->
+                                    <div class="glass-card rounded-xl p-4 mb-4">
+                                        <div class="form-control">
+                                            <label class="label cursor-pointer justify-start gap-3">
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="obs-show-feedback" 
+                                                    class="checkbox checkbox-primary" 
+                                                    checked
+                                                    onchange="updateObsUrl()"
+                                                />
+                                                <div class="label-text text-white/90">
+                                                    <span class="font-semibold">Show Command Text on Screen</span>
+                                                    <p class="text-sm text-white/60 mt-1">Display the command name (e.g., !sound) when triggered</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2 responsive-token-info">
+                                        <button class="btn btn-warning text-white" onclick="regenerateObsToken()">
+                                            <i class="fas fa-sync"></i>
+                                            Regenerate Token
+                                        </button>
+                                        <div class="flex-1"></div>
+                                        <div class="text-sm text-white/60 flex items-center gap-2">
+                                            <i class="fas fa-clock"></i>
+                                            <span id="obs-token-info"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Instructions -->
+                            <div class="glass-card rounded-xl p-6">
+                                <h3 class="text-lg text-white mb-4">
+                                    <i class="fas fa-question-circle"></i>
+                                    How to Set Up OBS Browser Source
+                                </h3>
+                                <ol class="list-decimal list-inside space-y-2 text-white/80 text-sm">
+                                    <li>Copy the URL above</li>
+                                    <li>Open OBS Studio</li>
+                                    <li>Right-click in Sources → Add → Browser Source</li>
+                                    <li>Name it "MultiBot Audio Commands"</li>
+                                    <li>Paste the URL in the URL field</li>
+                                    <li>Set Width: 1920, Height: 1080 (or your stream resolution)</li>
+                                    <li>Check "Shutdown source when not visible" (optional)</li>
+                                    <li>Click OK</li>
+                                    <li>Your audio commands will now play in OBS when triggered!</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="drawer-side">
+            <label for="drawer-toggle" class="drawer-overlay"></label>
+            <aside class="w-64 min-h-full glass-sidebar">
+                <div class="p-6">
+                    <!-- Logo -->
+                    <div class="flex items-center mb-8">
+                        <i class="fab fa-twitch text-white text-3xl"></i>
+                        <span class="text-2xl font-bold ml-2 text-white">MultiBot</span>
+                    </div>
+
+                    <!-- User Info -->
+                    <div class="mb-6 p-4 glass-card rounded-xl">
+                        <div class="flex items-center space-x-3">
+                            <div class="avatar">
+                                <div class="w-12 rounded-full border-2 border-white/30 overflow-hidden">
+                                    <img id="user-profile-image" src="{{PROFILE_IMAGE_URL}}" alt="Profile" class="w-full h-full object-cover" style="display: none;" />
+                                    <div id="user-avatar-placeholder" class="bg-white/20 text-white rounded-full w-full h-full flex items-center justify-center">
+                                        <span id="user-initial" class="text-lg font-semibold">{{USER_INITIAL}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-sm text-white" id="user-name">{{USERNAME}}</p>
+                                <p class="text-xs text-white/70">Twitch Streamer</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Menu -->
+                    <ul class="menu p-0 w-full">
+                        <li>
+                            <a href="#dashboard" class="active text-white hover:bg-white/20 rounded-lg" onclick="showSection('dashboard', event)">
+                                <i class="fas fa-home"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#tts" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('tts', event)">
+                                <i class="fas fa-volume-up"></i>
+                                Text-to-Speech Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#audio" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('audio', event)">
+                                <i class="fas fa-music"></i>
+                                Audio Commands
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#jumpscare" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('jumpscare', event)">
+                                <i class="fas fa-ghost"></i>
+                                Jump Scare Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#audience" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('audience', event)">
+                                <i class="fas fa-users"></i>
+                                Studio Audience
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#celebration" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('celebration', event)">
+                                <i class="fas fa-fireworks"></i>
+                                Celebration Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#calculator" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('calculator', event)">
+                                <i class="fas fa-calculator"></i>
+                                Calculator Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#chat-debug" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('chat-debug', event)">
+                                <i class="fas fa-comments"></i>
+                                Chat Debug
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#design" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('design', event)">
+                                <i class="fas fa-palette"></i>
+                                Design Stream
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#obs-setup" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('obs-setup', event)">
+                                <i class="fas fa-desktop"></i>
+                                OBS Setup
+                            </a>
+                        </li>
+                        <li class="mt-auto pt-4 border-t border-white/20">
+                            <a href="/auth/logout" class="text-white hover:bg-white/20 rounded-lg">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Load JavaScript modules -->
+    <script src="/js/utils.js"></script>
+    <script src="/js/navigation.js"></script>
+    <script src="/js/chatDebug.js"></script>
+    <script src="/js/audioCommands.js"></script>
+    <script src="/js/obsToken.js"></script>
+    <script src="/js/designCanvas.js"></script>
+    <script src="/js/imageManager.js"></script>
+    
+    <!-- All JavaScript functionality has been moved to modular files -->
+    <!-- No inline JavaScript remains - all code is in /js/ modules -->
+
+</body>
+</html>
+

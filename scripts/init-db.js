@@ -39,18 +39,41 @@ async function initializeDatabase() {
     const tables = await checkTables();
     console.log(`Found ${tables.length} tables: ${tables.join(', ') || 'None'}`);
 
-    const requiredTables = ['users', 'audio_commands', 'obs_tokens'];
+    const requiredTables = ['users', 'audio_commands', 'obs_tokens', 'user_images', 'design_elements'];
     const missingTables = requiredTables.filter(table => !tables.includes(table));
 
     if (missingTables.length > 0) {
       console.log(`\nMissing tables: ${missingTables.join(', ')}`);
-      console.log('Initializing database schema...');
       
-      const schemaPath = join(__dirname, '..', 'database', 'schema.sql');
-      const schema = readFileSync(schemaPath, 'utf8');
+      // Check if we need to run the full schema (for new databases)
+      const coreTables = ['users', 'audio_commands', 'obs_tokens'];
+      const missingCoreTables = coreTables.filter(table => !tables.includes(table));
       
-      await pool.query(schema);
-      console.log('✓ Database schema initialized successfully');
+      if (missingCoreTables.length > 0) {
+        console.log('Initializing main database schema...');
+        const schemaPath = join(__dirname, '..', 'database', 'schema.sql');
+        const schema = readFileSync(schemaPath, 'utf8');
+        await pool.query(schema);
+        console.log('✓ Main database schema initialized');
+      }
+      
+      // Run user_images table migration if needed
+      if (missingTables.includes('user_images')) {
+        console.log('Adding user_images table...');
+        const imagesTablePath = join(__dirname, '..', 'database', 'add_images_table.sql');
+        const imagesTable = readFileSync(imagesTablePath, 'utf8');
+        await pool.query(imagesTable);
+        console.log('✓ user_images table created');
+      }
+      
+      // Run design_elements table migration if needed
+      if (missingTables.includes('design_elements')) {
+        console.log('Adding design_elements table...');
+        const designTablePath = join(__dirname, '..', 'database', 'add_design_elements_table.sql');
+        const designTable = readFileSync(designTablePath, 'utf8');
+        await pool.query(designTable);
+        console.log('✓ design_elements table created');
+      }
       
       const newTables = await checkTables();
       console.log(`\nTables after initialization: ${newTables.join(', ')}`);

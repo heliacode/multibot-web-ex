@@ -1,0 +1,210 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+.gradient-bg {
+    background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 25%, #14b8a6 50%, #0891b2 75%, #0c4a6e 100%);
+}
+
+.glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-sidebar {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(15px);
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.animate-float {
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+}
+
+/* Responsive fixes for smaller screens */
+@media (max-width: 768px) {
+    /* Reduce padding on mobile */
+    main {
+        padding: 1rem !important;
+    }
+    
+    .card-body {
+        padding: 1.5rem !important;
+    }
+    
+    /* Make headers stack vertically */
+    .responsive-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+    
+    .responsive-header button {
+        width: 100%;
+    }
+    
+    /* Make button groups stack */
+    .responsive-buttons {
+        flex-direction: column !important;
+        width: 100%;
+    }
+    
+    .responsive-buttons button {
+        width: 100%;
+    }
+    
+    /* Make input groups stack */
+    .responsive-input-group {
+        flex-direction: column !important;
+    }
+    
+    .responsive-input-group input {
+        width: 100% !important;
+    }
+    
+    .responsive-input-group button {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+    
+    /* Make audio preview controls stack */
+    .responsive-audio-controls {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .responsive-audio-controls audio {
+        width: 100% !important;
+    }
+    
+    /* Make command cards stack */
+    .responsive-command-card {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+    
+    .responsive-command-card .flex-1 {
+        width: 100%;
+    }
+    
+    .responsive-command-buttons {
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: flex-start !important;
+    }
+    
+    /* Modal adjustments */
+    .modal-box {
+        max-width: 95vw !important;
+        margin: 1rem !important;
+    }
+    
+    /* Reduce font sizes */
+    h1 {
+        font-size: 2rem !important;
+    }
+    
+    h2 {
+        font-size: 1.5rem !important;
+    }
+    
+    /* Make file info stack */
+    .responsive-file-info {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
+    
+    /* Make OBS token info stack */
+    .responsive-token-info {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+    
+    .responsive-token-info .flex-1 {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    /* Even smaller screens */
+    .text-4xl {
+        font-size: 1.75rem !important;
+    }
+    
+    .text-2xl {
+        font-size: 1.25rem !important;
+    }
+    
+    .text-xl {
+        font-size: 1rem !important;
+    }
+}
+
+/* Interact.js resize handles */
+.draggable-element {
+    touch-action: none;
+}
+
+.draggable-element[data-resizing="true"] {
+    opacity: 0.8;
+}
+
+/* Visual resize handles (Interact.js will make edges interactive) */
+.draggable-element::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border: 2px dashed transparent;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.draggable-element[style*="border: 3px solid"]::before {
+    opacity: 1;
+    border-color: rgba(96, 165, 250, 0.3);
+}
+
+/* Resize cursor hints */
+.draggable-element[data-resizing="true"] {
+    cursor: nwse-resize !important;
+}
+
+/* Layer item drag styles */
+.layer-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing !important;
+}
+
+.layer-item {
+    cursor: grab;
+}
+
+.layer-item:active {
+    cursor: grabbing;
+}
+

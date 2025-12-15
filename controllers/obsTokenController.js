@@ -28,9 +28,11 @@ export async function getToken(req, res) {
     const tokenData = await getOrCreateObsToken(user.id, twitchUserId);
     
     // Build OBS browser source URL (default: showFeedback=true)
+    // Properly encode token for URL (base64 tokens contain +, /, = which need encoding)
     const protocol = req.protocol;
     const host = req.get('host');
-    const obsUrl = `${protocol}://${host}/obs-source?token=${tokenData.token}&showFeedback=true`;
+    const encodedToken = encodeURIComponent(tokenData.token);
+    const obsUrl = `${protocol}://${host}/obs-source?token=${encodedToken}&showFeedback=true`;
 
     res.json({
       success: true,
@@ -68,9 +70,11 @@ export async function regenerateToken(req, res) {
     const tokenData = await regenerateObsToken(user.id, twitchUserId);
     
     // Build new OBS browser source URL (default: showFeedback=true)
+    // Properly encode token for URL (base64 tokens contain +, /, = which need encoding)
     const protocol = req.protocol;
     const host = req.get('host');
-    const obsUrl = `${protocol}://${host}/obs-source?token=${tokenData.token}&showFeedback=true`;
+    const encodedToken = encodeURIComponent(tokenData.token);
+    const obsUrl = `${protocol}://${host}/obs-source?token=${encodedToken}&showFeedback=true`;
 
     res.json({
       success: true,

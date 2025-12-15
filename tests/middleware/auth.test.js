@@ -1,3 +1,4 @@
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { requireAuth, optionalAuth } from '../../middleware/auth.js';
 
 describe('Auth Middleware', () => {
@@ -6,10 +7,15 @@ describe('Auth Middleware', () => {
 
     beforeEach(() => {
       req = {
-        session: {}
+        session: {},
+        url: '/dashboard',
+        path: '/dashboard',
+        originalUrl: '/dashboard'
       };
       res = {
-        redirect: jest.fn()
+        redirect: jest.fn(),
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
       };
       next = jest.fn();
     });

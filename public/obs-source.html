@@ -17,7 +17,7 @@
             overflow: hidden;
         }
 
-        /* Status indicator */
+        /* Status indicator - hidden by default, only show on errors */
         #status {
             position: fixed;
             top: 10px;
@@ -27,6 +27,13 @@
             font-size: 12px;
             font-weight: bold;
             z-index: 1000;
+            display: none; /* Hidden by default */
+        }
+        
+        /* Only show status when disconnected or error */
+        #status.disconnected,
+        #status.error {
+            display: block;
         }
 
         #status.connected {
@@ -85,6 +92,9 @@
 
     <!-- Audio container (hidden) -->
     <div id="audio-container"></div>
+
+    <!-- Design elements container -->
+    <div id="design-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"></div>
 
     <script>
         // Get token from URL - handle both URLSearchParams and direct string extraction
@@ -193,6 +203,10 @@
                         console.error('[OBS] Authentication failed:', data.message);
                     } else if (data.type === 'command_trigger') {
                         handleCommandTrigger(data.command);
+                    } else if (data.type === 'design_update') {
+                        // Live update design elements
+                        console.log('[OBS] Design update received');
+                        loadDesignElements(data.designData);
                     }
                 } catch (error) {
                     console.error('[OBS] Error parsing message:', error);
@@ -213,11 +227,18 @@
             };
         }
 
-        // Update status indicator
+        // Update status indicator (only show on errors/disconnections)
         function updateStatus(status, text) {
             const statusEl = document.getElementById('status');
             statusEl.className = status;
             statusEl.textContent = text;
+            
+            // Hide status when connected, show only on errors/disconnections
+            if (status === 'connected' || status === 'connecting') {
+                statusEl.style.display = 'none';
+            } else {
+                statusEl.style.display = 'block';
+            }
         }
 
         // Handle command trigger
@@ -277,8 +298,139 @@
             // For now, we'll load them on-demand
         }
 
+        // Decode HTML entities (for &quot; etc.)
+        function decodeHtmlEntities(str) {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = str;
+            return textarea.value;
+        }
+
+        // Load and render design elements
+        function loadDesignElements(designDataStr) {
+            let designElements = [];
+            
+            try {
+                // First, try to get from window variable (set by server)
+                if (window.__OBS_DESIGN_DATA__) {
+                    designElements = Array.isArray(window.__OBS_DESIGN_DATA__) 
+                        ? window.__OBS_DESIGN_DATA__ 
+                        : JSON.parse(window.__OBS_DESIGN_DATA__);
+                    console.log('[OBS] Loaded design elements from window variable:', designElements.length);
+                }
+                // If no data from window variable, try the provided string
+                else if (designDataStr && designDataStr !== '{{DESIGN_DATA}}' && designDataStr !== '[]' && designDataStr.trim() !== '') {
+                    // Decode HTML entities if needed (handles &quot; etc.)
+                    let decoded = designDataStr;
+                    try {
+                        decoded = decodeHtmlEntities(designDataStr);
+                    } catch (e) {
+                        // If decodeHtmlEntities fails, try parsing directly
+                        decoded = designDataStr;
+                    }
+                    
+                    // Parse JSON
+                    if (typeof decoded === 'string') {
+                        designElements = JSON.parse(decoded);
+                    } else {
+                        designElements = Array.isArray(decoded) ? decoded : [];
+                    }
+                    console.log('[OBS] Loaded design elements from string:', designElements.length);
+                } else {
+                    console.log('[OBS] No design data found');
+                }
+            } catch (error) {
+                console.error('[OBS] Error parsing design data:', error);
+                console.error('[OBS] Design data string:', designDataStr);
+                console.error('[OBS] Window data:', window.__OBS_DESIGN_DATA__);
+                console.error('[OBS] Error details:', error.message);
+            }
+            
+            const container = document.getElementById('design-container');
+            if (!container) return;
+            
+            // Clear existing elements
+            container.innerHTML = '';
+            
+            if (designElements.length === 0) {
+                return; // No design elements to render
+            }
+            
+            // Render each design element
+            designElements.forEach((elementData) => {
+                let element;
+                
+                if (elementData.type === 'text') {
+                    element = document.createElement('div');
+                    element.textContent = elementData.text || '';
+                    element.style.cssText = `
+                        position: absolute;
+                        left: ${elementData.x}%;
+                        top: ${elementData.y}%;
+                        width: ${elementData.width}px;
+                        height: ${elementData.height}px;
+                        padding: 10px 20px;
+                        background: rgba(255, 255, 255, 0.2);
+                        backdrop-filter: blur(10px);
+                        border: 2px solid rgba(255, 255, 255, 0.3);
+                        border-radius: 8px;
+                        color: ${elementData.color || '#ffffff'};
+                        font-size: ${elementData.fontSize || 24}px;
+                        font-weight: bold;
+                        pointer-events: none;
+                        transform: translate(-50%, -50%) rotate(${elementData.rotation || 0}deg);
+                        z-index: ${elementData.zIndex || 10};
+                        text-align: center;
+                        box-sizing: border-box;
+                    `;
+                } else if (elementData.type === 'image') {
+                    element = document.createElement('img');
+                    element.src = elementData.imagePath;
+                    element.style.cssText = `
+                        position: absolute;
+                        left: ${xPercent}%;
+                        top: ${yPercent}%;
+                        width: ${width1080p}px;
+                        height: ${height1080p}px;
+                        object-fit: contain;
+                        pointer-events: none;
+                        transform: translate(-50%, -50%) rotate(${elementData.rotation || 0}deg);
+                        z-index: ${elementData.zIndex || 10};
+                        box-sizing: border-box;
+                    `;
+                } else if (elementData.type === 'circle' || elementData.type === 'square') {
+                    element = document.createElement('div');
+                    const isCircle = elementData.type === 'circle';
+                    const borderRadius = isCircle ? 'border-radius: 50%;' : '';
+                    element.style.cssText = `
+                        position: absolute;
+                        left: ${xPercent}%;
+                        top: ${yPercent}%;
+                        width: ${width1080p}px;
+                        height: ${height1080p}px;
+                        ${borderRadius}
+                        background: ${elementData.color || 'rgba(255, 100, 100, 0.5)'};
+                        border: 2px solid rgba(255, 255, 255, 0.5);
+                        pointer-events: none;
+                        transform: translate(-50%, -50%) rotate(${elementData.rotation || 0}deg);
+                        z-index: ${elementData.zIndex || 10};
+                        box-sizing: border-box;
+                    `;
+                }
+                
+                if (element) {
+                    container.appendChild(element);
+                }
+            });
+            
+            console.log(`[OBS] Rendered ${designElements.length} design elements`);
+        }
+
         // Initialize
         connect();
+        
+        // Load initial design elements
+        // The server embeds design data in window.__OBS_DESIGN_DATA__
+        loadDesignElements();
     </script>
 </body>
 </html>

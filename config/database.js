@@ -10,5 +10,10 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
+// Helper function for querying (used by some models)
+export async function query(text, params) {
+  return pool.query(text, params);
+}
+
 export default pool;
 

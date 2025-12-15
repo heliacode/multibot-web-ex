@@ -10,6 +10,8 @@ import chatRoutes from './routes/chat.js';
 import audioCommandRoutes from './routes/audioCommands.js';
 import obsTokenRoutes from './routes/obsToken.js';
 import obsSourceRoutes from './routes/obsSource.js';
+import imageRoutes from './routes/images.js';
+import designRoutes from './routes/design.js';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import { setWebSocketServer } from './services/twitchChat.js';
@@ -51,6 +53,8 @@ app.use('/api/obs-token', (req, res, next) => {
   console.log(`[ROUTE DEBUG] /api/obs-token - Method: ${req.method}, Path: ${req.path}, OriginalUrl: ${req.originalUrl}`);
   next();
 }, obsTokenRoutes);
+app.use('/api/images', imageRoutes);
+app.use('/api/design', designRoutes);
 app.use('/auth', authRoutes);
 app.use('/obs-source', obsSourceRoutes);
 app.use('/dashboard', dashboardRoutes);
@@ -90,9 +94,21 @@ wss.on('connection', (ws, req) => {
           return;
         }
 
-        // Validate token
+        // Validate token - try both encoded and decoded versions
         console.log(`[WebSocket] Attempting to authenticate OBS source with token: ${token.substring(0, 10)}...`);
-        const tokenData = await getObsTokenByToken(token);
+        let tokenData = await getObsTokenByToken(token);
+        
+        // If not found, try URL-decoded version (in case token was double-encoded)
+        if (!tokenData) {
+          try {
+            const decodedToken = decodeURIComponent(token);
+            if (decodedToken !== token) {
+              tokenData = await getObsTokenByToken(decodedToken);
+            }
+          } catch (e) {
+            // decodeURIComponent failed, continue with original token lookup result
+          }
+        }
         
         if (!tokenData) {
           console.error(`[WebSocket] Token not found in database: ${token.substring(0, 10)}...`);
@@ -149,8 +165,10 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-// Store WebSocket server for chat service to broadcast messages
+// Store WebSocket server for chat service and design updates to broadcast messages
 app.locals.wss = wss;
+// Also store globally for design controller
+global.wss = wss;
 setWebSocketServer(wss);
 
 // Start server

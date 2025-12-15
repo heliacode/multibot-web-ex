@@ -1,3 +1,4 @@
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 import { createCommand, getCommands } from '../../controllers/audioCommandController.js';
 import * as userModel from '../../models/user.js';
 import * as audioCommandModel from '../../models/audioCommand.js';
@@ -19,12 +20,20 @@ describe('Audio Command Controller', () => {
 
   describe('createCommand', () => {
     it('should return 401 if not authenticated', async () => {
-      const response = await request(app)
-        .post('/api/audio-commands')
-        .send({ command: '!test' });
+      const req = {
+        session: {},
+        body: { command: '!test' },
+        file: null
+      };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
 
-      expect(response.status).toBe(401);
-      expect(response.body.error).toBe('Not authenticated');
+      await createCommand(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Not authenticated' });
     });
 
     it('should return 400 if command is missing', async () => {
@@ -170,10 +179,18 @@ describe('Audio Command Controller', () => {
 
   describe('getCommands', () => {
     it('should return 401 if not authenticated', async () => {
-      const response = await request(app)
-        .get('/api/audio-commands');
+      const req = {
+        session: {}
+      };
+      const res = {
+        status: jest.fn().mockReturnThis(),
+        json: jest.fn()
+      };
 
-      expect(response.status).toBe(401);
+      await getCommands(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Not authenticated' });
     });
 
     it('should return 404 if user not found', async () => {
