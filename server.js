@@ -41,17 +41,23 @@ app.use(session({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static files
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Routes
-app.use('/', indexRoutes);
-app.use('/auth', authRoutes);
-app.use('/dashboard', dashboardRoutes);
+// API Routes - MUST come before static files to avoid 404s
 app.use('/api/chat', chatRoutes);
-app.use('/api/audio-commands', audioCommandRoutes);
-app.use('/api/obs-token', obsTokenRoutes);
+app.use('/api/audio-commands', (req, res, next) => {
+  console.log(`[ROUTE DEBUG] /api/audio-commands - Method: ${req.method}, Path: ${req.path}, OriginalUrl: ${req.originalUrl}`);
+  next();
+}, audioCommandRoutes);
+app.use('/api/obs-token', (req, res, next) => {
+  console.log(`[ROUTE DEBUG] /api/obs-token - Method: ${req.method}, Path: ${req.path}, OriginalUrl: ${req.originalUrl}`);
+  next();
+}, obsTokenRoutes);
+app.use('/auth', authRoutes);
 app.use('/obs-source', obsSourceRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/', indexRoutes);
+
+// Static files - comes after routes to avoid catching API requests
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -85,16 +91,20 @@ wss.on('connection', (ws, req) => {
         }
 
         // Validate token
+        console.log(`[WebSocket] Attempting to authenticate OBS source with token: ${token.substring(0, 10)}...`);
         const tokenData = await getObsTokenByToken(token);
         
         if (!tokenData) {
+          console.error(`[WebSocket] Token not found in database: ${token.substring(0, 10)}...`);
           ws.send(JSON.stringify({ 
             type: 'obs_auth_failed', 
-            message: 'Invalid token' 
+            message: 'Invalid token - token not found in database. Please regenerate your token in the dashboard.' 
           }));
           ws.close();
           return;
         }
+        
+        console.log(`[WebSocket] Token found for user: ${tokenData.twitch_user_id}`);
 
         // Authenticate OBS source
         ws.isAuthenticated = true;

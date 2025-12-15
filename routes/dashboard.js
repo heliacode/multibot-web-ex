@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { requireAuth } from '../middleware/auth.js';
+import { connectToChat, getChatStatus } from '../services/twitchChat.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -9,6 +10,28 @@ const __dirname = path.dirname(__filename);
 
 router.get('/', requireAuth, async (req, res) => {
   try {
+    // Auto-connect to chat if not already connected
+    const twitchUserId = req.session.userId;
+    const username = req.session.username;
+    const accessToken = req.session.accessToken;
+    
+    if (twitchUserId && username) {
+      const chatStatus = getChatStatus(twitchUserId);
+      if (!chatStatus || !chatStatus.connected) {
+        console.log(`[Dashboard] Auto-connecting chat for user ${twitchUserId}`);
+        connectToChat(twitchUserId, username, accessToken)
+          .then(() => {
+            console.log(`[Dashboard] Chat auto-connected successfully for user ${twitchUserId}`);
+          })
+          .catch((error) => {
+            console.error(`[Dashboard] Failed to auto-connect chat for user ${twitchUserId}:`, error.message);
+            // Don't block dashboard load - chat connection will retry
+          });
+      } else {
+        console.log(`[Dashboard] Chat already connected for user ${twitchUserId}`);
+      }
+    }
+    
     // Read the dashboard HTML file and replace placeholders
     const fs = await import('fs');
     let dashboardHtml = fs.readFileSync(
@@ -17,13 +40,13 @@ router.get('/', requireAuth, async (req, res) => {
     );
     
     // Replace user info placeholders
-    const username = req.session.displayName || req.session.username || 'User';
+    const displayName = req.session.displayName || req.session.username || 'User';
     const twitchUsername = req.session.username || '';
     const userId = req.session.userId || '';
     const profileImageUrl = req.session.profileImageUrl || '';
-    const userInitial = username.charAt(0).toUpperCase();
+    const userInitial = displayName.charAt(0).toUpperCase();
     
-    dashboardHtml = dashboardHtml.replace(/\{\{USERNAME\}\}/g, username);
+    dashboardHtml = dashboardHtml.replace(/\{\{USERNAME\}\}/g, displayName);
     dashboardHtml = dashboardHtml.replace(/\{\{TWITCH_USERNAME\}\}/g, twitchUsername);
     dashboardHtml = dashboardHtml.replace(/\{\{USER_ID\}\}/g, userId);
     dashboardHtml = dashboardHtml.replace(/\{\{PROFILE_IMAGE_URL\}\}/g, profileImageUrl);

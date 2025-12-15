@@ -9,7 +9,9 @@
     "dev": "node --watch server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
     "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
-    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
+    "test:route": "node scripts/test-audio-command-route.js",
+    "test:obs": "node scripts/test-obs-source.js"
   },
   "keywords": ["twitch", "bot", "streaming"],
   "author": "",
@@ -32,10 +34,8 @@
     "@types/jest": "^29.5.11"
   },
   "jest": {
-    "preset": "default",
     "testEnvironment": "node",
     "transform": {},
-    "extensionsToTreatAsEsm": [".js"],
     "moduleNameMapper": {
       "^(\\.{1,2}/.*)\\.js$": "$1"
     },

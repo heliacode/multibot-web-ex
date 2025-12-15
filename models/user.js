@@ -63,11 +63,31 @@ export async function getUserByTwitchId(twitchUserId) {
   }
 
   const user = result.rows[0];
+  
+  // Parse scopes - handle both JSON string and plain string formats
+  let scopes = [];
+  try {
+    if (typeof user.scopes === 'string') {
+      // Try parsing as JSON first
+      try {
+        scopes = JSON.parse(user.scopes);
+      } catch (e) {
+        // If not valid JSON, treat as space-separated string
+        scopes = user.scopes.split(' ').filter(s => s.trim());
+      }
+    } else if (Array.isArray(user.scopes)) {
+      scopes = user.scopes;
+    }
+  } catch (error) {
+    console.warn('Error parsing scopes:', error);
+    scopes = [];
+  }
+  
   return {
     ...user,
     access_token: decrypt(user.access_token),
     refresh_token: decrypt(user.refresh_token),
-    scopes: JSON.parse(user.scopes)
+    scopes: scopes
   };
 }
 
@@ -80,11 +100,31 @@ export async function getUserById(id) {
   }
 
   const user = result.rows[0];
+  
+  // Parse scopes - handle both JSON string and plain string formats
+  let scopes = [];
+  try {
+    if (typeof user.scopes === 'string') {
+      // Try parsing as JSON first
+      try {
+        scopes = JSON.parse(user.scopes);
+      } catch (e) {
+        // If not valid JSON, treat as space-separated string
+        scopes = user.scopes.split(' ').filter(s => s.trim());
+      }
+    } else if (Array.isArray(user.scopes)) {
+      scopes = user.scopes;
+    }
+  } catch (error) {
+    console.warn('Error parsing scopes:', error);
+    scopes = [];
+  }
+  
   return {
     ...user,
     access_token: decrypt(user.access_token),
     refresh_token: decrypt(user.refresh_token),
-    scopes: JSON.parse(user.scopes)
+    scopes: scopes
   };
 }
 

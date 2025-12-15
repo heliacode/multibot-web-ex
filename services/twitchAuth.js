@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { twitchConfig } from '../config/twitch.js';
 import { createUser, getUserByTwitchId, updateUserTokens } from '../models/user.js';
 
-export function generateAuthUrl(state) {
+export function generateAuthUrl(state, forcePrompt = false) {
   const params = new URLSearchParams({
     client_id: twitchConfig.clientId,
     redirect_uri: twitchConfig.redirectUri,
@@ -11,6 +11,13 @@ export function generateAuthUrl(state) {
     scope: twitchConfig.scopes.join(' '),
     state: state
   });
+
+  // Add prompt parameter to force re-authentication if requested
+  // prompt=login forces Twitch to ask for credentials again
+  // prompt=consent forces user to re-authorize the app
+  if (forcePrompt) {
+    params.append('prompt', 'login');
+  }
 
   return `${twitchConfig.authUrl}?${params.toString()}`;
 }

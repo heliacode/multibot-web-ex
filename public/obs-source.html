@@ -87,16 +87,69 @@
     <div id="audio-container"></div>
 
     <script>
-        // Get token from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token') || '{{TOKEN}}';
+        // Get token from URL - handle both URLSearchParams and direct string extraction
+        let token = null;
+        
+        // First, try to get token from server-replaced placeholder (most reliable)
+        // Server replaces {{TOKEN}} with actual token value
+        const serverToken = '{{TOKEN}}';
+        // If server replaced it, serverToken will be the actual token (not the placeholder)
+        // Check: if it exists, has length, and is not the literal placeholder string
+        // (Note: server replaces ALL {{TOKEN}}, so we check if it's a real token by length/content)
+        if (serverToken && typeof serverToken === 'string' && serverToken.length > 10) {
+            // Looks like a real token (tokens are typically longer than 10 chars)
+            token = serverToken;
+        }
+        
+        // If server token wasn't available, extract from URL
+        // Always try manual extraction first for tokens with special characters
+        if (!token) {
+            const search = window.location.search || window.location.href.split('?')[1] || '';
+            // Match token=value, capturing everything after = until & or end of string
+            // This handles tokens with = characters correctly
+            const match = search.match(/[?&]token=([^&]*)/);
+            if (match && match[1]) {
+                try {
+                    token = decodeURIComponent(match[1]);
+                } catch (e) {
+                    // If decode fails, use raw value
+                    token = match[1];
+                }
+            }
+        }
+        
+        // Fallback: Try URLSearchParams if manual extraction didn't work
+        if (!token) {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlToken = urlParams.get('token');
+                if (urlToken && urlToken.trim() !== '') {
+                    token = urlToken;
+                }
+            } catch (e) {
+                // URLSearchParams failed, token remains null
+            }
+        }
 
-        if (!token || token === '{{TOKEN}}') {
+        // Validate token - be more lenient, only check for truly invalid cases
+        // Note: Don't check against '{{TOKEN}}' because server replaces ALL instances
+        // Instead, just check if token exists and is not empty
+        if (!token || (typeof token === 'string' && token.trim() === '')) {
             document.body.innerHTML = `
-                <div style="padding: 20px; color: white; background: rgba(0,0,0,0.8);">
-                    <h2>Error: Missing Token</h2>
-                    <p>Please provide a token in the URL: /obs-source?token=YOUR_TOKEN</p>
-                    <p>Get your token from the MultiBot dashboard.</p>
+                <div style="padding: 40px; color: white; background: rgba(0,0,0,0.9); text-align: center; font-family: Arial, sans-serif; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="max-width: 600px; padding: 40px; background: rgba(255, 255, 255, 0.1); border-radius: 10px;">
+                        <h1 style="color: #ff4444; margin-bottom: 20px; font-size: 32px;">Error: Missing Token</h1>
+                        <p style="margin: 15px 0; font-size: 16px; line-height: 1.6;">This OBS Browser Source requires a token to identify your account.</p>
+                        <p style="margin: 15px 0; font-size: 16px;"><strong>To get your token:</strong></p>
+                        <ol style="text-align: left; margin: 20px 0; padding-left: 20px;">
+                            <li style="margin: 10px 0;">Go to your <a href="/dashboard" style="color: #9146ff;">MultiBot Dashboard</a></li>
+                            <li style="margin: 10px 0;">Scroll to the "OBS Setup" section</li>
+                            <li style="margin: 10px 0;">Click "Generate OBS Token" if you haven't already</li>
+                            <li style="margin: 10px 0;">Copy the URL shown (it will look like: <code style="background: rgba(0,0,0,0.3); padding: 5px 10px; border-radius: 3px;">/obs-source?token=YOUR_TOKEN</code>)</li>
+                            <li style="margin: 10px 0;">Use that complete URL in your OBS Browser Source</li>
+                        </ol>
+                        <a href="/dashboard" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: #9146ff; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">Go to Dashboard</a>
+                    </div>
                 </div>
             `;
             throw new Error('Token required');
@@ -198,13 +251,18 @@
                 console.error(`[OBS] Error playing audio for command ${command}:`, error);
             });
 
-            // Show visual feedback (optional)
-            showCommandFeedback(command);
+            // Show visual feedback (if enabled)
+            const showFeedback = '{{SHOW_FEEDBACK}}' === 'true';
+            if (showFeedback) {
+                showCommandFeedback(command);
+            }
         }
 
         // Show visual feedback
         function showCommandFeedback(command) {
             const feedback = document.getElementById('command-feedback');
+            if (!feedback) return; // Safety check
+            
             feedback.textContent = command;
             feedback.classList.add('show');
             

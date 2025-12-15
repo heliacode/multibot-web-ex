@@ -89,7 +89,10 @@ export async function getChatClient(twitchUserId, username, accessToken = null) 
     lastPingTime: Date.now(),
     lastMessageTime: Date.now(), // Track last message received to detect stale connections
     reconnectAttempts: 0,
-    connectionStartTime: Date.now()
+    recreationAttempts: 0, // Track connection recreation attempts
+    lastRecreationAttempt: 0, // Timestamp of last recreation attempt
+    connectionStartTime: Date.now(),
+    consecutiveFailures: 0 // Track consecutive keep-alive failures
   });
 
   return activeConnections.get(twitchUserId);
@@ -159,16 +162,38 @@ async function processCommand(twitchUserId, message) {
  * Broadcast command trigger to WebSocket clients
  */
 function broadcastCommandTrigger(twitchUserId, commandData) {
-  if (!wss) return;
+  if (!wss) {
+    console.warn('[Chat] WebSocket server not available for broadcasting');
+    return;
+  }
   
+  let sentCount = 0;
   wss.clients.forEach((client) => {
-    if (client.userId && String(client.userId) === String(twitchUserId) && client.readyState === 1) {
-      client.send(JSON.stringify({
-        type: 'command_trigger',
-        command: commandData
-      }));
+    // Send to both OBS sources and dashboard clients for this user
+    if (client.userId && 
+        String(client.userId) === String(twitchUserId) && 
+        client.readyState === 1 && 
+        client.isAuthenticated) {
+      try {
+        client.send(JSON.stringify({
+          type: 'command_trigger',
+          command: commandData
+        }));
+        sentCount++;
+        if (client.isObsSource) {
+          console.log(`[Chat] Broadcasted command trigger to OBS source for user ${twitchUserId}`);
+        }
+      } catch (error) {
+        console.error(`[Chat] Error sending command trigger to client:`, error);
+      }
     }
   });
+  
+  if (sentCount === 0) {
+    console.warn(`[Chat] No WebSocket clients found for user ${twitchUserId} to broadcast command trigger`);
+  } else {
+    console.log(`[Chat] Broadcasted command trigger to ${sentCount} client(s) for user ${twitchUserId}`);
+  }
 }
 
 /**
@@ -182,7 +207,7 @@ function setupKeepAlive(twitchUserId, connection) {
     clearInterval(keepAliveIntervals.get(twitchUserId));
   }
   
-  // Health check every 2 minutes to ensure connection is alive
+  // STRONG keep-alive: Check every 30 seconds for aggressive health monitoring
   const interval = setInterval(() => {
     if (!connection.client) {
       clearInterval(interval);
@@ -200,46 +225,128 @@ function setupKeepAlive(twitchUserId, connection) {
       
       if (!isConnected && connection.connected) {
         // Connection was marked as connected but state shows otherwise
-        console.log(`[Keep-Alive] Connection state mismatch for ${twitchUserId}, state: ${readyState}`);
         connection.connected = false;
+        connection.consecutiveFailures = (connection.consecutiveFailures || 0) + 1;
+        connection.reconnectAttempts = (connection.reconnectAttempts || 0) + 1;
         
-        // Attempt reconnection
-        if (connection.reconnectAttempts < 5) {
-          console.log(`[Keep-Alive] Attempting to reconnect ${twitchUserId}...`);
+        console.warn(`[Keep-Alive] Connection state mismatch for ${twitchUserId}, state: ${readyState}, consecutive failures: ${connection.consecutiveFailures}`);
+        console.log(`[Keep-Alive] Reconnection attempt #${connection.reconnectAttempts} for ${twitchUserId}`);
+        
+        try {
           connection.client.reconnect();
-        } else {
-          console.error(`[Keep-Alive] Max reconnection attempts reached for ${twitchUserId}`);
+        } catch (reconnectError) {
+          console.error(`[Keep-Alive] Reconnect() failed for ${twitchUserId}:`, reconnectError.message);
+          
+          // If reconnect fails, try to recreate the connection with exponential backoff
+          const now = Date.now();
+          const timeSinceLastRecreation = now - (connection.lastRecreationAttempt || 0);
+          const backoffDelay = Math.min(5000 * Math.pow(2, connection.recreationAttempts || 0), 60000); // Max 60 seconds
+          
+          if (timeSinceLastRecreation >= backoffDelay) {
+            connection.recreationAttempts = (connection.recreationAttempts || 0) + 1;
+            connection.lastRecreationAttempt = now;
+            
+            console.log(`[Keep-Alive] Scheduling connection recreation for ${twitchUserId} (attempt #${connection.recreationAttempts}, delay: ${backoffDelay}ms)`);
+            
+            setTimeout(async () => {
+              try {
+                const user = await getUserByTwitchId(twitchUserId);
+                if (user && user.access_token) {
+                  console.log(`[Keep-Alive] Attempting to recreate connection for ${twitchUserId}`);
+                  // Remove old connection before recreating
+                  if (activeConnections.has(twitchUserId)) {
+                    const oldConnection = activeConnections.get(twitchUserId);
+                    try {
+                      if (oldConnection.client) {
+                        oldConnection.client.removeAllListeners();
+                        oldConnection.client.disconnect();
+                      }
+                    } catch (disconnectError) {
+                      // Ignore disconnect errors
+                    }
+                    activeConnections.delete(twitchUserId);
+                  }
+                  
+                  // Recreate connection
+                  await connectToChat(twitchUserId, user.twitch_username || twitchUserId, user.access_token);
+                  console.log(`[Keep-Alive] ✓ Connection recreated successfully for ${twitchUserId}`);
+                  connection.consecutiveFailures = 0; // Reset on successful recreation
+                } else {
+                  console.error(`[Keep-Alive] Cannot recreate connection for ${twitchUserId}: User or access token not found`);
+                }
+              } catch (error) {
+                console.error(`[Keep-Alive] Failed to recreate connection for ${twitchUserId}:`, error.message);
+                // Keep-alive will try again on next check (30 seconds)
+              }
+            }, backoffDelay);
+          } else {
+            console.log(`[Keep-Alive] Skipping recreation for ${twitchUserId} (backoff: ${Math.round((backoffDelay - timeSinceLastRecreation) / 1000)}s remaining)`);
+          }
+        }
+      } else if (isConnected && connection.connected) {
+        // Connection is healthy - reset failure counter
+        if (connection.consecutiveFailures > 0) {
+          console.log(`[Keep-Alive] ✓ Connection recovered for ${twitchUserId} after ${connection.consecutiveFailures} failures`);
+          connection.consecutiveFailures = 0;
         }
       }
       
-      // Check if we've received messages recently (within last 10 minutes)
+      // Check if we've received messages recently (within last 5 minutes)
       // If not, the connection might be stale even if state says OPEN
       const timeSinceLastMessage = now - connection.lastMessageTime;
-      if (isConnected && timeSinceLastMessage > 10 * 60 * 1000) {
-        // No messages in 10 minutes - connection might be stale
-        // Send a test message or verify connection by checking channel
-        console.log(`[Keep-Alive] No messages received in ${Math.round(timeSinceLastMessage / 1000)}s for ${twitchUserId}, verifying connection...`);
-        // The tmi.js library handles PING/PONG automatically, but we can verify by checking state
+      const timeSinceConnection = now - connection.connectionStartTime;
+      
+      if (isConnected && timeSinceLastMessage > 5 * 60 * 1000 && timeSinceConnection > 5 * 60 * 1000) {
+        // No messages in 5 minutes and connection has been up for at least 5 minutes
+        // This might indicate a stale connection - verify by checking state
+        console.warn(`[Keep-Alive] No messages received in ${Math.round(timeSinceLastMessage / 1000)}s for ${twitchUserId}, connection might be stale`);
+        // Force a state check by attempting to get readyState again
+        try {
+          const currentState = connection.client.readyState();
+          if (currentState !== 'OPEN') {
+            console.warn(`[Keep-Alive] State check revealed connection is not OPEN (${currentState}), reconnecting...`);
+            connection.connected = false;
+            connection.client.reconnect();
+          }
+        } catch (stateError) {
+          console.error(`[Keep-Alive] Error checking state for ${twitchUserId}:`, stateError);
+          connection.connected = false;
+          connection.client.reconnect();
+        }
       }
       
-      // Log connection health periodically
-      if (isConnected) {
+      // Log connection health every 2 minutes (less verbose)
+      if (isConnected && (now - connection.connectionStartTime) % (2 * 60 * 1000) < 30000) {
         const uptime = Math.round((now - connection.connectionStartTime) / 1000);
-        console.log(`[Keep-Alive] Connection healthy for ${twitchUserId} - Uptime: ${uptime}s, Messages: ${connection.messageHistory.length}`);
+        const messagesSinceStart = connection.messageHistory.length;
+        const lastMessageAgo = Math.round((now - connection.lastMessageTime) / 1000);
+        console.log(`[Keep-Alive] ✓ Connection healthy for ${twitchUserId} - Uptime: ${uptime}s, Messages: ${messagesSinceStart}, Last message: ${lastMessageAgo}s ago`);
       }
       
     } catch (error) {
-      console.error(`[Keep-Alive] Error checking connection health for ${twitchUserId}:`, error);
-      // If error checking state, try to reconnect
+      console.error(`[Keep-Alive] Error checking connection health for ${twitchUserId}:`, error.message);
+      connection.consecutiveFailures = (connection.consecutiveFailures || 0) + 1;
+      
+      // If error checking state, try to reconnect immediately
       if (connection.connected) {
         connection.connected = false;
-        connection.client.reconnect();
+        try {
+          connection.client.reconnect();
+        } catch (reconnectError) {
+          console.error(`[Keep-Alive] Reconnect failed for ${twitchUserId}:`, reconnectError.message);
+          // Will trigger recreation logic on next check if reconnect keeps failing
+        }
+      }
+      
+      // If we've had many consecutive failures, log a warning
+      if (connection.consecutiveFailures >= 5) {
+        console.warn(`[Keep-Alive] ⚠️  ${connection.consecutiveFailures} consecutive failures for ${twitchUserId} - connection may be unstable`);
       }
     }
-  }, 2 * 60 * 1000); // Check every 2 minutes
+  }, 30 * 1000); // Check every 30 seconds for STRONG keep-alive
   
   keepAliveIntervals.set(twitchUserId, interval);
-  console.log(`[Keep-Alive] Keep-alive monitoring started for ${twitchUserId}`);
+  console.log(`[Keep-Alive] ✓ STRONG keep-alive monitoring started for ${twitchUserId} (checking every 30s)`);
 }
 
 /**
@@ -299,6 +406,8 @@ export async function connectToChat(twitchUserId, username, accessToken = null, 
       console.log(`[Chat] Connected to Twitch chat for ${username} at ${addr}:${port}`);
       connection.connected = true;
       connection.reconnectAttempts = 0;
+      connection.recreationAttempts = 0; // Reset recreation attempts on successful connection
+      connection.consecutiveFailures = 0; // Reset failure counter
       connection.connectionStartTime = Date.now();
       connection.lastMessageTime = Date.now();
       

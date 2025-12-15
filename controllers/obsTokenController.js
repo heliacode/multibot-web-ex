@@ -20,16 +20,17 @@ export async function getToken(req, res) {
     // Get user ID from database
     const user = await getUserByTwitchId(twitchUserId);
     if (!user || !user.id) {
-      return res.status(404).json({ error: 'User not found' });
+      console.warn(`[OBS TOKEN] User not found for twitchUserId: ${twitchUserId}`);
+      return res.status(404).json({ error: 'User not found', message: 'Please log out and log back in to create your user account.' });
     }
 
     // Get or create token
     const tokenData = await getOrCreateObsToken(user.id, twitchUserId);
     
-    // Build OBS browser source URL
+    // Build OBS browser source URL (default: showFeedback=true)
     const protocol = req.protocol;
     const host = req.get('host');
-    const obsUrl = `${protocol}://${host}/obs-source?token=${tokenData.token}`;
+    const obsUrl = `${protocol}://${host}/obs-source?token=${tokenData.token}&showFeedback=true`;
 
     res.json({
       success: true,
@@ -66,10 +67,10 @@ export async function regenerateToken(req, res) {
     // Regenerate token
     const tokenData = await regenerateObsToken(user.id, twitchUserId);
     
-    // Build new OBS browser source URL
+    // Build new OBS browser source URL (default: showFeedback=true)
     const protocol = req.protocol;
     const host = req.get('host');
-    const obsUrl = `${protocol}://${host}/obs-source?token=${tokenData.token}`;
+    const obsUrl = `${protocol}://${host}/obs-source?token=${tokenData.token}&showFeedback=true`;
 
     res.json({
       success: true,

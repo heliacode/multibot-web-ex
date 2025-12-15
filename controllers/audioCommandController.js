@@ -32,7 +32,15 @@ async function getUserIdFromTwitchId(twitchUserId) {
 export async function createCommand(req, res) {
   try {
     const twitchUserId = req.session.userId;
+    console.log('[AUDIO CMD DEBUG] Session data:', {
+      userId: twitchUserId,
+      username: req.session.username,
+      displayName: req.session.displayName,
+      sessionId: req.sessionID
+    });
+    
     if (!twitchUserId) {
+      console.error('[AUDIO CMD DEBUG] No userId in session');
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
@@ -43,10 +51,20 @@ export async function createCommand(req, res) {
       return res.status(400).json({ error: 'Command is required' });
     }
 
-    // Get user ID
-    const userId = await getUserIdFromTwitchId(twitchUserId);
+    // Get user ID - ensure we're using string comparison
+    const twitchUserIdStr = String(twitchUserId);
+    console.log('[AUDIO CMD DEBUG] Looking up user with twitchUserId:', twitchUserIdStr, 'Type:', typeof twitchUserIdStr);
+    const userId = await getUserIdFromTwitchId(twitchUserIdStr);
+    console.log('[AUDIO CMD DEBUG] Found userId:', userId);
+    
     if (!userId) {
-      return res.status(404).json({ error: 'User not found' });
+      console.error('[AUDIO CMD DEBUG] User lookup failed. Session userId:', twitchUserIdStr);
+      console.error('[AUDIO CMD DEBUG] Checking database for this twitch_user_id...');
+      // Let's also check what's actually in the database
+      const { getUserByTwitchId } = await import('../models/user.js');
+      const dbUser = await getUserByTwitchId(twitchUserIdStr);
+      console.error('[AUDIO CMD DEBUG] Direct DB lookup result:', dbUser ? `Found user id ${dbUser.id}` : 'NOT FOUND');
+      return res.status(404).json({ error: 'User not found', debug: { sessionUserId: twitchUserIdStr } });
     }
 
     let filePath = null;
@@ -93,9 +111,11 @@ export async function createCommand(req, res) {
     });
   } catch (error) {
     console.error('Error creating audio command:', error);
+    // Ensure we always return JSON, even on errors
+    const errorMessage = error.message || 'Unknown error';
     res.status(500).json({
       error: 'Failed to create audio command',
-      message: error.message
+      message: errorMessage
     });
   }
 }

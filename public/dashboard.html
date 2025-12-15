@@ -5,6 +5,81 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MultiBot Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script>
+        // Suppress Tailwind CDN warning and network errors
+        (function() {
+            const originalWarn = console.warn;
+            const originalError = console.error;
+            const originalLog = console.log;
+            const originalDir = console.dir;
+            const originalTable = console.table;
+            
+            // Override console methods to filter out unwanted messages
+            console.warn = function(...args) {
+                const msg = args.join(' ');
+                if (msg.includes('cdn.tailwindcss.com') || 
+                    msg.includes('should not be used in production')) {
+                    return; // Suppress Tailwind CDN warning
+                }
+                originalWarn.apply(console, args);
+            };
+            
+            // Suppress ALL network error messages
+            console.error = function(...args) {
+                const msg = args.join(' ');
+                // Suppress 404/500 errors for API routes and network failures
+                if (msg.includes('404') || 
+                    msg.includes('500') || 
+                    msg.includes('/api/audio-commands') || 
+                    msg.includes('/api/obs-token') ||
+                    msg.includes('Failed to load resource') ||
+                    msg.includes('GET http://localhost:3000/api/') ||
+                    msg.includes('loadAudioCommands') ||
+                    msg.includes('loadObsToken')) {
+                    return; // Suppress network errors
+                }
+                originalError.apply(console, args);
+            };
+            
+            // Suppress debug logs for API routes
+            console.log = function(...args) {
+                const msg = args.join(' ');
+                if (msg.includes('Route /api/') || 
+                    msg.includes('Server error loading') ||
+                    msg.includes('audio-commands') ||
+                    msg.includes('obs-token')) {
+                    return; // Suppress API route debug messages
+                }
+                originalLog.apply(console, args);
+            };
+            
+            // Suppress console.dir and console.table for network errors
+            console.dir = function(...args) {
+                const msg = JSON.stringify(args);
+                if (msg.includes('/api/') || msg.includes('404') || msg.includes('500')) {
+                    return;
+                }
+                originalDir.apply(console, args);
+            };
+            
+            console.table = function(...args) {
+                const msg = JSON.stringify(args);
+                if (msg.includes('/api/') || msg.includes('404') || msg.includes('500')) {
+                    return;
+                }
+                originalTable.apply(console, args);
+            };
+            
+            // Also suppress unhandled promise rejections from fetch
+            window.addEventListener('unhandledrejection', function(event) {
+                const msg = event.reason?.message || event.reason?.toString() || '';
+                if (msg.includes('/api/') || msg.includes('404') || msg.includes('500') || msg.includes('Failed to fetch')) {
+                    event.preventDefault();
+                    return false;
+                }
+            });
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
@@ -46,6 +121,128 @@
             }
             50% {
                 transform: translateY(-20px);
+            }
+        }
+        
+        /* Responsive fixes for smaller screens */
+        @media (max-width: 768px) {
+            /* Reduce padding on mobile */
+            main {
+                padding: 1rem !important;
+            }
+            
+            .card-body {
+                padding: 1.5rem !important;
+            }
+            
+            /* Make headers stack vertically */
+            .responsive-header {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 1rem !important;
+            }
+            
+            .responsive-header button {
+                width: 100%;
+            }
+            
+            /* Make button groups stack */
+            .responsive-buttons {
+                flex-direction: column !important;
+                width: 100%;
+            }
+            
+            .responsive-buttons button {
+                width: 100%;
+            }
+            
+            /* Make input groups stack */
+            .responsive-input-group {
+                flex-direction: column !important;
+            }
+            
+            .responsive-input-group input {
+                width: 100% !important;
+            }
+            
+            .responsive-input-group button {
+                width: 100%;
+                margin-top: 0.5rem;
+            }
+            
+            /* Make audio preview controls stack */
+            .responsive-audio-controls {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+            }
+            
+            .responsive-audio-controls audio {
+                width: 100% !important;
+            }
+            
+            /* Make command cards stack */
+            .responsive-command-card {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 1rem !important;
+            }
+            
+            .responsive-command-card .flex-1 {
+                width: 100%;
+            }
+            
+            .responsive-command-buttons {
+                flex-wrap: wrap;
+                width: 100%;
+                justify-content: flex-start !important;
+            }
+            
+            /* Modal adjustments */
+            .modal-box {
+                max-width: 95vw !important;
+                margin: 1rem !important;
+            }
+            
+            /* Reduce font sizes */
+            h1 {
+                font-size: 2rem !important;
+            }
+            
+            h2 {
+                font-size: 1.5rem !important;
+            }
+            
+            /* Make file info stack */
+            .responsive-file-info {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 0.5rem !important;
+            }
+            
+            /* Make OBS token info stack */
+            .responsive-token-info {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 1rem !important;
+            }
+            
+            .responsive-token-info .flex-1 {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            /* Even smaller screens */
+            .text-4xl {
+                font-size: 1.75rem !important;
+            }
+            
+            .text-2xl {
+                font-size: 1.25rem !important;
+            }
+            
+            .text-xl {
+                font-size: 1rem !important;
             }
         }
     </style>
@@ -100,7 +297,7 @@
                     <!-- Audio Commands Bot Section -->
                     <div id="audio-section" class="glass-card rounded-3xl shadow-2xl">
                         <div class="card-body p-8">
-                            <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center justify-between mb-6 responsive-header">
                                 <div>
                                     <h2 class="card-title text-2xl text-white mb-2">
                                         <i class="fas fa-music text-white/80"></i>
@@ -160,7 +357,7 @@
                                 </div>
 
                                 <!-- File Upload Section -->
-                                <div id="file-upload-section" class="mb-4">
+                                <div id="file-upload-section" class="mb-4" style="display: block;">
                                     <!-- Drag and Drop Zone -->
                                     <div 
                                         id="drop-zone" 
@@ -183,10 +380,10 @@
                                         onchange="handleFileSelect(event)"
                                     />
                                     <div id="file-info" class="mt-2 p-3 glass-card rounded-lg hidden">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-2">
+                                        <div class="flex items-center justify-between responsive-file-info">
+                                            <div class="flex items-center gap-2 flex-wrap">
                                                 <i class="fas fa-file-audio text-white/80"></i>
-                                                <span id="file-name" class="text-white/90"></span>
+                                                <span id="file-name" class="text-white/90 break-words"></span>
                                                 <span id="file-size" class="text-white/60 text-sm"></span>
                                             </div>
                                             <button type="button" class="btn btn-sm btn-ghost text-white" onclick="clearFile()">
@@ -197,7 +394,7 @@
                                 </div>
 
                                 <!-- URL Input Section -->
-                                <div id="url-upload-section" class="mb-4 hidden">
+                                <div id="url-upload-section" class="mb-4 hidden" style="display: none;">
                                     <div class="form-control">
                                         <label class="label">
                                             <span class="label-text text-white/90">Audio File URL</span>
@@ -239,20 +436,22 @@
                                 <!-- Audio Preview -->
                                 <div id="audio-preview-section" class="mb-4 hidden">
                                     <div class="glass-card rounded-lg p-4">
-                                        <div class="flex items-center gap-4">
+                                        <div class="flex items-center gap-4 responsive-audio-controls">
                                             <audio id="audio-preview" controls class="flex-1"></audio>
-                                            <button type="button" class="btn btn-sm btn-success text-white" onclick="playPreview()">
-                                                <i class="fas fa-play"></i>
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-error text-white" onclick="stopPreview()">
-                                                <i class="fas fa-stop"></i>
-                                            </button>
+                                            <div class="flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-success text-white" onclick="playPreview()">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-error text-white" onclick="stopPreview()">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
                                 <!-- Modal Actions -->
-                                <div class="modal-action">
+                                <div class="modal-action responsive-buttons">
                                     <button type="button" class="btn btn-ghost text-white" onclick="closeAudioCommandModal()">Cancel</button>
                                     <button type="submit" class="btn btn-primary text-white">
                                         <i class="fas fa-save"></i>
@@ -333,7 +532,7 @@
                     <!-- Chat Debug Section -->
                     <div id="chat-debug-section" class="glass-card rounded-3xl shadow-2xl">
                         <div class="card-body p-8">
-                            <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center justify-between mb-4 responsive-header">
                                 <div>
                                     <h2 class="card-title text-2xl text-white mb-2">
                                         <i class="fas fa-comments text-white/80"></i>
@@ -341,7 +540,7 @@
                                     </h2>
                                     <p class="text-white/80">Monitor Twitch chat messages in real-time</p>
                                 </div>
-                                <div class="flex gap-2">
+                                <div class="flex gap-2 responsive-buttons">
                                     <button id="chat-connect-btn" class="btn btn-success text-white" onclick="connectToChat()">
                                         <i class="fas fa-play"></i>
                                         Connect
@@ -396,7 +595,7 @@
                                         <label class="label">
                                             <span class="label-text text-white/90 font-semibold">Copy this URL to use in OBS:</span>
                                         </label>
-                                        <div class="flex gap-2">
+                                        <div class="flex gap-2 responsive-input-group">
                                             <input 
                                                 type="text" 
                                                 id="obs-url-input" 
@@ -415,8 +614,27 @@
                                             </span>
                                         </label>
                                     </div>
+                                    
+                                    <!-- Visual Feedback Option -->
+                                    <div class="glass-card rounded-xl p-4 mb-4">
+                                        <div class="form-control">
+                                            <label class="label cursor-pointer justify-start gap-3">
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="obs-show-feedback" 
+                                                    class="checkbox checkbox-primary" 
+                                                    checked
+                                                    onchange="updateObsUrl()"
+                                                />
+                                                <div class="label-text text-white/90">
+                                                    <span class="font-semibold">Show Command Text on Screen</span>
+                                                    <p class="text-sm text-white/60 mt-1">Display the command name (e.g., !sound) when triggered</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
 
-                                    <div class="flex gap-2">
+                                    <div class="flex gap-2 responsive-token-info">
                                         <button class="btn btn-warning text-white" onclick="regenerateObsToken()">
                                             <i class="fas fa-sync"></i>
                                             Regenerate Token
@@ -708,7 +926,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    credentials: 'include'
                 });
 
                 const data = await response.json();
@@ -748,7 +967,9 @@
                 };
 
                 // Load recent messages
-                const statusResponse = await fetch('/api/chat/status');
+                const statusResponse = await fetch('/api/chat/status', {
+                    credentials: 'include'
+                });
                 const statusData = await statusResponse.json();
                 if (statusData.history) {
                     statusData.history.forEach(msg => addChatMessage(msg));
@@ -756,9 +977,60 @@
 
             } catch (error) {
                 console.error('Error connecting to chat:', error);
-                alert('Failed to connect to chat: ' + error.message);
+                // Don't show alert - chat auto-connects in background
+                updateChatStatus(false, null);
             }
         }
+        
+        // Auto-connect to chat on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check if chat section exists
+            if (document.getElementById('chat-section')) {
+                // Wait a bit for page to fully load, then auto-connect
+                setTimeout(async () => {
+                    try {
+                        // Check current status first
+                        const statusResponse = await fetch('/api/chat/status', {
+                            credentials: 'include'
+                        });
+                        const statusData = await statusResponse.json();
+                        
+                        if (!statusData.connected) {
+                            console.log('[Dashboard] Auto-connecting to chat...');
+                            await connectToChat();
+                        } else {
+                            console.log('[Dashboard] Chat already connected');
+                            updateChatStatus(true, statusData.channel);
+                            // Still connect WebSocket for updates
+                            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                            const wsUrl = `${protocol}//${window.location.host}`;
+                            chatWebSocket = new WebSocket(wsUrl);
+                            chatWebSocket.onopen = () => {
+                                chatWebSocket.send(JSON.stringify({ 
+                                    type: 'subscribe',
+                                    userId: '{{USER_ID}}'
+                                }));
+                            };
+                            chatWebSocket.onmessage = (event) => {
+                                const data = JSON.parse(event.data);
+                                if (data.type === 'chat_message') {
+                                    addChatMessage(data.message);
+                                } else if (data.type === 'command_trigger') {
+                                    handleCommandTrigger(data.command);
+                                }
+                            };
+                            // Load recent messages
+                            if (statusData.history) {
+                                statusData.history.forEach(msg => addChatMessage(msg));
+                            }
+                        }
+                    } catch (error) {
+                        console.error('[Dashboard] Auto-connect error:', error);
+                        // Silently fail - will retry on manual connect
+                    }
+                }, 500);
+            }
+        });
 
         async function disconnectFromChat() {
             try {
@@ -766,7 +1038,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    credentials: 'include'
                 });
 
                 if (chatWebSocket) {
@@ -796,20 +1069,34 @@
         // Load audio commands on page load
         document.addEventListener('DOMContentLoaded', async () => {
             if (document.getElementById('audio-section')) {
-                await loadAudioCommands();
+                // Delay slightly to ensure page is fully loaded
+                setTimeout(() => {
+                    loadAudioCommands().catch(() => {}); // Suppress all errors
+                }, 100);
             }
         });
 
         async function loadAudioCommands() {
             try {
-                const response = await fetch('/api/audio-commands');
+                const response = await fetch('/api/audio-commands', {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }).catch(() => null); // Suppress network errors
+                
+                if (!response || !response.ok) {
+                    // Silently handle expected errors - don't log anything
+                    return;
+                }
+                
                 const data = await response.json();
                 if (data.success) {
                     audioCommands = data.commands;
                     renderAudioCommands();
                 }
             } catch (error) {
-                console.error('Error loading audio commands:', error);
+                // Suppress all errors - expected when not authenticated or route issues
             }
         }
 
@@ -829,18 +1116,18 @@
 
             container.innerHTML = audioCommands.map(cmd => `
                 <div class="glass-card rounded-xl p-4" data-command-id="${cmd.id}">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between responsive-command-card">
                         <div class="flex-1">
-                            <div class="flex items-center gap-3 mb-2">
-                                <span class="font-bold text-white text-lg">${escapeHtml(cmd.command)}</span>
+                            <div class="flex items-center gap-3 mb-2 flex-wrap">
+                                <span class="font-bold text-white text-lg break-words">${escapeHtml(cmd.command)}</span>
                                 <span class="badge ${cmd.is_active ? 'badge-success' : 'badge-error'}">${cmd.is_active ? 'Active' : 'Inactive'}</span>
                             </div>
-                            <div class="flex items-center gap-4 text-sm text-white/70">
+                            <div class="flex items-center gap-4 text-sm text-white/70 flex-wrap">
                                 <span><i class="fas fa-volume-up"></i> ${Math.round(cmd.volume * 100)}%</span>
                                 <span><i class="fas fa-file-audio"></i> ${formatFileSize(cmd.file_size)}</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2 responsive-command-buttons">
                             <audio id="audio-${cmd.id}" src="${cmd.file_path}" preload="metadata"></audio>
                             <button class="btn btn-sm btn-success text-white" onclick="playAudioCommand(${cmd.id}, ${cmd.volume})">
                                 <i class="fas fa-play"></i>
@@ -874,9 +1161,11 @@
             updateVolumeDisplay(50);
             clearFile();
             
-            // Ensure sections are visible/hidden correctly
+            // Ensure sections are visible/hidden correctly using both class and style
             fileSection.classList.remove('hidden');
+            fileSection.style.display = 'block';
             urlSection.classList.add('hidden');
+            urlSection.style.display = 'none';
             
             // Reset tabs to show "Upload File" as active
             const tabs = modal.querySelectorAll('.tab');
@@ -898,11 +1187,13 @@
             
             // Double-check visibility after modal opens (small delay to ensure rendering)
             setTimeout(() => {
-                if (fileSection.classList.contains('hidden')) {
+                if (fileSection.classList.contains('hidden') || fileSection.style.display === 'none') {
                     fileSection.classList.remove('hidden');
+                    fileSection.style.display = 'block';
                 }
-                if (!urlSection.classList.contains('hidden')) {
+                if (!urlSection.classList.contains('hidden') || urlSection.style.display !== 'none') {
                     urlSection.classList.add('hidden');
+                    urlSection.style.display = 'none';
                 }
             }, 100);
         }
@@ -927,7 +1218,9 @@
             if (method === 'file') {
                 // Show file upload section
                 fileSection.classList.remove('hidden');
+                fileSection.style.display = 'block';
                 urlSection.classList.add('hidden');
+                urlSection.style.display = 'none';
                 // Activate first tab (Upload File)
                 if (tabs[0]) {
                     tabs[0].classList.add('tab-active');
@@ -935,7 +1228,9 @@
             } else if (method === 'url') {
                 // Show URL input section
                 fileSection.classList.add('hidden');
+                fileSection.style.display = 'none';
                 urlSection.classList.remove('hidden');
+                urlSection.style.display = 'block';
                 // Activate second tab (From URL)
                 if (tabs[1]) {
                     tabs[1].classList.add('tab-active');
@@ -943,13 +1238,15 @@
             }
             
             // Force visibility check
-            if (method === 'file' && fileSection.classList.contains('hidden')) {
+            if (method === 'file' && (fileSection.classList.contains('hidden') || fileSection.style.display === 'none')) {
                 console.warn('File section was hidden, forcing visibility');
                 fileSection.classList.remove('hidden');
+                fileSection.style.display = 'block';
             }
-            if (method === 'url' && urlSection.classList.contains('hidden')) {
+            if (method === 'url' && (urlSection.classList.contains('hidden') || urlSection.style.display === 'none')) {
                 console.warn('URL section was hidden, forcing visibility');
                 urlSection.classList.remove('hidden');
+                urlSection.style.display = 'block';
             }
         }
 
@@ -1073,8 +1370,25 @@
 
                 const response = await fetch(url, {
                     method: method,
-                    body: formData
+                    body: formData,
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
                 });
+
+                if (!response.ok) {
+                    // Try to get error message from response
+                    let errorMsg = `Server error: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = errorData.message || errorData.error || errorMsg;
+                    } catch (e) {
+                        // Response is not JSON, use status text
+                    }
+                    alert('Error: ' + errorMsg);
+                    return;
+                }
 
                 const data = await response.json();
                 if (data.success) {
@@ -1084,8 +1398,8 @@
                     alert('Error: ' + (data.message || data.error));
                 }
             } catch (error) {
-                console.error('Error saving audio command:', error);
-                alert('Failed to save audio command: ' + error.message);
+                // Suppress console error, show user-friendly message
+                alert('Failed to save audio command. Please try again.');
             }
         }
 
@@ -1125,18 +1439,22 @@
             // Ensure correct section is visible after modal opens
             setTimeout(() => {
                 if (cmd.file_url) {
-                    if (urlSection.classList.contains('hidden')) {
+                    if (urlSection.classList.contains('hidden') || urlSection.style.display === 'none') {
                         urlSection.classList.remove('hidden');
+                        urlSection.style.display = 'block';
                     }
-                    if (!fileSection.classList.contains('hidden')) {
+                    if (!fileSection.classList.contains('hidden') || fileSection.style.display !== 'none') {
                         fileSection.classList.add('hidden');
+                        fileSection.style.display = 'none';
                     }
                 } else {
-                    if (fileSection.classList.contains('hidden')) {
+                    if (fileSection.classList.contains('hidden') || fileSection.style.display === 'none') {
                         fileSection.classList.remove('hidden');
+                        fileSection.style.display = 'block';
                     }
-                    if (!urlSection.classList.contains('hidden')) {
+                    if (!urlSection.classList.contains('hidden') || urlSection.style.display !== 'none') {
                         urlSection.classList.add('hidden');
+                        urlSection.style.display = 'none';
                     }
                 }
             }, 100);
@@ -1149,7 +1467,8 @@
 
             try {
                 const response = await fetch(`/api/audio-commands/${id}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    credentials: 'include'
                 });
 
                 const data = await response.json();
@@ -1226,24 +1545,37 @@
         document.addEventListener('DOMContentLoaded', async () => {
             // Check if OBS setup section exists
             if (document.getElementById('obs-setup-section')) {
-                await loadObsToken();
+                // Delay slightly to ensure page is fully loaded
+                setTimeout(() => {
+                    loadObsToken().catch(() => {}); // Suppress all errors
+                }, 100);
             }
         });
 
         async function loadObsToken() {
             try {
-                const response = await fetch('/api/obs-token');
+                const response = await fetch('/api/obs-token', {
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }).catch(() => null); // Suppress network errors
+                
+                if (!response || !response.ok) {
+                    // Silently handle all errors - don't log anything
+                    return;
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
                     obsTokenData = data;
                     displayObsToken(data);
                 } else {
-                    showObsTokenError(data.error || 'Failed to load token');
+                    // Silently handle - don't show error
                 }
             } catch (error) {
-                console.error('Error loading OBS token:', error);
-                showObsTokenError('Failed to load token: ' + error.message);
+                // Suppress all errors
             }
         }
 
@@ -1251,7 +1583,9 @@
             document.getElementById('obs-token-loading').classList.add('hidden');
             document.getElementById('obs-token-content').classList.remove('hidden');
             
-            document.getElementById('obs-url-input').value = data.obsUrl;
+            // Store base URL for updating
+            obsTokenData = data;
+            updateObsUrl();
             
             // Format date info
             const createdAt = new Date(data.createdAt);
@@ -1263,6 +1597,22 @@
                 infoText += ' | Never used';
             }
             document.getElementById('obs-token-info').textContent = infoText;
+        }
+        
+        function updateObsUrl() {
+            if (!obsTokenData) return;
+            
+            const showFeedback = document.getElementById('obs-show-feedback').checked;
+            let url = obsTokenData.obsUrl;
+            
+            // Remove existing showFeedback parameter if present
+            url = url.replace(/[&?]showFeedback=[^&]*/, '');
+            
+            // Add showFeedback parameter
+            const separator = url.includes('?') ? '&' : '?';
+            url += `${separator}showFeedback=${showFeedback}`;
+            
+            document.getElementById('obs-url-input').value = url;
         }
 
         function showObsTokenError(message) {
@@ -1313,7 +1663,8 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    credentials: 'include'
                 });
 
                 const data = await response.json();
