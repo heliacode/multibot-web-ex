@@ -14,17 +14,20 @@ export async function handleCallback(req, res) {
 
     // Check for OAuth errors
     if (error) {
-      return res.redirect('/?error=' + encodeURIComponent(error));
+      const userMessage = error === 'access_denied' 
+        ? 'You cancelled the authorization. Please try again if you want to connect.'
+        : 'Authentication was cancelled or incomplete. Please try again.';
+      return res.redirect('/?error=' + encodeURIComponent(userMessage));
     }
 
     // Verify state parameter
     if (!state || state !== req.session.oauthState) {
-      return res.redirect('/?error=' + encodeURIComponent('Invalid state parameter'));
+      return res.redirect('/?error=' + encodeURIComponent('Security verification failed. Please try again.'));
     }
 
     // Check for authorization code
     if (!code) {
-      return res.redirect('/?error=' + encodeURIComponent('No authorization code provided'));
+      return res.redirect('/?error=' + encodeURIComponent('Authorization was cancelled or incomplete. Please try again.'));
     }
 
     // Handle OAuth callback
@@ -35,6 +38,8 @@ export async function handleCallback(req, res) {
     req.session.username = userData.username;
     req.session.displayName = userData.displayName;
     req.session.profileImageUrl = userData.profileImageUrl;
+    req.session.accessToken = userData.accessToken; // Store access token for chat connection
+    req.session.refreshToken = userData.refreshToken;
 
     // Clear OAuth state
     delete req.session.oauthState;
@@ -44,8 +49,21 @@ export async function handleCallback(req, res) {
   } catch (error) {
     console.error('OAuth callback error:', error);
     console.error('Error stack:', error.stack);
-    const errorMessage = error.message || 'Authentication failed';
-    res.redirect('/?error=' + encodeURIComponent(errorMessage));
+    
+    // Map technical errors to user-friendly messages
+    let userMessage = 'Authentication failed. Please try again.';
+    
+    if (error.message.includes('Client Secret is not configured')) {
+      userMessage = 'Authentication configuration error. Please contact support.';
+    } else if (error.message.includes('Failed to exchange')) {
+      userMessage = 'Unable to complete authentication. Please try again.';
+    } else if (error.message.includes('Failed to fetch user information')) {
+      userMessage = 'Unable to retrieve your Twitch account information. Please try again.';
+    } else if (error.message.includes('Database error')) {
+      userMessage = 'Unable to save your account information. Please try again.';
+    }
+    
+    res.redirect('/?error=' + encodeURIComponent(userMessage));
   }
 }
 

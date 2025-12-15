@@ -6,6 +6,14 @@ import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import indexRoutes from './routes/index.js';
 import dashboardRoutes from './routes/dashboard.js';
+import chatRoutes from './routes/chat.js';
+import audioCommandRoutes from './routes/audioCommands.js';
+import obsTokenRoutes from './routes/obsToken.js';
+import obsSourceRoutes from './routes/obsSource.js';
+import { WebSocketServer } from 'ws';
+import http from 'http';
+import { setWebSocketServer } from './services/twitchChat.js';
+import { getObsTokenByToken } from './models/obsToken.js';
 
 dotenv.config();
 
@@ -13,6 +21,9 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
+
+// Create HTTP server for WebSocket support
+const server = http.createServer(app);
 
 // Session configuration
 app.use(session({
@@ -37,6 +48,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRoutes);
 app.use('/auth', authRoutes);
 app.use('/dashboard', dashboardRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/audio-commands', audioCommandRoutes);
+app.use('/api/obs-token', obsTokenRoutes);
+app.use('/obs-source', obsSourceRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -44,8 +59,92 @@ app.use((err, req, res, next) => {
   res.status(500).send('Internal Server Error');
 });
 
+// WebSocket server for real-time chat updates
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws, req) => {
+  ws.isAuthenticated = false;
+  ws.userId = null;
+  ws.isObsSource = false;
+
+  ws.on('message', async (message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      
+      // Handle OBS browser source authentication
+      if (data.type === 'obs_authenticate') {
+        const token = data.token;
+        
+        if (!token) {
+          ws.send(JSON.stringify({ 
+            type: 'obs_auth_failed', 
+            message: 'Token is required' 
+          }));
+          ws.close();
+          return;
+        }
+
+        // Validate token
+        const tokenData = await getObsTokenByToken(token);
+        
+        if (!tokenData) {
+          ws.send(JSON.stringify({ 
+            type: 'obs_auth_failed', 
+            message: 'Invalid token' 
+          }));
+          ws.close();
+          return;
+        }
+
+        // Authenticate OBS source
+        ws.isAuthenticated = true;
+        ws.userId = tokenData.twitch_user_id;
+        ws.isObsSource = true;
+        
+        ws.send(JSON.stringify({ 
+          type: 'obs_authenticated', 
+          message: 'OBS browser source authenticated successfully' 
+        }));
+        
+        console.log(`[WebSocket] OBS browser source authenticated for user ${tokenData.twitch_user_id}`);
+      }
+      // Handle regular dashboard WebSocket subscription
+      else if (data.type === 'subscribe') {
+        // Store user ID with WebSocket connection (for dashboard)
+        ws.userId = data.userId;
+        ws.isAuthenticated = true;
+        ws.isObsSource = false;
+        ws.send(JSON.stringify({ 
+          type: 'subscribed', 
+          message: 'Subscribed to chat updates' 
+        }));
+      }
+    } catch (error) {
+      console.error('WebSocket error:', error);
+      if (!ws.isObsSource) {
+        ws.send(JSON.stringify({ 
+          type: 'error', 
+          message: 'WebSocket error occurred' 
+        }));
+      }
+    }
+  });
+
+  ws.on('close', () => {
+    if (ws.isObsSource) {
+      console.log(`[WebSocket] OBS browser source disconnected for user ${ws.userId}`);
+    } else {
+      console.log(`[WebSocket] Dashboard client disconnected for user ${ws.userId}`);
+    }
+  });
+});
+
+// Store WebSocket server for chat service to broadcast messages
+app.locals.wss = wss;
+setWebSocketServer(wss);
+
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
 

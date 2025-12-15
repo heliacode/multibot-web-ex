@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiBot OBS Browser Source</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: transparent;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Status indicator */
+        #status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        #status.connected {
+            background: rgba(0, 255, 0, 0.3);
+            color: #00ff00;
+        }
+
+        #status.disconnected {
+            background: rgba(255, 0, 0, 0.3);
+            color: #ff0000;
+        }
+
+        #status.connecting {
+            background: rgba(255, 255, 0, 0.3);
+            color: #ffff00;
+        }
+
+        /* Hidden audio elements container */
+        #audio-container {
+            display: none;
+        }
+
+        /* Visual feedback (optional - can be enabled) */
+        .command-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 999;
+        }
+
+        .command-feedback.show {
+            opacity: 1;
+            animation: fadeOut 2s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Status indicator -->
+    <div id="status" class="connecting">Connecting...</div>
+
+    <!-- Visual feedback container -->
+    <div id="command-feedback" class="command-feedback"></div>
+
+    <!-- Audio container (hidden) -->
+    <div id="audio-container"></div>
+
+    <script>
+        // Get token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token') || '{{TOKEN}}';
+
+        if (!token || token === '{{TOKEN}}') {
+            document.body.innerHTML = `
+                <div style="padding: 20px; color: white; background: rgba(0,0,0,0.8);">
+                    <h2>Error: Missing Token</h2>
+                    <p>Please provide a token in the URL: /obs-source?token=YOUR_TOKEN</p>
+                    <p>Get your token from the MultiBot dashboard.</p>
+                </div>
+            `;
+            throw new Error('Token required');
+        }
+
+        // WebSocket connection
+        let ws = null;
+        let audioElements = new Map(); // Store audio elements by command ID
+        let isConnected = false;
+
+        // Determine WebSocket URL
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+
+        // Connect to WebSocket
+        function connect() {
+            updateStatus('connecting', 'Connecting...');
+            
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                console.log('[OBS] WebSocket connected');
+                // Send token to authenticate
+                ws.send(JSON.stringify({
+                    type: 'obs_authenticate',
+                    token: token
+                }));
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'obs_authenticated') {
+                        isConnected = true;
+                        updateStatus('connected', 'Connected');
+                        console.log('[OBS] Authenticated successfully');
+                    } else if (data.type === 'obs_auth_failed') {
+                        isConnected = false;
+                        updateStatus('disconnected', 'Auth Failed');
+                        console.error('[OBS] Authentication failed:', data.message);
+                    } else if (data.type === 'command_trigger') {
+                        handleCommandTrigger(data.command);
+                    }
+                } catch (error) {
+                    console.error('[OBS] Error parsing message:', error);
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('[OBS] WebSocket error:', error);
+                updateStatus('disconnected', 'Connection Error');
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                updateStatus('disconnected', 'Disconnected');
+                console.log('[OBS] WebSocket closed, reconnecting in 3 seconds...');
+                // Reconnect after 3 seconds
+                setTimeout(connect, 3000);
+            };
+        }
+
+        // Update status indicator
+        function updateStatus(status, text) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = status;
+            statusEl.textContent = text;
+        }
+
+        // Handle command trigger
+        function handleCommandTrigger(commandData) {
+            if (commandData.type === 'audio_command') {
+                playAudioCommand(commandData);
+            }
+        }
+
+        // Play audio command
+        function playAudioCommand(commandData) {
+            const { id, filePath, volume, command } = commandData;
+            
+            console.log(`[OBS] Playing audio command: ${command} (${filePath})`);
+
+            // Check if audio element already exists
+            let audio = audioElements.get(id);
+            
+            if (!audio) {
+                // Create new audio element
+                audio = new Audio(filePath);
+                audio.preload = 'auto';
+                audioElements.set(id, audio);
+            }
+
+            // Set volume (0-1 range)
+            audio.volume = Math.max(0, Math.min(1, volume || 0.5));
+
+            // Play audio
+            audio.play().catch(error => {
+                console.error(`[OBS] Error playing audio for command ${command}:`, error);
+            });
+
+            // Show visual feedback (optional)
+            showCommandFeedback(command);
+        }
+
+        // Show visual feedback
+        function showCommandFeedback(command) {
+            const feedback = document.getElementById('command-feedback');
+            feedback.textContent = command;
+            feedback.classList.add('show');
+            
+            setTimeout(() => {
+                feedback.classList.remove('show');
+            }, 2000);
+        }
+
+        // Preload audio files (optional - can be enabled if needed)
+        async function preloadAudioFiles() {
+            // This could fetch the list of commands and preload them
+            // For now, we'll load them on-demand
+        }
+
+        // Initialize
+        connect();
+    </script>
+</body>
+</html>
+

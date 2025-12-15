@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiBot Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 25%, #14b8a6 50%, #0891b2 75%, #0c4a6e 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+    </style>
+</head>
+<body class="gradient-bg">
+    <div class="drawer lg:drawer-open">
+        <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+        
+        <!-- Page content -->
+        <div class="drawer-content flex flex-col">
+            <!-- Mobile Navbar -->
+            <div class="navbar glass-effect w-full shadow-lg lg:hidden">
+                <div class="flex-none">
+                    <label for="drawer-toggle" class="btn btn-square btn-ghost text-white">
+                        <i class="fas fa-bars text-xl"></i>
+                    </label>
+                </div>
+                <div class="flex-1">
+                    <a class="btn btn-ghost text-xl text-white">
+                        <i class="fab fa-twitch"></i>
+                        <span class="ml-2">MultiBot</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main content -->
+            <main class="flex-1 p-6 min-h-screen">
+                <!-- Dashboard Header -->
+                <div class="mb-6">
+                    <h1 class="text-4xl font-bold text-white mb-2">Dashboard</h1>
+                    <p class="text-white/90">Manage your Twitch bot features</p>
+                </div>
+
+                <!-- Content Sections -->
+                <div id="content-area" class="space-y-6">
+                    <!-- Text-to-Speech Bot Section -->
+                    <div id="tts-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-volume-up text-white/80"></i>
+                                Text-to-Speech Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure your text-to-speech bot settings</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Text-to-Speech Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Audio Commands Bot Section -->
+                    <div id="audio-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <div class="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 class="card-title text-2xl text-white mb-2">
+                                        <i class="fas fa-music text-white/80"></i>
+                                        Audio Commands Bot
+                                    </h2>
+                                    <p class="text-white/80">Manage your custom audio commands (Max 500KB per file)</p>
+                                </div>
+                                <button class="btn btn-primary text-white" onclick="showAddAudioCommandModal()">
+                                    <i class="fas fa-plus"></i>
+                                    Add Command
+                                </button>
+                            </div>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- Audio Commands List -->
+                            <div id="audio-commands-list" class="space-y-4">
+                                <div class="text-center py-12 text-white/60">
+                                    <i class="fas fa-music text-6xl mb-4 animate-float"></i>
+                                    <p>No audio commands yet. Click "Add Command" to create one.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add/Edit Audio Command Modal -->
+                    <dialog id="audio-command-modal" class="modal">
+                        <div class="modal-box glass-card max-w-2xl">
+                            <h3 class="font-bold text-2xl text-white mb-4">
+                                <i class="fas fa-music"></i>
+                                <span id="modal-title">Add Audio Command</span>
+                            </h3>
+                            
+                            <form id="audio-command-form" onsubmit="saveAudioCommand(event)">
+                                <!-- Command Input -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90">Command Trigger</span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="command-input" 
+                                        class="input input-bordered bg-white/10 text-white border-white/20" 
+                                        placeholder="!sound" 
+                                        required
+                                        pattern="^![a-zA-Z0-9_]+$"
+                                        title="Command must start with ! and contain only letters, numbers, and underscores"
+                                    />
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Command must start with ! (e.g., !sound)</span>
+                                    </label>
+                                </div>
+
+                                <!-- File Upload Methods Tabs -->
+                                <div class="tabs tabs-boxed bg-white/10 mb-4">
+                                    <a class="tab tab-active text-white" onclick="switchUploadMethod('file')">Upload File</a>
+                                    <a class="tab text-white" onclick="switchUploadMethod('url')">From URL</a>
+                                </div>
+
+                                <!-- File Upload Section -->
+                                <div id="file-upload-section" class="mb-4">
+                                    <!-- Drag and Drop Zone -->
+                                    <div 
+                                        id="drop-zone" 
+                                        class="border-2 border-dashed border-white/30 rounded-xl p-8 text-center cursor-pointer hover:border-white/50 transition-colors bg-white/5"
+                                        ondrop="handleDrop(event)" 
+                                        ondragover="handleDragOver(event)"
+                                        ondragleave="handleDragLeave(event)"
+                                        onclick="document.getElementById('file-input').click()"
+                                    >
+                                        <i class="fas fa-cloud-upload-alt text-4xl text-white/60 mb-2"></i>
+                                        <p class="text-white/80 mb-1">Drag and drop MP3 file here</p>
+                                        <p class="text-white/60 text-sm">or click to browse</p>
+                                        <p class="text-white/50 text-xs mt-2">Max file size: 500KB</p>
+                                    </div>
+                                    <input 
+                                        type="file" 
+                                        id="file-input" 
+                                        class="hidden" 
+                                        accept="audio/mpeg,audio/mp3,.mp3"
+                                        onchange="handleFileSelect(event)"
+                                    />
+                                    <div id="file-info" class="mt-2 p-3 glass-card rounded-lg hidden">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-2">
+                                                <i class="fas fa-file-audio text-white/80"></i>
+                                                <span id="file-name" class="text-white/90"></span>
+                                                <span id="file-size" class="text-white/60 text-sm"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-ghost text-white" onclick="clearFile()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- URL Input Section -->
+                                <div id="url-upload-section" class="mb-4 hidden">
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text text-white/90">Audio File URL</span>
+                                        </label>
+                                        <input 
+                                            type="url" 
+                                            id="url-input" 
+                                            class="input input-bordered bg-white/10 text-white border-white/20" 
+                                            placeholder="https://example.com/sound.mp3"
+                                        />
+                                        <label class="label">
+                                            <span class="label-text-alt text-white/60">Enter a direct URL to an MP3 file</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Volume Slider -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90">Volume</span>
+                                        <span id="volume-value" class="text-white/90">50%</span>
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        id="volume-slider" 
+                                        min="0" 
+                                        max="100" 
+                                        value="50" 
+                                        class="range range-primary"
+                                        oninput="updateVolumeDisplay(this.value)"
+                                    />
+                                    <div class="w-full flex justify-between text-xs px-2 text-white/60">
+                                        <span>0%</span>
+                                        <span>50%</span>
+                                        <span>100%</span>
+                                    </div>
+                                </div>
+
+                                <!-- Audio Preview -->
+                                <div id="audio-preview-section" class="mb-4 hidden">
+                                    <div class="glass-card rounded-lg p-4">
+                                        <div class="flex items-center gap-4">
+                                            <audio id="audio-preview" controls class="flex-1"></audio>
+                                            <button type="button" class="btn btn-sm btn-success text-white" onclick="playPreview()">
+                                                <i class="fas fa-play"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-error text-white" onclick="stopPreview()">
+                                                <i class="fas fa-stop"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal Actions -->
+                                <div class="modal-action">
+                                    <button type="button" class="btn btn-ghost text-white" onclick="closeAudioCommandModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-primary text-white">
+                                        <i class="fas fa-save"></i>
+                                        Save Command
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <form method="dialog" class="modal-backdrop">
+                            <button onclick="closeAudioCommandModal()">close</button>
+                        </form>
+                    </dialog>
+
+                    <!-- Jump Scare Bot Section -->
+                    <div id="jumpscare-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-ghost text-white/80"></i>
+                                Jump Scare Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure jump scare triggers and sounds</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Jump Scare Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Studio Audience Bot Section -->
+                    <div id="audience-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-users text-white/80"></i>
+                                Live Studio Audience Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Manage crowd reactions and audience effects</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Live Studio Audience Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Celebration Bot Section -->
+                    <div id="celebration-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-fireworks text-white/80"></i>
+                                Celebration Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure celebration effects and triggers</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Celebration Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculator Bot Section -->
+                    <div id="calculator-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-calculator text-white/80"></i>
+                                Calculator Bot
+                            </h2>
+                            <p class="text-white/80 mb-4">Manage calculator bot settings</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div class="text-center py-12 text-white/60">
+                                <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
+                                <p>Calculator Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Debug Section -->
+                    <div id="chat-debug-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="card-title text-2xl text-white mb-2">
+                                        <i class="fas fa-comments text-white/80"></i>
+                                        Chat Debug
+                                    </h2>
+                                    <p class="text-white/80">Monitor Twitch chat messages in real-time</p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button id="chat-connect-btn" class="btn btn-success text-white" onclick="connectToChat()">
+                                        <i class="fas fa-play"></i>
+                                        Connect
+                                    </button>
+                                    <button id="chat-disconnect-btn" class="btn btn-error text-white" onclick="disconnectFromChat()" style="display: none;">
+                                        <i class="fas fa-stop"></i>
+                                        Disconnect
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- Connection Status -->
+                            <div id="chat-status" class="mb-4 p-4 glass-card rounded-xl">
+                                <div class="flex items-center gap-2">
+                                    <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-500"></div>
+                                    <span id="status-text" class="text-white/80">Not connected</span>
+                                </div>
+                            </div>
+
+                            <!-- Chat Messages -->
+                            <div class="bg-black/30 rounded-xl p-4 h-96 overflow-y-auto" id="chat-messages">
+                                <div class="text-center text-white/50 py-8">
+                                    <i class="fas fa-comments text-4xl mb-2"></i>
+                                    <p>No messages yet. Click Connect to start monitoring chat.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OBS Setup Section -->
+                    <div id="obs-setup-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-desktop text-white/80"></i>
+                                OBS Browser Source Setup
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure your OBS browser source to play audio commands</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- Token Management -->
+                            <div class="mb-6">
+                                <h3 class="text-xl text-white mb-4">Your OBS Browser Source URL</h3>
+                                
+                                <div id="obs-token-loading" class="text-center py-8 text-white/60">
+                                    <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
+                                    <p>Loading token...</p>
+                                </div>
+
+                                <div id="obs-token-content" class="hidden">
+                                    <div class="glass-card rounded-xl p-4 mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90 font-semibold">Copy this URL to use in OBS:</span>
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input 
+                                                type="text" 
+                                                id="obs-url-input" 
+                                                class="input input-bordered flex-1 bg-white/10 text-white border-white/20" 
+                                                readonly
+                                            />
+                                            <button class="btn btn-primary text-white" onclick="copyObsUrl()">
+                                                <i class="fas fa-copy"></i>
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <label class="label mt-2">
+                                            <span class="label-text-alt text-white/60">
+                                                <i class="fas fa-info-circle"></i>
+                                                Add this URL as a Browser Source in OBS Studio
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <div class="flex gap-2">
+                                        <button class="btn btn-warning text-white" onclick="regenerateObsToken()">
+                                            <i class="fas fa-sync"></i>
+                                            Regenerate Token
+                                        </button>
+                                        <div class="flex-1"></div>
+                                        <div class="text-sm text-white/60 flex items-center gap-2">
+                                            <i class="fas fa-clock"></i>
+                                            <span id="obs-token-info"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Instructions -->
+                            <div class="glass-card rounded-xl p-6">
+                                <h3 class="text-lg text-white mb-4">
+                                    <i class="fas fa-question-circle"></i>
+                                    How to Set Up OBS Browser Source
+                                </h3>
+                                <ol class="list-decimal list-inside space-y-2 text-white/80 text-sm">
+                                    <li>Copy the URL above</li>
+                                    <li>Open OBS Studio</li>
+                                    <li>Right-click in Sources → Add → Browser Source</li>
+                                    <li>Name it "MultiBot Audio Commands"</li>
+                                    <li>Paste the URL in the URL field</li>
+                                    <li>Set Width: 1920, Height: 1080 (or your stream resolution)</li>
+                                    <li>Check "Shutdown source when not visible" (optional)</li>
+                                    <li>Click OK</li>
+                                    <li>Your audio commands will now play in OBS when triggered!</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="drawer-side">
+            <label for="drawer-toggle" class="drawer-overlay"></label>
+            <aside class="w-64 min-h-full glass-sidebar">
+                <div class="p-6">
+                    <!-- Logo -->
+                    <div class="flex items-center mb-8">
+                        <i class="fab fa-twitch text-white text-3xl"></i>
+                        <span class="text-2xl font-bold ml-2 text-white">MultiBot</span>
+                    </div>
+
+                    <!-- User Info -->
+                    <div class="mb-6 p-4 glass-card rounded-xl">
+                        <div class="flex items-center space-x-3">
+                            <div class="avatar">
+                                <div class="w-12 rounded-full border-2 border-white/30 overflow-hidden">
+                                    <img id="user-profile-image" src="{{PROFILE_IMAGE_URL}}" alt="Profile" class="w-full h-full object-cover" style="display: none;" />
+                                    <div id="user-avatar-placeholder" class="bg-white/20 text-white rounded-full w-full h-full flex items-center justify-center">
+                                        <span id="user-initial" class="text-lg font-semibold">{{USER_INITIAL}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-sm text-white" id="user-name">{{USERNAME}}</p>
+                                <p class="text-xs text-white/70">Twitch Streamer</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Menu -->
+                    <ul class="menu p-0 w-full">
+                        <li>
+                            <a href="#dashboard" class="active text-white hover:bg-white/20 rounded-lg" onclick="showSection('dashboard', event)">
+                                <i class="fas fa-home"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#tts" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('tts', event)">
+                                <i class="fas fa-volume-up"></i>
+                                Text-to-Speech Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#audio" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('audio', event)">
+                                <i class="fas fa-music"></i>
+                                Audio Commands
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#jumpscare" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('jumpscare', event)">
+                                <i class="fas fa-ghost"></i>
+                                Jump Scare Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#audience" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('audience', event)">
+                                <i class="fas fa-users"></i>
+                                Studio Audience
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#celebration" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('celebration', event)">
+                                <i class="fas fa-fireworks"></i>
+                                Celebration Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#calculator" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('calculator', event)">
+                                <i class="fas fa-calculator"></i>
+                                Calculator Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#chat-debug" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('chat-debug', event)">
+                                <i class="fas fa-comments"></i>
+                                Chat Debug
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#obs-setup" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('obs-setup', event)">
+                                <i class="fas fa-desktop"></i>
+                                OBS Setup
+                            </a>
+                        </li>
+                        <li class="mt-auto pt-4 border-t border-white/20">
+                            <a href="/auth/logout" class="text-white hover:bg-white/20 rounded-lg">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <script>
+        // Navigation functionality
+        function showSection(section, event) {
+            if (event) {
+                event.preventDefault();
+            }
+            
+            // Hide all sections
+            const sections = document.querySelectorAll('[id$="-section"]');
+            sections.forEach(s => s.style.display = 'none');
+            
+            // Show selected section
+            if (section === 'dashboard') {
+                sections.forEach(s => s.style.display = 'block');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                const targetSection = document.getElementById(`${section}-section`);
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                    setTimeout(() => {
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                }
+            }
+            
+            // Update active menu item
+            document.querySelectorAll('.menu a').forEach(a => {
+                a.classList.remove('active');
+                a.classList.remove('bg-white/30');
+            });
+            if (event && event.target && event.target.closest('a')) {
+                const activeLink = event.target.closest('a');
+                activeLink.classList.add('active');
+                activeLink.classList.add('bg-white/30');
+            } else {
+                // Fallback: find the link by href
+                const link = document.querySelector(`a[href="#${section}"]`);
+                if (link) {
+                    link.classList.add('active');
+                    link.classList.add('bg-white/30');
+                }
+            }
+            
+            // Close drawer on mobile after selection
+            if (window.innerWidth < 1024) {
+                document.getElementById('drawer-toggle').checked = false;
+            }
+        }
+
+        // Load user info
+        document.addEventListener('DOMContentLoaded', () => {
+            // User info comes from server template replacement
+            const userName = '{{USERNAME}}' || 'User';
+            const profileImageUrl = '{{PROFILE_IMAGE_URL}}' || '';
+            const userInitial = '{{USER_INITIAL}}' || userName.charAt(0).toUpperCase();
+            
+            document.getElementById('user-name').textContent = userName;
+            document.getElementById('user-initial').textContent = userInitial;
+            
+            // Handle profile image
+            const profileImg = document.getElementById('user-profile-image');
+            const placeholder = document.getElementById('user-avatar-placeholder');
+            
+            // Check if we have a valid profile image URL (not the template placeholder)
+            if (profileImageUrl && profileImageUrl !== '{{PROFILE_IMAGE_URL}}' && profileImageUrl.trim() !== '') {
+                profileImg.src = profileImageUrl;
+                profileImg.style.display = 'block';
+                profileImg.onerror = function() {
+                    // If image fails to load, show placeholder
+                    this.style.display = 'none';
+                    if (placeholder) placeholder.style.display = 'flex';
+                };
+                if (placeholder) placeholder.style.display = 'none';
+            } else {
+                // No profile image, show placeholder with initial
+                if (profileImg) profileImg.style.display = 'none';
+                if (placeholder) placeholder.style.display = 'flex';
+            }
+            
+            // Set initial active state
+            const dashboardLink = document.querySelector('a[href="#dashboard"]');
+            if (dashboardLink) {
+                dashboardLink.classList.add('active');
+                dashboardLink.classList.add('bg-white/30');
+            }
+        });
+
+        // Chat Debug Functions
+        let chatWebSocket = null;
+        let chatConnected = false;
+
+        function updateChatStatus(connected, channel = null) {
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            const connectBtn = document.getElementById('chat-connect-btn');
+            const disconnectBtn = document.getElementById('chat-disconnect-btn');
+
+            if (connected) {
+                indicator.className = 'w-3 h-3 rounded-full bg-green-500';
+                statusText.textContent = channel ? `Connected to #${channel}` : 'Connected';
+                connectBtn.style.display = 'none';
+                disconnectBtn.style.display = 'block';
+                chatConnected = true;
+            } else {
+                indicator.className = 'w-3 h-3 rounded-full bg-gray-500';
+                statusText.textContent = 'Not connected';
+                connectBtn.style.display = 'block';
+                disconnectBtn.style.display = 'none';
+                chatConnected = false;
+            }
+        }
+
+        function addChatMessage(message) {
+            const messagesContainer = document.getElementById('chat-messages');
+            
+            // Remove empty state if present
+            const emptyState = messagesContainer.querySelector('.text-center');
+            if (emptyState) {
+                emptyState.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'mb-3 p-3 glass-card rounded-lg';
+            messageDiv.innerHTML = `
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0">
+                        <div class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs font-semibold text-white" style="background-color: ${message.color || '#FFFFFF'}20;">
+                            ${message.displayName.charAt(0).toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-semibold text-white" style="color: ${message.color || '#FFFFFF'};">${message.displayName}</span>
+                            <span class="text-xs text-white/50">${new Date(message.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        <p class="text-white/90">${escapeHtml(message.message)}</p>
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function connectToChat() {
+            try {
+                // Start chat connection
+                const response = await fetch('/api/chat/start', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to connect');
+                }
+
+                // Connect WebSocket for real-time updates
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}`;
+                chatWebSocket = new WebSocket(wsUrl);
+
+                chatWebSocket.onopen = () => {
+                    chatWebSocket.send(JSON.stringify({ 
+                        type: 'subscribe',
+                        userId: '{{USER_ID}}' // This will be replaced by server
+                    }));
+                    updateChatStatus(true, data.status.channel);
+                };
+
+                chatWebSocket.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'chat_message') {
+                        addChatMessage(data.message);
+                    } else if (data.type === 'command_trigger') {
+                        handleCommandTrigger(data.command);
+                    }
+                };
+
+                chatWebSocket.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                };
+
+                chatWebSocket.onclose = () => {
+                    updateChatStatus(false);
+                };
+
+                // Load recent messages
+                const statusResponse = await fetch('/api/chat/status');
+                const statusData = await statusResponse.json();
+                if (statusData.history) {
+                    statusData.history.forEach(msg => addChatMessage(msg));
+                }
+
+            } catch (error) {
+                console.error('Error connecting to chat:', error);
+                alert('Failed to connect to chat: ' + error.message);
+            }
+        }
+
+        async function disconnectFromChat() {
+            try {
+                await fetch('/api/chat/stop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (chatWebSocket) {
+                    chatWebSocket.close();
+                    chatWebSocket = null;
+                }
+
+                updateChatStatus(false);
+                document.getElementById('chat-messages').innerHTML = `
+                    <div class="text-center text-white/50 py-8">
+                        <i class="fas fa-comments text-4xl mb-2"></i>
+                        <p>Disconnected from chat.</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error disconnecting from chat:', error);
+            }
+        }
+
+        // Audio Commands Functions
+        let audioCommands = [];
+        let currentEditingId = null;
+        let selectedFile = null;
+        let uploadMethod = 'file';
+        let audioPreviewElement = null;
+
+        // Load audio commands on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (document.getElementById('audio-section')) {
+                await loadAudioCommands();
+            }
+        });
+
+        async function loadAudioCommands() {
+            try {
+                const response = await fetch('/api/audio-commands');
+                const data = await response.json();
+                if (data.success) {
+                    audioCommands = data.commands;
+                    renderAudioCommands();
+                }
+            } catch (error) {
+                console.error('Error loading audio commands:', error);
+            }
+        }
+
+        function renderAudioCommands() {
+            const container = document.getElementById('audio-commands-list');
+            if (!container) return;
+
+            if (audioCommands.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-white/60">
+                        <i class="fas fa-music text-6xl mb-4 animate-float"></i>
+                        <p>No audio commands yet. Click "Add Command" to create one.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = audioCommands.map(cmd => `
+                <div class="glass-card rounded-xl p-4" data-command-id="${cmd.id}">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="font-bold text-white text-lg">${escapeHtml(cmd.command)}</span>
+                                <span class="badge ${cmd.is_active ? 'badge-success' : 'badge-error'}">${cmd.is_active ? 'Active' : 'Inactive'}</span>
+                            </div>
+                            <div class="flex items-center gap-4 text-sm text-white/70">
+                                <span><i class="fas fa-volume-up"></i> ${Math.round(cmd.volume * 100)}%</span>
+                                <span><i class="fas fa-file-audio"></i> ${formatFileSize(cmd.file_size)}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <audio id="audio-${cmd.id}" src="${cmd.file_path}" preload="metadata"></audio>
+                            <button class="btn btn-sm btn-success text-white" onclick="playAudioCommand(${cmd.id}, ${cmd.volume})">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="btn btn-sm btn-error text-white" onclick="stopAudioCommand(${cmd.id})">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                            <button class="btn btn-sm btn-primary text-white" onclick="editAudioCommand(${cmd.id})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-error text-white" onclick="deleteAudioCommand(${cmd.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showAddAudioCommandModal() {
+            currentEditingId = null;
+            const modal = document.getElementById('audio-command-modal');
+            const form = document.getElementById('audio-command-form');
+            const fileSection = document.getElementById('file-upload-section');
+            const urlSection = document.getElementById('url-upload-section');
+            
+            // Reset form
+            document.getElementById('modal-title').textContent = 'Add Audio Command';
+            form.reset();
+            document.getElementById('volume-slider').value = 50;
+            updateVolumeDisplay(50);
+            clearFile();
+            
+            // Ensure sections are visible/hidden correctly
+            fileSection.classList.remove('hidden');
+            urlSection.classList.add('hidden');
+            
+            // Reset tabs to show "Upload File" as active
+            const tabs = modal.querySelectorAll('.tab');
+            tabs.forEach((tab, index) => {
+                tab.classList.remove('tab-active');
+                if (index === 0) {
+                    tab.classList.add('tab-active');
+                }
+            });
+            
+            // Hide preview section
+            document.getElementById('audio-preview-section').classList.add('hidden');
+            
+            // Set upload method
+            uploadMethod = 'file';
+            
+            // Show modal
+            modal.showModal();
+            
+            // Double-check visibility after modal opens (small delay to ensure rendering)
+            setTimeout(() => {
+                if (fileSection.classList.contains('hidden')) {
+                    fileSection.classList.remove('hidden');
+                }
+                if (!urlSection.classList.contains('hidden')) {
+                    urlSection.classList.add('hidden');
+                }
+            }, 100);
+        }
+
+        function switchUploadMethod(method) {
+            uploadMethod = method;
+            const modal = document.getElementById('audio-command-modal');
+            const fileSection = document.getElementById('file-upload-section');
+            const urlSection = document.getElementById('url-upload-section');
+            
+            // Only select tabs within the modal to avoid conflicts
+            const tabs = modal.querySelectorAll('.tab');
+            
+            if (!tabs || tabs.length < 2) {
+                console.error('Could not find tabs in modal');
+                return;
+            }
+
+            // Remove active class from all tabs
+            tabs.forEach(tab => tab.classList.remove('tab-active'));
+            
+            if (method === 'file') {
+                // Show file upload section
+                fileSection.classList.remove('hidden');
+                urlSection.classList.add('hidden');
+                // Activate first tab (Upload File)
+                if (tabs[0]) {
+                    tabs[0].classList.add('tab-active');
+                }
+            } else if (method === 'url') {
+                // Show URL input section
+                fileSection.classList.add('hidden');
+                urlSection.classList.remove('hidden');
+                // Activate second tab (From URL)
+                if (tabs[1]) {
+                    tabs[1].classList.add('tab-active');
+                }
+            }
+            
+            // Force visibility check
+            if (method === 'file' && fileSection.classList.contains('hidden')) {
+                console.warn('File section was hidden, forcing visibility');
+                fileSection.classList.remove('hidden');
+            }
+            if (method === 'url' && urlSection.classList.contains('hidden')) {
+                console.warn('URL section was hidden, forcing visibility');
+                urlSection.classList.remove('hidden');
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.add('border-white/60');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('border-white/60');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('border-white/60');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        }
+
+        function handleFile(file) {
+            if (!file.type.includes('audio') && !file.name.endsWith('.mp3')) {
+                alert('Please select an MP3 audio file');
+                return;
+            }
+
+            if (file.size > 500 * 1024) {
+                alert('File size exceeds 500KB limit');
+                return;
+            }
+
+            selectedFile = file;
+            document.getElementById('file-name').textContent = file.name;
+            document.getElementById('file-size').textContent = formatFileSize(file.size);
+            document.getElementById('file-info').classList.remove('hidden');
+
+            // Set up preview
+            const url = URL.createObjectURL(file);
+            const audioPreview = document.getElementById('audio-preview');
+            audioPreview.src = url;
+            document.getElementById('audio-preview-section').classList.remove('hidden');
+        }
+
+        function clearFile() {
+            selectedFile = null;
+            document.getElementById('file-input').value = '';
+            document.getElementById('file-info').classList.add('hidden');
+            document.getElementById('audio-preview-section').classList.add('hidden');
+            const audioPreview = document.getElementById('audio-preview');
+            if (audioPreview) {
+                audioPreview.src = '';
+                audioPreview.pause();
+            }
+        }
+
+        function updateVolumeDisplay(value) {
+            document.getElementById('volume-value').textContent = value + '%';
+        }
+
+        function playPreview() {
+            const audio = document.getElementById('audio-preview');
+            if (audio) {
+                audio.volume = document.getElementById('volume-slider').value / 100;
+                audio.play();
+            }
+        }
+
+        function stopPreview() {
+            const audio = document.getElementById('audio-preview');
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        }
+
+        async function saveAudioCommand(e) {
+            e.preventDefault();
+            
+            const command = document.getElementById('command-input').value.trim();
+            if (!command.startsWith('!')) {
+                alert('Command must start with !');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('command', command);
+            formData.append('volume', document.getElementById('volume-slider').value / 100);
+
+            if (uploadMethod === 'file') {
+                if (!selectedFile) {
+                    alert('Please select a file or provide a URL');
+                    return;
+                }
+                formData.append('audioFile', selectedFile);
+            } else {
+                const url = document.getElementById('url-input').value.trim();
+                if (!url) {
+                    alert('Please provide a URL or select a file');
+                    return;
+                }
+                formData.append('fileUrl', url);
+            }
+
+            try {
+                const url = currentEditingId 
+                    ? `/api/audio-commands/${currentEditingId}`
+                    : '/api/audio-commands';
+                const method = currentEditingId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    closeAudioCommandModal();
+                    await loadAudioCommands();
+                } else {
+                    alert('Error: ' + (data.message || data.error));
+                }
+            } catch (error) {
+                console.error('Error saving audio command:', error);
+                alert('Failed to save audio command: ' + error.message);
+            }
+        }
+
+        function editAudioCommand(id) {
+            const cmd = audioCommands.find(c => c.id === id);
+            if (!cmd) return;
+
+            const modal = document.getElementById('audio-command-modal');
+            const fileSection = document.getElementById('file-upload-section');
+            const urlSection = document.getElementById('url-upload-section');
+
+            currentEditingId = id;
+            document.getElementById('modal-title').textContent = 'Edit Audio Command';
+            document.getElementById('command-input').value = cmd.command;
+            document.getElementById('volume-slider').value = Math.round(cmd.volume * 100);
+            updateVolumeDisplay(Math.round(cmd.volume * 100));
+
+            if (cmd.file_url) {
+                switchUploadMethod('url');
+                document.getElementById('url-input').value = cmd.file_url;
+            } else {
+                switchUploadMethod('file');
+                // Can't edit file, but show current file info
+                document.getElementById('file-name').textContent = cmd.file_path.split('/').pop();
+                document.getElementById('file-size').textContent = formatFileSize(cmd.file_size);
+                document.getElementById('file-info').classList.remove('hidden');
+            }
+
+            // Set up preview with existing file
+            const audioPreview = document.getElementById('audio-preview');
+            audioPreview.src = cmd.file_path;
+            document.getElementById('audio-preview-section').classList.remove('hidden');
+
+            // Show modal
+            modal.showModal();
+            
+            // Ensure correct section is visible after modal opens
+            setTimeout(() => {
+                if (cmd.file_url) {
+                    if (urlSection.classList.contains('hidden')) {
+                        urlSection.classList.remove('hidden');
+                    }
+                    if (!fileSection.classList.contains('hidden')) {
+                        fileSection.classList.add('hidden');
+                    }
+                } else {
+                    if (fileSection.classList.contains('hidden')) {
+                        fileSection.classList.remove('hidden');
+                    }
+                    if (!urlSection.classList.contains('hidden')) {
+                        urlSection.classList.add('hidden');
+                    }
+                }
+            }, 100);
+        }
+
+        async function deleteAudioCommand(id) {
+            if (!confirm('Are you sure you want to delete this audio command?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/audio-commands/${id}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    await loadAudioCommands();
+                } else {
+                    alert('Error: ' + (data.message || data.error));
+                }
+            } catch (error) {
+                console.error('Error deleting audio command:', error);
+                alert('Failed to delete audio command: ' + error.message);
+            }
+        }
+
+        function playAudioCommand(id, volume) {
+            const audio = document.getElementById(`audio-${id}`);
+            if (audio) {
+                audio.volume = volume;
+                audio.play();
+            }
+        }
+
+        function stopAudioCommand(id) {
+            const audio = document.getElementById(`audio-${id}`);
+            if (audio) {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+        }
+
+        function closeAudioCommandModal() {
+            document.getElementById('audio-command-modal').close();
+            clearFile();
+            currentEditingId = null;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Handle command triggers from chat
+        function handleCommandTrigger(commandData) {
+            if (commandData.type === 'audio_command') {
+                // Find the audio element for this command
+                const audioElement = document.getElementById(`audio-${commandData.id}`);
+                if (audioElement) {
+                    audioElement.volume = commandData.volume;
+                    audioElement.play().catch(error => {
+                        console.error('Error playing audio command:', error);
+                    });
+                } else {
+                    // If audio element doesn't exist yet, create it temporarily
+                    const audio = new Audio(commandData.filePath);
+                    audio.volume = commandData.volume;
+                    audio.play().catch(error => {
+                        console.error('Error playing audio command:', error);
+                    });
+                }
+            }
+        }
+
+        // OBS Token Management Functions
+        let obsTokenData = null;
+
+        // Load OBS token on page load if OBS section is visible
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Check if OBS setup section exists
+            if (document.getElementById('obs-setup-section')) {
+                await loadObsToken();
+            }
+        });
+
+        async function loadObsToken() {
+            try {
+                const response = await fetch('/api/obs-token');
+                const data = await response.json();
+                
+                if (data.success) {
+                    obsTokenData = data;
+                    displayObsToken(data);
+                } else {
+                    showObsTokenError(data.error || 'Failed to load token');
+                }
+            } catch (error) {
+                console.error('Error loading OBS token:', error);
+                showObsTokenError('Failed to load token: ' + error.message);
+            }
+        }
+
+        function displayObsToken(data) {
+            document.getElementById('obs-token-loading').classList.add('hidden');
+            document.getElementById('obs-token-content').classList.remove('hidden');
+            
+            document.getElementById('obs-url-input').value = data.obsUrl;
+            
+            // Format date info
+            const createdAt = new Date(data.createdAt);
+            const lastUsed = data.lastUsedAt ? new Date(data.lastUsedAt) : null;
+            let infoText = `Created: ${createdAt.toLocaleDateString()}`;
+            if (lastUsed) {
+                infoText += ` | Last used: ${lastUsed.toLocaleDateString()}`;
+            } else {
+                infoText += ' | Never used';
+            }
+            document.getElementById('obs-token-info').textContent = infoText;
+        }
+
+        function showObsTokenError(message) {
+            document.getElementById('obs-token-loading').innerHTML = `
+                <div class="text-center py-8 text-red-400">
+                    <i class="fas fa-exclamation-triangle text-4xl mb-2"></i>
+                    <p>${escapeHtml(message)}</p>
+                    <button class="btn btn-primary mt-4 text-white" onclick="loadObsToken()">
+                        <i class="fas fa-redo"></i>
+                        Retry
+                    </button>
+                </div>
+            `;
+        }
+
+        function copyObsUrl() {
+            const urlInput = document.getElementById('obs-url-input');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999); // For mobile devices
+            
+            try {
+                document.execCommand('copy');
+                // Show success feedback
+                const btn = event.target.closest('button');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                btn.classList.add('btn-success');
+                btn.classList.remove('btn-primary');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-primary');
+                }, 2000);
+            } catch (error) {
+                console.error('Failed to copy:', error);
+                alert('Failed to copy URL. Please copy it manually.');
+            }
+        }
+
+        async function regenerateObsToken() {
+            if (!confirm('Are you sure you want to regenerate your OBS token? You will need to update the URL in your OBS browser source.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/obs-token/regenerate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    obsTokenData = data;
+                    displayObsToken(data);
+                    
+                    // Show success message
+                    const toast = document.createElement('div');
+                    toast.className = 'toast toast-top toast-end';
+                    toast.innerHTML = `
+                        <div class="alert alert-success">
+                            <span>${data.message || 'Token regenerated successfully!'}</span>
+                        </div>
+                    `;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.remove(), 3000);
+                } else {
+                    alert('Error: ' + (data.message || data.error));
+                }
+            } catch (error) {
+                console.error('Error regenerating OBS token:', error);
+                alert('Failed to regenerate token: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

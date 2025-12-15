@@ -38,11 +38,21 @@ export async function exchangeCodeForTokens(code) {
       }
     );
 
+    // Handle scope - it might be a string or already an array
+    let scopes = [];
+    if (response.data.scope) {
+      if (Array.isArray(response.data.scope)) {
+        scopes = response.data.scope;
+      } else if (typeof response.data.scope === 'string') {
+        scopes = response.data.scope.split(' ');
+      }
+    }
+
     return {
       accessToken: response.data.access_token,
       refreshToken: response.data.refresh_token,
       expiresIn: response.data.expires_in,
-      scopes: response.data.scope ? response.data.scope.split(' ') : []
+      scopes: scopes
     };
   } catch (error) {
     console.error('Error exchanging code for tokens:', error.response?.data || error.message);
@@ -152,7 +162,9 @@ export async function handleOAuthCallback(code) {
     username: userInfo.login,
     displayName: userInfo.display_name,
     email: userInfo.email,
-    profileImageUrl: userInfo.profile_image_url
+    profileImageUrl: userInfo.profile_image_url,
+    accessToken: tokens.accessToken, // Include access token for session storage
+    refreshToken: tokens.refreshToken
   };
 }
 
