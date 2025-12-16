@@ -1,6 +1,6 @@
 /**
  * Test script to verify authentication flow
- * Run with: node scripts/test-auth-flow.js
+ * Run with: node tests/scripts/test-auth-flow.js
  */
 
 import http from 'http';

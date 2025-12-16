@@ -7,10 +7,10 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import pool from '../config/database.js';
-import { getGifCommandById } from '../models/gifCommand.js';
-import { getActiveBitTriggersByTwitchUserId } from '../models/bitTrigger.js';
-import { processBitsDonation } from '../services/twitchChat.js';
+import pool from '../../config/database.js';
+import { getGifCommandById } from '../../models/gifCommand.js';
+import { getActiveBitTriggersByTwitchUserId } from '../../models/bitTrigger.js';
+import { processBitsDonation } from '../../services/twitchChat.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

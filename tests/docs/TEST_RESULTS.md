@@ -17,10 +17,10 @@
 ```
 
 ### Test Scripts Created
-1. `scripts/test-bits-trigger.js` - Basic functionality tests
-2. `scripts/test-bits-trigger-full.js` - Full end-to-end tests (requires server)
-3. `scripts/test-bits-simulation.js` - Simulation endpoint tests
-4. `scripts/test-all-features.js` - Comprehensive feature tests
+1. `tests/scripts/test-bits-trigger.js` - Basic functionality tests
+2. `tests/scripts/test-bits-trigger-full.js` - Full end-to-end tests (requires server)
+3. `tests/scripts/test-bits-simulation.js` - Simulation endpoint tests
+4. `tests/scripts/test-all-features.js` - Comprehensive feature tests
 
 ## ✅ Previous Features Verification
 
@@ -75,7 +75,7 @@ npm run test:bits
 npm run test:commands
 
 # Test end-to-end (requires server running)
-node scripts/test-bits-trigger-full.js
+node tests/scripts/test-bits-trigger-full.js
 ```
 
 ## 📊 Overall Test Summary

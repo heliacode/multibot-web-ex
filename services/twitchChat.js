@@ -458,6 +458,37 @@ export async function processBitsDonation(twitchUserId, bits, username) {
       return null;
     }
     
+    // Check if it's a dedicated trigger (bits-only, not a command)
+    if (bitTrigger.is_dedicated && bitTrigger.dedicated_gif_url) {
+      console.log(`[TwitchChat] Found dedicated bit trigger: ${bitTrigger.bit_amount} bits -> dedicated GIF`);
+      
+      const position = (bitTrigger.dedicated_gif_position && String(bitTrigger.dedicated_gif_position).trim() !== '') 
+        ? String(bitTrigger.dedicated_gif_position).trim() 
+        : 'center';
+      const size = (bitTrigger.dedicated_gif_size && String(bitTrigger.dedicated_gif_size).trim() !== '') 
+        ? String(bitTrigger.dedicated_gif_size).trim() 
+        : 'medium';
+      
+      const commandData = {
+        type: 'gif_command',
+        command: 'bits_thank_you', // Special command name for dedicated triggers
+        gifUrl: bitTrigger.dedicated_gif_url,
+        gifId: bitTrigger.dedicated_gif_id || null,
+        duration: bitTrigger.dedicated_gif_duration || 5000,
+        position: position,
+        size: size,
+        id: null, // No command ID for dedicated triggers
+        triggeredBy: 'bits',
+        bits: bits,
+        username: username,
+        isDedicated: true
+      };
+      
+      console.log(`[TwitchChat] Broadcasting dedicated GIF with position: "${commandData.position}", size: "${commandData.size}"`);
+      broadcastCommandTrigger(twitchUserId, commandData);
+      return { type: 'gif', command: 'bits_thank_you', isDedicated: true };
+    }
+    
     console.log(`[TwitchChat] Found bit trigger: ${bitTrigger.bit_amount} bits -> ${bitTrigger.command_type} command ${bitTrigger.command_id}`);
     
     // Get the full command details based on type

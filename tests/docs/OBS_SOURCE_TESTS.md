@@ -4,7 +4,7 @@ This document describes the test suite for OBS Source functionality.
 
 ## Test Files
 
-### 1. `tests/utils/tokenExtraction.test.js`
+### 1. `tests/unit/utils/tokenExtraction.test.js`
 Tests the client-side token extraction logic that runs in the browser.
 
 **What it tests:**
@@ -14,9 +14,9 @@ Tests the client-side token extraction logic that runs in the browser.
 - Fallback mechanisms
 - Edge cases (unicode, long tokens, etc.)
 
-**Run:** `npm test -- tests/utils/tokenExtraction.test.js`
+**Run:** `npm test -- tests/unit/utils/tokenExtraction.test.js`
 
-### 2. `tests/routes/obsSource.test.js`
+### 2. `tests/unit/routes/obsSource.test.js`
 Tests the OBS source route handler.
 
 **What it tests:**
@@ -26,9 +26,9 @@ Tests the OBS source route handler.
 - Special character handling
 - Mobile responsiveness
 
-**Run:** `npm test -- tests/routes/obsSource.test.js`
+**Run:** `npm test -- tests/unit/routes/obsSource.test.js`
 
-### 3. `tests/controllers/obsTokenController.test.js`
+### 3. `tests/unit/controllers/obsTokenController.test.js`
 Tests the OBS token API endpoints.
 
 **What it tests:**
@@ -37,9 +37,9 @@ Tests the OBS token API endpoints.
 - Authentication requirements
 - Error handling
 
-**Run:** `npm test -- tests/controllers/obsTokenController.test.js`
+**Run:** `npm test -- tests/unit/controllers/obsTokenController.test.js`
 
-### 4. `scripts/test-obs-source.js`
+### 4. `tests/scripts/test-obs-source.js`
 Quick integration test script that tests the actual running server.
 
 **What it tests:**
@@ -57,10 +57,10 @@ Quick integration test script that tests the actual running server.
 npm test -- --testPathPattern="obs|token"
 
 # Run token extraction tests only
-npm test -- tests/utils/tokenExtraction.test.js
+npm test -- tests/unit/utils/tokenExtraction.test.js
 
 # Run route tests only
-npm test -- tests/routes/obsSource.test.js
+npm test -- tests/unit/routes/obsSource.test.js
 
 # Run quick integration test (requires server)
 npm run test:obs
@@ -88,9 +88,9 @@ The tests cover:
 
 When adding new OBS source features:
 
-1. Add unit tests for the logic in `tests/utils/`
-2. Add route tests in `tests/routes/`
-3. Add integration tests in `scripts/`
+1. Add unit tests for the logic in `tests/unit/utils/`
+2. Add route tests in `tests/unit/routes/`
+3. Add integration tests in `tests/scripts/`
 4. Update this document
 
 ## Continuous Testing

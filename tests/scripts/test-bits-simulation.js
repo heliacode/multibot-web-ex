@@ -4,9 +4,9 @@
  */
 
 import http from 'http';
-import pool from '../config/database.js';
-import { processBitsDonation } from '../services/twitchChat.js';
-import { getActiveBitTriggersByTwitchUserId } from '../models/bitTrigger.js';
+import pool from '../../config/database.js';
+import { processBitsDonation } from '../../services/twitchChat.js';
+import { getActiveBitTriggersByTwitchUserId } from '../../models/bitTrigger.js';
 
 const TEST_TWITCH_USER_ID = '25019517';
 

@@ -5,9 +5,9 @@
 
 import http from 'http';
 import { spawn } from 'child_process';
-import pool from '../config/database.js';
-import { getActiveBitTriggersByTwitchUserId } from '../models/bitTrigger.js';
-import { getGifCommandById } from '../models/gifCommand.js';
+import pool from '../../config/database.js';
+import { getActiveBitTriggersByTwitchUserId } from '../../models/bitTrigger.js';
+import { getGifCommandById } from '../../models/gifCommand.js';
 
 const TEST_TWITCH_USER_ID = '25019517';
 

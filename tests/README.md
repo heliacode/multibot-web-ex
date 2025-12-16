@@ -1,89 +1,60 @@
-# Testing Guide
+# Tests Directory
 
-This directory contains all tests for MultiBot Web.
+This directory contains all test files organized by type.
 
-## Test Structure
-
-Tests are organized to mirror the source code structure:
+## Structure
 
 ```
 tests/
-├── config/          # Configuration tests
-├── controllers/     # Controller tests
-├── middleware/      # Middleware tests
-├── models/         # Model tests (requires DB)
-├── routes/         # Route integration tests
-├── services/       # Service tests
-└── setup.js        # Test setup and configuration
+├── scripts/          # End-to-end and integration test scripts
+│   ├── test-obs-source-flow.js
+│   ├── test-bits-simulation.js
+│   ├── test-all-commands.js
+│   └── ... (all test-*.js files)
+│
+├── unit/             # Jest unit tests
+│   ├── config/       # Configuration tests
+│   ├── controllers/  # Controller tests
+│   ├── middleware/   # Middleware tests
+│   ├── models/       # Model tests
+│   ├── routes/       # Route tests
+│   ├── services/     # Service tests
+│   └── utils/        # Utility tests
+│
+├── integration/      # Integration tests (Jest)
+│   ├── commands.integration.test.js
+│   ├── obsSource.integration.test.js
+│   └── ...
+│
+├── docs/             # Test documentation
+│   ├── TEST_COVERAGE_VALIDATION.md
+│   ├── TEST_RESULTS.md
+│   └── TESTING_GUIDE.md
+│
+├── setup.js          # Jest setup file
+└── README.md          # This file
 ```
 
 ## Running Tests
 
-### Run all tests
+### Unit Tests (Jest)
 ```bash
-npm test
+npm test                    # Run all unit tests
+npm run test:watch         # Watch mode
+npm run test:coverage       # With coverage
 ```
 
-### Run tests in watch mode
+### Integration/E2E Tests
 ```bash
-npm run test:watch
+npm run test:integration   # OBS source flow
+npm run test:obs           # OBS source tests
+npm run test:route         # Route tests
+npm run test:commands      # All commands
+npm run test:commands:e2e  # End-to-end audio/GIF
+npm run test:bits          # Bits simulation
+npm run test:all           # Integration + unit tests
 ```
 
-### Run tests with coverage
-```bash
-npm run test:coverage
-```
+## Test Scripts Location
 
-## Test Coverage Goals
-
-We aim for:
-- **70% minimum coverage** across all modules
-- **100% coverage** for critical paths (authentication, security)
-- All new features must include tests
-
-## Writing Tests
-
-### Test Naming Convention
-- Test files: `*.test.js`
-- Test descriptions: Use descriptive `describe` and `it` blocks
-
-### Example Test Structure
-```javascript
-import { functionToTest } from '../../path/to/module.js';
-
-describe('Module Name', () => {
-  describe('functionToTest', () => {
-    it('should do something specific', () => {
-      // Arrange
-      const input = 'test';
-      
-      // Act
-      const result = functionToTest(input);
-      
-      // Assert
-      expect(result).toBe('expected');
-    });
-  });
-});
-```
-
-## Mocking
-
-- Use Jest mocks for external dependencies (Twitch API, database)
-- Mock at the module level, not implementation level
-- Keep mocks close to the tests that use them
-
-## Database Tests
-
-For database-related tests:
-- Use a separate test database
-- Set up and tear down test data in `beforeEach`/`afterEach`
-- Use transactions that rollback after each test
-
-## Integration Tests
-
-Integration tests should:
-- Test full request/response cycles
-- Use Supertest for HTTP testing
-- Mock external APIs but test internal integrations
-
+All test scripts (test-*.js) have been moved from `scripts/` to `tests/scripts/` for better organization. Utility scripts remain in `scripts/` (e.g., `init-db.js`, `pre-deployment-check.js`).

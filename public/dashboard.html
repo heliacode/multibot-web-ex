@@ -505,49 +505,185 @@
                                     </label>
                                 </div>
 
-                                <!-- Command Type -->
+                                <!-- Trigger Type Selection -->
                                 <div class="form-control mb-4">
                                     <label class="label">
                                         <span class="label-text text-white/90 font-semibold">
                                             <i class="fas fa-list"></i>
-                                            Command Type
+                                            Trigger Type
                                         </span>
                                     </label>
                                     <select 
-                                        id="bit-command-type" 
+                                        id="bit-trigger-type" 
                                         class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
                                         style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
-                                        onchange="updateBitCommandList()"
+                                        onchange="toggleBitTriggerType()"
                                         required
                                     >
-                                        <option value="" style="background-color: #1f2937; color: white;">Select type...</option>
-                                        <option value="audio" style="background-color: #1f2937; color: white;">Audio Command</option>
-                                        <option value="gif" style="background-color: #1f2937; color: white;">GIF Command</option>
+                                        <option value="command" style="background-color: #1f2937; color: white;">Trigger Existing Command</option>
+                                        <option value="dedicated" style="background-color: #1f2937; color: white;">Bits Only (Dedicated GIF)</option>
                                     </select>
                                     <label class="label">
-                                        <span class="label-text-alt text-white/60">Type of command to trigger</span>
+                                        <span class="label-text-alt text-white/60">Choose to trigger a command or show a dedicated GIF only for bits</span>
                                     </label>
                                 </div>
 
-                                <!-- Command Selection -->
-                                <div class="form-control mb-4">
-                                    <label class="label">
-                                        <span class="label-text text-white/90 font-semibold">
-                                            <i class="fas fa-command"></i>
-                                            Command
-                                        </span>
-                                    </label>
-                                    <select 
-                                        id="bit-command-id" 
-                                        class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
-                                        style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
-                                        required
-                                    >
-                                        <option value="" style="background-color: #1f2937; color: white;">Select a command...</option>
-                                    </select>
-                                    <label class="label">
-                                        <span class="label-text-alt text-white/60">Command to trigger when bits are donated</span>
-                                    </label>
+                                <!-- Command Selection Section -->
+                                <div id="bit-command-section">
+                                    <!-- Command Type -->
+                                    <div class="form-control mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90 font-semibold">
+                                                <i class="fas fa-list"></i>
+                                                Command Type
+                                            </span>
+                                        </label>
+                                        <select 
+                                            id="bit-command-type" 
+                                            class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
+                                            style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
+                                            onchange="updateBitCommandList()"
+                                        >
+                                            <option value="" style="background-color: #1f2937; color: white;">Select type...</option>
+                                            <option value="audio" style="background-color: #1f2937; color: white;">Audio Command</option>
+                                            <option value="gif" style="background-color: #1f2937; color: white;">GIF Command</option>
+                                        </select>
+                                        <label class="label">
+                                            <span class="label-text-alt text-white/60">Type of command to trigger</span>
+                                        </label>
+                                    </div>
+
+                                    <!-- Command Selection -->
+                                    <div class="form-control mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90 font-semibold">
+                                                <i class="fas fa-command"></i>
+                                                Command
+                                            </span>
+                                        </label>
+                                        <select 
+                                            id="bit-command-id" 
+                                            class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
+                                            style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
+                                        >
+                                            <option value="" style="background-color: #1f2937; color: white;">Select a command...</option>
+                                        </select>
+                                        <label class="label">
+                                            <span class="label-text-alt text-white/60">Command to trigger when bits are donated</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Dedicated GIF Section -->
+                                <div id="bit-dedicated-section" style="display: none;">
+                                    <!-- Giphy Search -->
+                                    <div class="form-control mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90">Search GIFs</span>
+                                        </label>
+                                        <div class="flex gap-2">
+                                            <input 
+                                                type="text" 
+                                                id="bit-dedicated-giphy-search" 
+                                                class="input input-bordered bg-white/10 text-white border-white/20 flex-1" 
+                                                placeholder="Search for GIFs..."
+                                                oninput="searchGiphyForBitTrigger(this.value)"
+                                            />
+                                            <button type="button" class="btn btn-primary text-white" onclick="loadTrendingGifsForBitTrigger()">
+                                                <i class="fas fa-fire"></i>
+                                                Trending
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- GIF Search Results -->
+                                    <div id="bit-dedicated-giphy-results" class="mb-4 max-h-64 overflow-y-auto p-4 bg-black/30 rounded-lg">
+                                        <div class="text-center py-8 text-white/60">
+                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                            <p>Loading trending GIFs...</p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Selected GIF Preview -->
+                                    <div id="bit-dedicated-gif-preview" class="mb-4 hidden">
+                                        <div class="glass-card rounded-lg p-4">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center gap-3">
+                                                    <img id="bit-dedicated-gif-preview-img" src="" alt="Selected GIF" class="w-20 h-20 object-cover rounded" />
+                                                    <div>
+                                                        <p class="text-white font-semibold">Selected GIF</p>
+                                                        <p id="bit-dedicated-gif-url" class="text-white/60 text-sm truncate max-w-xs"></p>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-ghost text-white" onclick="clearBitDedicatedGif()">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Position -->
+                                    <div class="form-control mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90 font-semibold">
+                                                <i class="fas fa-crosshairs"></i>
+                                                Position
+                                            </span>
+                                        </label>
+                                        <select 
+                                            id="bit-dedicated-position" 
+                                            class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
+                                            style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
+                                        >
+                                            <option value="center" style="background-color: #1f2937; color: white;">Center</option>
+                                            <option value="top-left" style="background-color: #1f2937; color: white;">Top Left</option>
+                                            <option value="top-center" style="background-color: #1f2937; color: white;">Top Center</option>
+                                            <option value="top-right" style="background-color: #1f2937; color: white;">Top Right</option>
+                                            <option value="center-left" style="background-color: #1f2937; color: white;">Center Left</option>
+                                            <option value="center-right" style="background-color: #1f2937; color: white;">Center Right</option>
+                                            <option value="bottom-left" style="background-color: #1f2937; color: white;">Bottom Left</option>
+                                            <option value="bottom-center" style="background-color: #1f2937; color: white;">Bottom Center</option>
+                                            <option value="bottom-right" style="background-color: #1f2937; color: white;">Bottom Right</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Size -->
+                                    <div class="form-control mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90 font-semibold">
+                                                <i class="fas fa-expand-arrows-alt"></i>
+                                                Size
+                                            </span>
+                                        </label>
+                                        <select 
+                                            id="bit-dedicated-size" 
+                                            class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
+                                            style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
+                                        >
+                                            <option value="small" style="background-color: #1f2937; color: white;">Small (128x128 max)</option>
+                                            <option value="medium" style="background-color: #1f2937; color: white;">Medium (512x512 max)</option>
+                                            <option value="original" style="background-color: #1f2937; color: white;">Original Size</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Duration -->
+                                    <div class="form-control mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90">Display Duration (ms)</span>
+                                        </label>
+                                        <input 
+                                            type="number" 
+                                            id="bit-dedicated-duration" 
+                                            class="input input-bordered bg-white/10 text-white border-white/20" 
+                                            value="5000"
+                                            min="1000"
+                                            max="30000"
+                                            step="1000"
+                                        />
+                                        <label class="label">
+                                            <span class="label-text-alt text-white/60">How long the GIF should display (1000-30000ms)</span>
+                                        </label>
+                                    </div>
                                 </div>
 
                                 <!-- Modal Actions -->
@@ -599,7 +735,10 @@
                             </div>
                             <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
                             <div id="bit-triggers-list" class="space-y-4">
-                                <!-- Bit triggers will be loaded here -->
+                                <div class="text-center py-12 text-white/60">
+                                    <i class="fas fa-spinner fa-spin text-6xl mb-4"></i>
+                                    <p>Loading bit triggers...</p>
+                                </div>
                             </div>
                         </div>
                     </div>

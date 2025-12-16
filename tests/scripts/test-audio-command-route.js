@@ -1,6 +1,6 @@
 /**
  * Test script to verify audio command route is accessible
- * Run with: node scripts/test-audio-command-route.js
+ * Run with: node tests/scripts/test-audio-command-route.js
  */
 
 import http from 'http';

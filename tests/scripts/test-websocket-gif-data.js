@@ -4,10 +4,10 @@
  */
 
 import WebSocket from 'ws';
-import pool from '../config/database.js';
-import { getObsTokenByToken } from '../models/obsToken.js';
-import { getUserByTwitchId } from '../models/user.js';
-import { processBitsDonation } from '../services/twitchChat.js';
+import pool from '../../config/database.js';
+import { getObsTokenByToken } from '../../models/obsToken.js';
+import { getUserByTwitchId } from '../../models/user.js';
+import { processBitsDonation } from '../../services/twitchChat.js';
 
 const TEST_TWITCH_USER_ID = '25019517';
 const WS_URL = 'ws://localhost:3000';

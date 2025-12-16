@@ -3,8 +3,8 @@
  * Tests: command loading -> processing -> WebSocket broadcasting -> OBS source receiving
  */
 
-import pool from '../config/database.js';
-import { getActiveGifCommandsByTwitchUserId } from '../models/gifCommand.js';
+import pool from '../../config/database.js';
+import { getActiveGifCommandsByTwitchUserId } from '../../models/gifCommand.js';
 import WebSocket from 'ws';
 
 const TEST_TWITCH_USER_ID = '25019517'; // The user ID from the database

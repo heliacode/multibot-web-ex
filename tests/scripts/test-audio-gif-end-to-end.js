@@ -3,9 +3,9 @@
  * Tests the complete flow: database -> command handlers -> WebSocket -> OBS source
  */
 
-import pool from '../config/database.js';
-import { getActiveAudioCommandsByTwitchUserId } from '../models/audioCommand.js';
-import { getActiveGifCommandsByTwitchUserId } from '../models/gifCommand.js';
+import pool from '../../config/database.js';
+import { getActiveAudioCommandsByTwitchUserId } from '../../models/audioCommand.js';
+import { getActiveGifCommandsByTwitchUserId } from '../../models/gifCommand.js';
 import http from 'http';
 
 const TEST_TWITCH_USER_ID = '25019517';

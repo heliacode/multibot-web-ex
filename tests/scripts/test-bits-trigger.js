@@ -2,11 +2,11 @@
  * Test script to verify bits trigger functionality
  */
 
-import pool from '../config/database.js';
-import { createBitTrigger, getActiveBitTriggersByTwitchUserId, findBitTriggerForAmount } from '../models/bitTrigger.js';
-import { getActiveAudioCommandsByTwitchUserId } from '../models/audioCommand.js';
-import { getActiveGifCommandsByTwitchUserId } from '../models/gifCommand.js';
-import { getUserByTwitchId } from '../models/user.js';
+import pool from '../../config/database.js';
+import { createBitTrigger, getActiveBitTriggersByTwitchUserId, findBitTriggerForAmount } from '../../models/bitTrigger.js';
+import { getActiveAudioCommandsByTwitchUserId } from '../../models/audioCommand.js';
+import { getActiveGifCommandsByTwitchUserId } from '../../models/gifCommand.js';
+import { getUserByTwitchId } from '../../models/user.js';
 
 const TEST_TWITCH_USER_ID = '25019517';
 

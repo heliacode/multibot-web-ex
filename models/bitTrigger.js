@@ -9,14 +9,23 @@ export async function createBitTrigger(bitTriggerData) {
     twitchUserId,
     bitAmount,
     commandType,
-    commandId
+    commandId,
+    isDedicated = false,
+    dedicatedGifUrl,
+    dedicatedGifId,
+    dedicatedGifTitle,
+    dedicatedGifPosition,
+    dedicatedGifSize,
+    dedicatedGifDuration
   } = bitTriggerData;
 
   const query = `
     INSERT INTO bit_triggers (
-      user_id, twitch_user_id, bit_amount, command_type, command_id
+      user_id, twitch_user_id, bit_amount, command_type, command_id,
+      is_dedicated, dedicated_gif_url, dedicated_gif_id, dedicated_gif_title,
+      dedicated_gif_position, dedicated_gif_size, dedicated_gif_duration
     )
-    VALUES ($1, $2, $3, $4, $5)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     RETURNING *
   `;
 
@@ -24,8 +33,15 @@ export async function createBitTrigger(bitTriggerData) {
     userId,
     twitchUserId,
     bitAmount,
-    commandType,
-    commandId
+    isDedicated ? null : commandType,
+    isDedicated ? null : commandId,
+    isDedicated,
+    isDedicated ? dedicatedGifUrl : null,
+    isDedicated ? (dedicatedGifId || null) : null,
+    isDedicated ? (dedicatedGifTitle || 'Thank You!') : null,
+    isDedicated ? (dedicatedGifPosition || 'center') : null,
+    isDedicated ? (dedicatedGifSize || 'medium') : null,
+    isDedicated ? (dedicatedGifDuration || 5000) : null
   ];
 
   try {
@@ -164,7 +180,11 @@ export async function findBitTriggerForAmount(twitchUserId, bitAmount) {
  * Update a bit trigger
  */
 export async function updateBitTrigger(id, userId, updateData) {
-  const allowedFields = ['bit_amount', 'command_type', 'command_id', 'is_active'];
+  const allowedFields = [
+    'bit_amount', 'command_type', 'command_id', 'is_active',
+    'is_dedicated', 'dedicated_gif_url', 'dedicated_gif_id', 'dedicated_gif_title',
+    'dedicated_gif_position', 'dedicated_gif_size', 'dedicated_gif_duration'
+  ];
   const updates = [];
   const values = [];
   let paramCount = 1;

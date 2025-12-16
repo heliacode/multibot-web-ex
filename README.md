@@ -27,11 +27,17 @@ MultiBot-Web-Ex/
 ├── public/           # Static files
 │   └── index.html
 ├── tests/            # Test files
-│   ├── config/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── services/
+│   ├── scripts/      # E2E and integration test scripts
+│   ├── unit/         # Jest unit tests
+│   ├── integration/  # Jest integration tests
+│   ├── docs/         # Test documentation
 │   └── README.md
+├── docs/             # Project documentation
+│   ├── Authentication.md
+│   ├── OBS_Browser_Source.md
+│   ├── PROJECT_STRUCTURE.md
+│   ├── REFACTORING_PLAN.md
+│   └── REFACTORING_STATUS.md
 └── server.js         # Main entry point
 ```
 

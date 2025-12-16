@@ -1,12 +1,12 @@
 /**
  * End-to-end test script for OBS Source functionality
  * Tests the complete flow: token generation -> URL encoding -> OBS source loading
- * Run with: node scripts/test-obs-source-flow.js
+ * Run with: node tests/scripts/test-obs-source-flow.js
  */
 
-import pool from '../config/database.js';
-import { getOrCreateObsToken, regenerateObsToken, getObsTokenByToken } from '../models/obsToken.js';
-import { getUserByTwitchId } from '../models/user.js';
+import pool from '../../config/database.js';
+import { getOrCreateObsToken, regenerateObsToken, getObsTokenByToken } from '../../models/obsToken.js';
+import { getUserByTwitchId } from '../../models/user.js';
 import http from 'http';
 
 const BASE_URL = process.env.TEST_URL || 'http://localhost:3000';

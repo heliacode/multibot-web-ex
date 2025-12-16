@@ -4,11 +4,11 @@
  */
 
 import http from 'http';
-import pool from '../config/database.js';
-import { getActiveAudioCommandsByTwitchUserId } from '../models/audioCommand.js';
-import { getActiveGifCommandsByTwitchUserId } from '../models/gifCommand.js';
-import { getActiveBitTriggersByTwitchUserId } from '../models/bitTrigger.js';
-import { processCommand, processBitsDonation } from '../services/twitchChat.js';
+import pool from '../../config/database.js';
+import { getActiveAudioCommandsByTwitchUserId } from '../../models/audioCommand.js';
+import { getActiveGifCommandsByTwitchUserId } from '../../models/gifCommand.js';
+import { getActiveBitTriggersByTwitchUserId } from '../../models/bitTrigger.js';
+import { processCommand, processBitsDonation } from '../../services/twitchChat.js';
 
 const TEST_TWITCH_USER_ID = '25019517';
 

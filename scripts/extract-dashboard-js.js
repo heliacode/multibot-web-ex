@@ -50,5 +50,5 @@ const sections = {
 };
 
 console.log('Extraction script created. Manual extraction recommended due to complexity.');
-console.log('See REFACTORING_STATUS.md for details on what needs to be extracted.');
+console.log('See docs/REFACTORING_STATUS.md for details on what needs to be extracted.');
 

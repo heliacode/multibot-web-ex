@@ -74,14 +74,14 @@ Runs integration tests + unit tests.
 ## Test Files
 
 ### Integration Tests
-- `scripts/test-obs-source-flow.js` - End-to-end OBS source flow
+- `tests/scripts/test-obs-source-flow.js` - End-to-end OBS source flow
 - `tests/integration/obsSource.integration.test.js` - Jest integration tests
 
 ### Unit Tests
-- `tests/routes/obsSource.test.js` - Route tests (has mocking issues)
-- `tests/controllers/*.test.js` - Controller tests (some have mocking issues)
-- `tests/services/*.test.js` - Service tests
-- `tests/models/*.test.js` - Model tests
+- `tests/unit/routes/obsSource.test.js` - Route tests (has mocking issues)
+- `tests/unit/controllers/*.test.js` - Controller tests (some have mocking issues)
+- `tests/unit/services/*.test.js` - Service tests
+- `tests/unit/models/*.test.js` - Model tests
 
 ## CI/CD
 
@@ -157,7 +157,7 @@ node scripts/init-db.js
 
 ## Adding New Tests
 
-When adding new features, add tests to `scripts/test-obs-source-flow.js`:
+When adding new features, add tests to `tests/scripts/test-obs-source-flow.js`:
 
 ```javascript
 // Example: Test new feature

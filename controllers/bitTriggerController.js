@@ -12,14 +12,25 @@ export async function createTrigger(req, res) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { bitAmount, commandType, commandId } = req.body;
+    const { bitAmount, commandType, commandId, isDedicated, dedicatedGifUrl, dedicatedGifId, dedicatedGifTitle, dedicatedGifPosition, dedicatedGifSize, dedicatedGifDuration } = req.body;
 
-    if (!bitAmount || !commandType || !commandId) {
-      return res.status(400).json({ error: 'bitAmount, commandType, and commandId are required' });
+    if (!bitAmount) {
+      return res.status(400).json({ error: 'bitAmount is required' });
     }
 
-    if (!['audio', 'gif'].includes(commandType)) {
-      return res.status(400).json({ error: 'commandType must be "audio" or "gif"' });
+    // Validate dedicated trigger
+    if (isDedicated) {
+      if (!dedicatedGifUrl) {
+        return res.status(400).json({ error: 'dedicatedGifUrl is required for dedicated triggers' });
+      }
+    } else {
+      // Validate command-based trigger
+      if (!commandType || !commandId) {
+        return res.status(400).json({ error: 'commandType and commandId are required for command-based triggers' });
+      }
+      if (!['audio', 'gif'].includes(commandType)) {
+        return res.status(400).json({ error: 'commandType must be "audio" or "gif"' });
+      }
     }
 
     const user = await getUserByTwitchId(twitchUserId);
@@ -33,8 +44,15 @@ export async function createTrigger(req, res) {
       userId,
       twitchUserId,
       bitAmount: parseInt(bitAmount),
-      commandType,
-      commandId: parseInt(commandId)
+      commandType: isDedicated ? null : commandType,
+      commandId: isDedicated ? null : parseInt(commandId),
+      isDedicated: isDedicated || false,
+      dedicatedGifUrl: isDedicated ? dedicatedGifUrl : null,
+      dedicatedGifId: isDedicated ? (dedicatedGifId || null) : null,
+      dedicatedGifTitle: isDedicated ? (dedicatedGifTitle || 'Thank You!') : null,
+      dedicatedGifPosition: isDedicated ? (dedicatedGifPosition || 'center') : null,
+      dedicatedGifSize: isDedicated ? (dedicatedGifSize || 'medium') : null,
+      dedicatedGifDuration: isDedicated ? (parseInt(dedicatedGifDuration) || 5000) : null
     });
 
     res.status(201).json({
@@ -131,7 +149,62 @@ export async function updateTrigger(req, res) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const trigger = await updateBitTrigger(parseInt(id), userId, req.body);
+    // Map camelCase from frontend to snake_case for database
+    const { bitAmount, commandType, commandId, isActive, isDedicated, dedicatedGifUrl, dedicatedGifId, dedicatedGifTitle, dedicatedGifPosition, dedicatedGifSize, dedicatedGifDuration } = req.body;
+    const updateData = {};
+    
+    if (bitAmount !== undefined) {
+      updateData.bit_amount = parseInt(bitAmount);
+    }
+    if (isDedicated !== undefined) {
+      updateData.is_dedicated = isDedicated;
+      // When switching to dedicated, clear command fields
+      if (isDedicated) {
+        updateData.command_type = null;
+        updateData.command_id = null;
+      }
+      // When switching from dedicated, clear dedicated fields
+      if (!isDedicated) {
+        updateData.dedicated_gif_url = null;
+        updateData.dedicated_gif_id = null;
+        updateData.dedicated_gif_title = null;
+        updateData.dedicated_gif_position = null;
+        updateData.dedicated_gif_size = null;
+        updateData.dedicated_gif_duration = null;
+      }
+    }
+    if (commandType !== undefined && !isDedicated) {
+      if (!['audio', 'gif'].includes(commandType)) {
+        return res.status(400).json({ error: 'commandType must be "audio" or "gif"' });
+      }
+      updateData.command_type = commandType;
+    }
+    if (commandId !== undefined && !isDedicated) {
+      updateData.command_id = parseInt(commandId);
+    }
+    if (isActive !== undefined) {
+      updateData.is_active = isActive;
+    }
+    if (dedicatedGifUrl !== undefined && isDedicated) {
+      updateData.dedicated_gif_url = dedicatedGifUrl;
+    }
+    if (dedicatedGifId !== undefined && isDedicated) {
+      updateData.dedicated_gif_id = dedicatedGifId;
+    }
+    if (dedicatedGifTitle !== undefined && isDedicated) {
+      updateData.dedicated_gif_title = dedicatedGifTitle;
+    }
+    if (dedicatedGifPosition !== undefined && isDedicated) {
+      updateData.dedicated_gif_position = dedicatedGifPosition;
+    }
+    if (dedicatedGifSize !== undefined && isDedicated) {
+      updateData.dedicated_gif_size = dedicatedGifSize;
+    }
+    if (dedicatedGifDuration !== undefined && isDedicated) {
+      updateData.dedicated_gif_duration = parseInt(dedicatedGifDuration);
+    }
+
+    const trigger = await updateBitTrigger(parseInt(id), userId, updateData);
 
     if (!trigger) {
       return res.status(404).json({ error: 'Bit trigger not found' });

@@ -32,7 +32,7 @@ try {
 // 2. Run integration tests
 console.log('\n2️⃣  Running OBS Source integration tests...');
 try {
-  execSync('node scripts/test-obs-source-flow.js', { stdio: 'inherit' });
+  execSync('node tests/scripts/test-obs-source-flow.js', { stdio: 'inherit' });
   console.log('   ✅ Integration tests passed');
   checks.push({ name: 'Integration Tests', status: 'pass' });
 } catch (error) {

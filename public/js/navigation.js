@@ -39,6 +39,15 @@ function showSection(section, event, skipHistory = false) {
         const targetSection = document.getElementById(sectionId);
         if (targetSection) {
             targetSection.style.display = 'block';
+            
+            // Trigger section-specific initialization
+            if (section === 'bits-section' || section === 'bits') {
+                // Ensure bit triggers are loaded when section is shown
+                if (window.ensureBitTriggersLoaded) {
+                    setTimeout(() => window.ensureBitTriggersLoaded(), 100);
+                }
+            }
+            
             setTimeout(() => {
                 targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);

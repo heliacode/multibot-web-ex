@@ -1,6 +1,6 @@
 /**
  * Quick test script for OBS Source route
- * Run with: node scripts/test-obs-source.js
+ * Run with: node tests/scripts/test-obs-source.js
  * 
  * This tests the OBS source route without requiring the full server to be running
  */

@@ -4,9 +4,9 @@
  */
 
 import http from 'http';
-import pool from '../config/database.js';
-import { getActiveAudioCommandsByTwitchUserId } from '../models/audioCommand.js';
-import { getActiveGifCommandsByTwitchUserId } from '../models/gifCommand.js';
+import pool from '../../config/database.js';
+import { getActiveAudioCommandsByTwitchUserId } from '../../models/audioCommand.js';
+import { getActiveGifCommandsByTwitchUserId } from '../../models/gifCommand.js';
 
 const TEST_TWITCH_USER_ID = '25019517';
 
