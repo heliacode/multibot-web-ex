@@ -2,11 +2,17 @@
  * Navigation and User Info Management
  */
 
+// Track if we're programmatically navigating (to prevent beforeunload)
+let isProgrammaticNavigation = false;
+
 // Navigation functionality
-function showSection(section, event) {
+function showSection(section, event, skipHistory = false) {
     if (event) {
         event.preventDefault();
     }
+    
+    // Get dashboard cards view
+    const dashboardCards = document.getElementById('dashboard-cards');
     
     // Hide all sections
     const sections = document.querySelectorAll('[id$="-section"]');
@@ -14,10 +20,23 @@ function showSection(section, event) {
     
     // Show selected section
     if (section === 'dashboard') {
-        sections.forEach(s => s.style.display = 'block');
+        // Show dashboard cards view
+        if (dashboardCards) {
+            dashboardCards.style.display = 'grid';
+        }
+        // Hide all individual sections
+        sections.forEach(s => s.style.display = 'none');
         window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-        const targetSection = document.getElementById(`${section}-section`);
+        // Hide dashboard cards view
+        if (dashboardCards) {
+            dashboardCards.style.display = 'none';
+        }
+        
+        // Show the selected section
+        // Handle both 'section' and 'section-section' formats
+        let sectionId = section.endsWith('-section') ? section : `${section}-section`;
+        const targetSection = document.getElementById(sectionId);
         if (targetSection) {
             targetSection.style.display = 'block';
             setTimeout(() => {
@@ -44,11 +63,82 @@ function showSection(section, event) {
         }
     }
     
+    // Update URL and history (unless we're navigating from browser history)
+    if (!skipHistory) {
+        const currentHash = window.location.hash.replace('#', '') || 'dashboard';
+        if (currentHash !== section) {
+            // Update URL without page reload
+            isProgrammaticNavigation = true;
+            const newUrl = `${window.location.pathname}#${section}`;
+            window.history.pushState({ section: section }, '', newUrl);
+            setTimeout(() => {
+                isProgrammaticNavigation = false;
+            }, 100);
+        }
+    }
+    
     // Close drawer on mobile after selection
     if (window.innerWidth < 1024) {
         document.getElementById('drawer-toggle').checked = false;
     }
 }
+
+// Handle browser back/forward buttons
+window.addEventListener('popstate', (event) => {
+    isProgrammaticNavigation = true;
+    
+    // Get section from URL hash or history state
+    let section = 'dashboard';
+    if (event.state && event.state.section) {
+        section = event.state.section;
+    } else {
+        const hash = window.location.hash.replace('#', '');
+        section = hash || 'dashboard';
+    }
+    
+    // Navigate to the section without adding to history
+    showSection(section, null, true);
+    
+    setTimeout(() => {
+        isProgrammaticNavigation = false;
+    }, 100);
+});
+
+// Warn user before leaving the website (but not for internal navigation)
+let hasUnsavedChanges = false; // Set this to true when user makes changes that need saving
+let alwaysWarnOnLeave = true; // Set to false if you only want to warn when there are unsaved changes
+
+// Function to set unsaved changes flag (can be called from other modules)
+window.setUnsavedChanges = function(hasChanges) {
+    hasUnsavedChanges = hasChanges;
+};
+
+// Function to configure warning behavior
+window.setAlwaysWarnOnLeave = function(alwaysWarn) {
+    alwaysWarnOnLeave = alwaysWarn;
+};
+
+window.addEventListener('beforeunload', (event) => {
+    // Only show warning if user is actually leaving the website
+    // (not navigating within the dashboard via programmatic navigation)
+    if (!isProgrammaticNavigation && (alwaysWarnOnLeave || hasUnsavedChanges)) {
+        // Modern browsers require returnValue to be set
+        event.preventDefault();
+        const message = hasUnsavedChanges 
+            ? 'You have unsaved changes. Are you sure you want to leave?'
+            : 'Are you sure you want to leave?';
+        event.returnValue = message;
+        return event.returnValue;
+    }
+});
+
+// Handle hash changes (direct URL navigation or external links)
+window.addEventListener('hashchange', (event) => {
+    if (!isProgrammaticNavigation) {
+        const hash = window.location.hash.replace('#', '') || 'dashboard';
+        showSection(hash, null, false);
+    }
+});
 
 // Load user info
 document.addEventListener('DOMContentLoaded', () => {
@@ -110,6 +200,34 @@ document.addEventListener('DOMContentLoaded', () => {
     if (dashboardLink) {
         dashboardLink.classList.add('active');
         dashboardLink.classList.add('bg-white/30');
+    }
+    
+    // Show dashboard cards by default
+    const dashboardCards = document.getElementById('dashboard-cards');
+    if (dashboardCards) {
+        dashboardCards.style.display = 'grid';
+    }
+    
+    // Hide all sections by default
+    const sections = document.querySelectorAll('[id$="-section"]');
+    sections.forEach(s => s.style.display = 'none');
+    
+    // Initialize navigation state
+    const hash = window.location.hash.replace('#', '') || 'dashboard';
+    if (hash !== 'dashboard') {
+        // If there's a hash, navigate to that section
+        isProgrammaticNavigation = true;
+        showSection(hash, null, true);
+        setTimeout(() => {
+            isProgrammaticNavigation = false;
+        }, 100);
+    } else {
+        // Initialize history with dashboard
+        isProgrammaticNavigation = true;
+        window.history.replaceState({ section: 'dashboard' }, '', window.location.pathname + '#dashboard');
+        setTimeout(() => {
+            isProgrammaticNavigation = false;
+        }, 100);
     }
 });
 
