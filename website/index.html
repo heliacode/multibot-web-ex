@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MultiBot - Powerful Twitch Bot Management Platform</title>
+    <meta name="description" content="Manage your Twitch bot with ease. Audio commands, GIF commands, chat integration, and OBS browser source support.">
+    <meta name="keywords" content="twitch bot, stream management, twitch commands, obs integration">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="MultiBot - Powerful Twitch Bot Management Platform">
+    <meta property="og:description" content="Manage your Twitch bot with ease. Audio commands, GIF commands, chat integration, and OBS browser source support.">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MultiBot - Powerful Twitch Bot Management Platform">
+    <meta name="twitter:description" content="Manage your Twitch bot with ease. Audio commands, GIF commands, chat integration, and OBS browser source support.">
+    
+    <!-- Tailwind CSS & DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "MultiBot",
+        "applicationCategory": "StreamingApplication",
+        "offers": {
+            "@type": "Offer",
+            "price": "6.99",
+            "priceCurrency": "USD"
+        },
+        "description": "Powerful Twitch bot management platform for streamers"
+    }
+    </script>
+</head>
+<body class="gradient-bg">
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+    
+    <!-- Hero Section -->
+    <section class="container mx-auto px-4 py-20 text-center">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-5xl md:text-6xl font-bold text-white mb-6 animate-float">
+                <i class="fab fa-twitch text-cyan-400"></i>
+                <span class="ml-3">MultiBot</span>
+            </h1>
+            <p class="text-2xl md:text-3xl text-white/90 mb-8">
+                Powerful Twitch Bot Management Platform
+            </p>
+            <p class="text-xl text-white/80 mb-12 max-w-2xl mx-auto">
+                Manage your Twitch bot with ease. Create custom audio commands, GIF commands, integrate with OBS, and engage with your chat like never before.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/dashboard" class="btn btn-primary btn-lg text-white">
+                    <i class="fas fa-rocket"></i>
+                    <span class="ml-2">Get Started</span>
+                </a>
+                <a href="/pricing.html" class="btn btn-outline btn-lg text-white border-white/50 hover:bg-white/10">
+                    <i class="fas fa-tag"></i>
+                    <span class="ml-2">View Pricing</span>
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features Preview -->
+    <section class="container mx-auto px-4 py-20">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl font-bold text-white mb-4">Everything You Need</h2>
+            <p class="text-xl text-white/80 max-w-2xl mx-auto">
+                All the tools you need to manage and enhance your Twitch stream
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-music"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-3">Audio Commands</h3>
+                <p class="text-white/80">
+                    Create custom audio commands that play sounds when triggered in chat. Perfect for memes, alerts, and engagement.
+                </p>
+            </div>
+            
+            <!-- Feature 2 -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-images"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-3">GIF Commands</h3>
+                <p class="text-white/80">
+                    Add animated GIFs to your stream with custom commands. Integrate with Giphy for endless possibilities.
+                </p>
+            </div>
+            
+            <!-- Feature 3 -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-3">OBS Integration</h3>
+                <p class="text-white/80">
+                    Seamlessly integrate with OBS Studio using browser sources. Display commands, alerts, and more on your stream.
+                </p>
+            </div>
+            
+            <!-- Feature 4 -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-3">Chat Integration</h3>
+                <p class="text-white/80">
+                    Real-time chat monitoring and interaction. Connect directly to your Twitch chat with WebSocket support.
+                </p>
+            </div>
+            
+            <!-- Feature 5 -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-3">Design Canvas</h3>
+                <p class="text-white/80">
+                    Visual design tools to create and position elements on your stream. Drag, resize, and customize everything.
+                </p>
+            </div>
+            
+            <!-- Feature 6 -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-white mb-3">Secure & Reliable</h3>
+                <p class="text-white/80">
+                    Enterprise-grade security with encrypted token storage. Your data is safe and your stream is always online.
+                </p>
+            </div>
+        </div>
+        
+        <div class="text-center mt-12">
+            <a href="/features.html" class="btn btn-outline btn-lg text-white border-white/50 hover:bg-white/10">
+                <span>View All Features</span>
+                <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </section>
+    
+    <!-- CTA Section -->
+    <section class="container mx-auto px-4 py-20">
+        <div class="glass-card rounded-3xl p-12 text-center max-w-3xl mx-auto">
+            <h2 class="text-4xl font-bold text-white mb-4">Ready to Get Started?</h2>
+            <p class="text-xl text-white/80 mb-8">
+                Join streamers who are already using MultiBot to enhance their Twitch streams
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/dashboard" class="btn btn-primary btn-lg text-white">
+                    <i class="fas fa-rocket"></i>
+                    <span class="ml-2">Start Free Trial</span>
+                </a>
+                <a href="/pricing.html" class="btn btn-outline btn-lg text-white border-white/50 hover:bg-white/10">
+                    <span>See Pricing</span>
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+    
+    <!-- Scripts -->
+    <script src="/assets/js/header-component.js"></script>
+    <script src="/assets/js/footer-component.js"></script>
+</body>
+</html>

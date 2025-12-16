@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - MultiBot</title>
+    <meta name="description" content="Read the latest articles, tutorials, and updates from MultiBot.">
+    
+    <!-- Tailwind CSS & DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="gradient-bg">
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+    
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-20">
+        <!-- Page Header -->
+        <div class="text-center mb-16">
+            <h1 class="text-5xl font-bold text-white mb-4">Blog</h1>
+            <p class="text-xl text-white/80 max-w-2xl mx-auto">
+                Latest articles, tutorials, and updates from MultiBot
+            </p>
+        </div>
+        
+        <!-- Blog Posts Container -->
+        <div id="blog-posts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            <!-- Posts will be loaded here dynamically -->
+            <div class="col-span-full text-center py-12">
+                <div class="animate-spin text-cyan-400 text-4xl mb-4">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                <p class="text-white/80">Loading blog posts...</p>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+    
+    <!-- Scripts -->
+    <script src="/assets/js/header-component.js"></script>
+    <script src="/assets/js/footer-component.js"></script>
+    <script>
+        // Blog posts loading system
+        async function loadBlogPosts() {
+            const container = document.getElementById('blog-posts-container');
+            
+            try {
+                // Try to load manifest first (fast)
+                const manifestResponse = await fetch('/blog/posts/manifest.json');
+                if (manifestResponse.ok) {
+                    const manifest = await manifestResponse.json();
+                    displayPostsFromManifest(manifest.posts);
+                    return;
+                }
+            } catch (error) {
+                console.log('Manifest not found, trying fallback...');
+            }
+            
+            // Fallback: Try to discover posts directly
+            try {
+                const posts = await discoverPosts();
+                displayPostsFromDiscovery(posts);
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-white/80">No blog posts found. Check back soon!</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function displayPostsFromManifest(posts) {
+            const container = document.getElementById('blog-posts-container');
+            
+            if (!posts || posts.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <p class="text-white/80">No blog posts yet. Check back soon!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Sort by date (newest first)
+            posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            container.innerHTML = posts.map(post => `
+                <div class="glass-card rounded-3xl p-6 blog-card cursor-pointer" onclick="window.location.href='${post.url}'">
+                    <div class="mb-4">
+                        <span class="badge badge-primary">${formatDate(post.date)}</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white mb-3">${escapeHtml(post.title)}</h2>
+                    <p class="text-white/80 mb-4 line-clamp-3">${escapeHtml(post.excerpt || '')}</p>
+                    <a href="${post.url}" class="text-cyan-400 hover:text-cyan-300 font-semibold">
+                        Read More <i class="fas fa-arrow-right ml-2"></i>
+                    </a>
+                </div>
+            `).join('');
+        }
+        
+        function displayPostsFromDiscovery(posts) {
+            // Similar to manifest display but with discovered posts
+            displayPostsFromManifest(posts);
+        }
+        
+        async function discoverPosts() {
+            // Fallback: hardcoded list for now
+            // In production, this would try to fetch post files directly
+            return [
+                {
+                    filename: "welcome-to-multibot.html",
+                    title: "Welcome to MultiBot",
+                    date: new Date().toISOString().split('T')[0],
+                    excerpt: "Get started with MultiBot and learn how to enhance your Twitch stream.",
+                    url: "/blog/posts/welcome-to-multibot.html"
+                }
+            ];
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Load posts when page loads
+        loadBlogPosts();
+    </script>
+</body>
+</html>

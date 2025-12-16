@@ -2,6 +2,7 @@ import tmi from 'tmi.js';
 import { getUserByTwitchId } from '../models/user.js';
 import { twitchConfig } from '../config/twitch.js';
 import { getActiveAudioCommandsByTwitchUserId } from '../models/audioCommand.js';
+import { getActiveGifCommandsByTwitchUserId } from '../models/gifCommand.js';
 
 // Store active chat connections per user
 const activeConnections = new Map();
@@ -104,8 +105,14 @@ export async function getChatClient(twitchUserId, username, accessToken = null) 
 async function setupCommandHandlers(twitchUserId) {
   try {
     const audioCommands = await getActiveAudioCommandsByTwitchUserId(twitchUserId);
+    const gifCommands = await getActiveGifCommandsByTwitchUserId(twitchUserId);
+    console.log(`[TwitchChat] Loading command handlers for user ${twitchUserId}`);
+    console.log(`[TwitchChat] Found ${audioCommands.length} audio commands`);
+    console.log(`[TwitchChat] Found ${gifCommands.length} GIF commands`);
+    
     const handlers = new Map();
     
+    // Add audio commands
     audioCommands.forEach(cmd => {
       handlers.set(cmd.command.toLowerCase(), {
         type: 'audio',
@@ -114,9 +121,26 @@ async function setupCommandHandlers(twitchUserId) {
         volume: cmd.volume,
         id: cmd.id
       });
+      console.log(`[TwitchChat] Loaded audio command: !${cmd.command}`);
+    });
+    
+    // Add GIF commands
+    gifCommands.forEach(cmd => {
+      handlers.set(cmd.command.toLowerCase(), {
+        type: 'gif',
+        command: cmd.command,
+        gifUrl: cmd.gif_url,
+        gifId: cmd.gif_id,
+        duration: cmd.duration || 5000,
+        position: cmd.position || 'center',
+        size: cmd.size || 'medium',
+        id: cmd.id
+      });
+      console.log(`[TwitchChat] Loaded GIF command: !${cmd.command} -> ${cmd.gif_url} (position: ${cmd.position || 'center'}, size: ${cmd.size || 'medium'})`);
     });
     
     commandHandlers.set(twitchUserId, handlers);
+    console.log(`[TwitchChat] Total handlers loaded: ${handlers.size}`);
     return handlers;
   } catch (error) {
     console.error(`Error loading command handlers for user ${twitchUserId}:`, error);
@@ -127,21 +151,30 @@ async function setupCommandHandlers(twitchUserId) {
 /**
  * Check if a message matches any command and trigger appropriate handler
  */
-async function processCommand(twitchUserId, message) {
+export async function processCommand(twitchUserId, message) {
+  console.log(`[TwitchChat] processCommand called for user ${twitchUserId}, message: "${message}"`);
   const handlers = commandHandlers.get(twitchUserId) || await setupCommandHandlers(twitchUserId);
   
   // Extract command from message (commands start with !)
   const words = message.trim().split(/\s+/);
   if (words.length === 0 || !words[0].startsWith('!')) {
+    console.log(`[TwitchChat] Message doesn't start with !, ignoring`);
     return null;
   }
   
-  const command = words[0].toLowerCase();
+  // Remove the ! prefix for lookup (commands are stored without ! in database)
+  const command = words[0].toLowerCase().replace(/^!/, '');
+  console.log(`[TwitchChat] Looking for command: "${command}" (from message: "${words[0]}")`);
+  console.log(`[TwitchChat] Available commands:`, Array.from(handlers.keys()));
+  
   const handler = handlers.get(command);
   
   if (!handler) {
+    console.log(`[TwitchChat] No handler found for command: "${command}"`);
     return null;
   }
+  
+  console.log(`[TwitchChat] Handler found:`, handler);
   
   // Trigger the command handler
   if (handler.type === 'audio') {
@@ -153,6 +186,23 @@ async function processCommand(twitchUserId, message) {
       volume: handler.volume,
       id: handler.id
     });
+  } else if (handler.type === 'gif') {
+    // Broadcast GIF command trigger to WebSocket clients
+    console.log(`[TwitchChat] Broadcasting GIF command: ${handler.command}`, {
+      gifUrl: handler.gifUrl,
+      duration: handler.duration,
+      position: handler.position
+    });
+    broadcastCommandTrigger(twitchUserId, {
+      type: 'gif_command',
+      command: handler.command,
+      gifUrl: handler.gifUrl,
+      gifId: handler.gifId,
+      duration: handler.duration,
+      position: handler.position || 'center',
+      size: handler.size || 'medium',
+      id: handler.id
+    });
   }
   
   return handler;
@@ -162,30 +212,55 @@ async function processCommand(twitchUserId, message) {
  * Broadcast command trigger to WebSocket clients
  */
 function broadcastCommandTrigger(twitchUserId, commandData) {
-  if (!wss) {
+  // Use global.wss if available, fallback to module-level wss
+  const wssInstance = global.wss || wss;
+  
+  if (!wssInstance) {
     console.warn('[Chat] WebSocket server not available for broadcasting');
     return;
   }
   
   let sentCount = 0;
-  wss.clients.forEach((client) => {
+  console.log(`[Chat] Broadcasting command trigger to clients for user ${twitchUserId}`);
+  console.log(`[Chat] Command data:`, commandData);
+  console.log(`[Chat] Total WebSocket clients:`, wssInstance.clients.size);
+  
+  wssInstance.clients.forEach((client) => {
+    console.log(`[Chat] Checking client:`, {
+      userId: client.userId,
+      isObsSource: client.isObsSource,
+      isAuthenticated: client.isAuthenticated,
+      readyState: client.readyState
+    });
+    
     // Send to both OBS sources and dashboard clients for this user
     if (client.userId && 
         String(client.userId) === String(twitchUserId) && 
         client.readyState === 1 && 
         client.isAuthenticated) {
       try {
-        client.send(JSON.stringify({
+        const message = {
           type: 'command_trigger',
           command: commandData
-        }));
+        };
+        console.log(`[Chat] Sending message to client:`, message);
+        client.send(JSON.stringify(message));
         sentCount++;
         if (client.isObsSource) {
-          console.log(`[Chat] Broadcasted command trigger to OBS source for user ${twitchUserId}`);
+          console.log(`[Chat] ✓ Broadcasted command trigger to OBS source for user ${twitchUserId}`);
+        } else {
+          console.log(`[Chat] ✓ Broadcasted command trigger to dashboard client for user ${twitchUserId}`);
         }
       } catch (error) {
         console.error(`[Chat] Error sending command trigger to client:`, error);
       }
+    } else {
+      console.log(`[Chat] Client skipped:`, {
+        hasUserId: !!client.userId,
+        userIdMatch: client.userId ? String(client.userId) === String(twitchUserId) : false,
+        readyState: client.readyState,
+        isAuthenticated: client.isAuthenticated
+      });
     }
   });
   
@@ -350,23 +425,21 @@ function setupKeepAlive(twitchUserId, connection) {
 }
 
 /**
- * Connect to Twitch chat for a user
+ * Set up the message handler for a Twitch chat connection
  */
-export async function connectToChat(twitchUserId, username, accessToken = null, onMessage = null) {
-  try {
-    const connection = await getChatClient(twitchUserId, username, accessToken);
-    
-    if (connection.connected) {
-      // Reload command handlers in case they've changed
-      await setupCommandHandlers(twitchUserId);
-      return connection;
-    }
-
-    // Load command handlers for this user
-    await setupCommandHandlers(twitchUserId);
-
-    // Set up message handler
-    connection.client.on('message', async (channel, tags, message, self) => {
+function setupMessageHandler(connection, twitchUserId, onMessage) {
+  // Remove any existing message handlers first
+  connection.client.removeAllListeners('message');
+  
+  // Set up message handler
+  connection.client.on('message', async (channel, tags, message, self) => {
+      console.log(`[TwitchChat] ========================================`);
+      console.log(`[TwitchChat] Message received in channel: ${channel}`);
+      console.log(`[TwitchChat] From user: ${tags.username}`);
+      console.log(`[TwitchChat] Message: "${message}"`);
+      console.log(`[TwitchChat] Is self (bot): ${self}`);
+      console.log(`[TwitchChat] Twitch user ID for this connection: ${twitchUserId}`);
+      
       const chatMessage = {
         id: tags.id || Date.now().toString(),
         username: tags.username || 'unknown',
@@ -389,8 +462,17 @@ export async function connectToChat(twitchUserId, username, accessToken = null, 
 
       // Process commands (only if not from bot itself)
       if (!self) {
-        await processCommand(twitchUserId, message);
+        console.log(`[TwitchChat] Processing command for user ${twitchUserId}, message: "${message}"`);
+        const commandResult = await processCommand(twitchUserId, message);
+        if (commandResult) {
+          console.log(`[TwitchChat] ✓ Command processed: ${commandResult.type} - ${commandResult.command}`);
+        } else {
+          console.log(`[TwitchChat] ✗ No command handler found for: "${message}"`);
+        }
+      } else {
+        console.log(`[TwitchChat] Ignoring message from bot itself`);
       }
+      console.log(`[TwitchChat] ========================================`);
 
       // Call the callback if provided
       if (onMessage) {
@@ -400,9 +482,29 @@ export async function connectToChat(twitchUserId, username, accessToken = null, 
       // Broadcast to WebSocket clients
       broadcastMessage(twitchUserId, chatMessage);
     });
+}
+
+/**
+ * Connect to Twitch chat for a user
+ */
+export async function connectToChat(twitchUserId, username, accessToken = null, onMessage = null) {
+  try {
+    const connection = await getChatClient(twitchUserId, username, accessToken);
+    
+    // Always reload command handlers in case they've changed
+    await setupCommandHandlers(twitchUserId);
+    
+    // If already connected, remove old message handlers to ensure we use the latest code
+    if (connection.connected) {
+      console.log(`[TwitchChat] Connection already exists and is connected for user ${twitchUserId}`);
+      console.log(`[TwitchChat] Removing old message handlers and setting up new ones...`);
+    }
+
+    // Set up message handler (always, even if connection already exists)
+    setupMessageHandler(connection, twitchUserId, onMessage);
 
     // Handle connection events
-    connection.client.on('connected', (addr, port) => {
+    connection.client.on('connected', async (addr, port) => {
       console.log(`[Chat] Connected to Twitch chat for ${username} at ${addr}:${port}`);
       connection.connected = true;
       connection.reconnectAttempts = 0;
@@ -410,6 +512,13 @@ export async function connectToChat(twitchUserId, username, accessToken = null, 
       connection.consecutiveFailures = 0; // Reset failure counter
       connection.connectionStartTime = Date.now();
       connection.lastMessageTime = Date.now();
+      
+      // Ensure message handler is set up (in case of reconnection)
+      console.log(`[TwitchChat] Ensuring message handler is set up for user ${twitchUserId} after connection`);
+      setupMessageHandler(connection, twitchUserId, onMessage);
+      
+      // Reload command handlers after reconnection
+      await setupCommandHandlers(twitchUserId);
       
       // Set up keep-alive monitoring
       setupKeepAlive(twitchUserId, connection);

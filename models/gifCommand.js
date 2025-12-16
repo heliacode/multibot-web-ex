@@ -1,38 +1,39 @@
 import pool from '../config/database.js';
 
 /**
- * Create a new audio command
+ * Create a new GIF command
  */
-export async function createAudioCommand(audioCommandData) {
+export async function createGifCommand(gifCommandData) {
   const {
     userId,
     twitchUserId,
     command,
-    filePath,
-    fileUrl,
-    fileSize,
-    volume = 0.5
-  } = audioCommandData;
+    gifUrl,
+    gifId = null,
+    gifTitle = null,
+    duration = 5000,
+    position = 'center',
+    size = 'medium'
+  } = gifCommandData;
 
   const query = `
-    INSERT INTO audio_commands (
-      user_id, twitch_user_id, command, file_path, file_url, file_size, volume
+    INSERT INTO gif_commands (
+      user_id, twitch_user_id, command, gif_url, gif_id, gif_title, duration, position, size
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *
   `;
 
-  // Remove ! prefix if present (commands should be stored without !)
-  const cleanCommand = command.toLowerCase().replace(/^!/, '');
-  
   const values = [
     userId,
     twitchUserId,
-    cleanCommand,
-    filePath,
-    fileUrl || null,
-    fileSize,
-    volume
+    command.toLowerCase(),
+    gifUrl,
+    gifId,
+    gifTitle,
+    duration,
+    position,
+    size
   ];
 
   try {
@@ -47,11 +48,11 @@ export async function createAudioCommand(audioCommandData) {
 }
 
 /**
- * Get all audio commands for a user
+ * Get all GIF commands for a user
  */
-export async function getAudioCommandsByUserId(userId) {
+export async function getGifCommandsByUserId(userId) {
   const query = `
-    SELECT * FROM audio_commands
+    SELECT * FROM gif_commands
     WHERE user_id = $1
     ORDER BY created_at DESC
   `;
@@ -65,11 +66,11 @@ export async function getAudioCommandsByUserId(userId) {
 }
 
 /**
- * Get all active audio commands for a Twitch user
+ * Get all active GIF commands for a Twitch user
  */
-export async function getActiveAudioCommandsByTwitchUserId(twitchUserId) {
+export async function getActiveGifCommandsByTwitchUserId(twitchUserId) {
   const query = `
-    SELECT * FROM audio_commands
+    SELECT * FROM gif_commands
     WHERE twitch_user_id = $1 AND is_active = true
     ORDER BY command ASC
   `;
@@ -83,11 +84,11 @@ export async function getActiveAudioCommandsByTwitchUserId(twitchUserId) {
 }
 
 /**
- * Get audio command by ID
+ * Get GIF command by ID
  */
-export async function getAudioCommandById(id, userId) {
+export async function getGifCommandById(id, userId) {
   const query = `
-    SELECT * FROM audio_commands
+    SELECT * FROM gif_commands
     WHERE id = $1 AND user_id = $2
   `;
 
@@ -103,10 +104,10 @@ export async function getAudioCommandById(id, userId) {
 }
 
 /**
- * Update an audio command
+ * Update a GIF command
  */
-export async function updateAudioCommand(id, userId, updateData) {
-  const allowedFields = ['command', 'file_path', 'file_url', 'file_size', 'volume', 'is_active'];
+export async function updateGifCommand(id, userId, updateData) {
+  const allowedFields = ['command', 'gif_url', 'gif_id', 'gif_title', 'duration', 'is_active', 'position', 'size'];
   const updates = [];
   const values = [];
   let paramCount = 1;
@@ -115,9 +116,7 @@ export async function updateAudioCommand(id, userId, updateData) {
     if (allowedFields.includes(key)) {
       updates.push(`${key} = $${paramCount}`);
       if (key === 'command') {
-        // Remove ! prefix if present (commands should be stored without !)
-        const cleanCommand = updateData[key].toLowerCase().replace(/^!/, '');
-        values.push(cleanCommand);
+        values.push(updateData[key].toLowerCase());
       } else {
         values.push(updateData[key]);
       }
@@ -131,7 +130,7 @@ export async function updateAudioCommand(id, userId, updateData) {
 
   values.push(id, userId);
   const query = `
-    UPDATE audio_commands
+    UPDATE gif_commands
     SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP
     WHERE id = $${paramCount} AND user_id = $${paramCount + 1}
     RETURNING *
@@ -152,11 +151,11 @@ export async function updateAudioCommand(id, userId, updateData) {
 }
 
 /**
- * Delete an audio command
+ * Delete a GIF command
  */
-export async function deleteAudioCommand(id, userId) {
+export async function deleteGifCommand(id, userId) {
   const query = `
-    DELETE FROM audio_commands
+    DELETE FROM gif_commands
     WHERE id = $1 AND user_id = $2
     RETURNING *
   `;

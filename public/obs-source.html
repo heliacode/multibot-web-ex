@@ -99,6 +99,9 @@
     <!-- Design elements container -->
     <div id="design-container" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 1; overflow: visible;"></div>
 
+    <!-- GIF display container -->
+    <div id="gif-container" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 9999; overflow: visible;"></div>
+
     <script>
         // Get token from URL - handle both URLSearchParams and direct string extraction
         let token = null;
@@ -193,8 +196,11 @@
             };
 
             ws.onmessage = (event) => {
+                console.log('[OBS] WebSocket message received:', event.data);
                 try {
                     const data = JSON.parse(event.data);
+                    console.log('[OBS] Parsed message data:', data);
+                    console.log('[OBS] Message type:', data.type);
                     
                     if (data.type === 'obs_authenticated') {
                         isConnected = true;
@@ -205,6 +211,8 @@
                         updateStatus('disconnected', 'Auth Failed');
                         console.error('[OBS] Authentication failed:', data.message);
                     } else if (data.type === 'command_trigger') {
+                        console.log('[OBS] Command trigger received - full data:', data);
+                        console.log('[OBS] Command data:', data.command);
                         handleCommandTrigger(data.command);
                     } else if (data.type === 'design_update') {
                         // Live update design elements
@@ -213,9 +221,15 @@
                         console.log('[OBS] Design data:', data.designData);
                         // Pass the design data string to loadDesignElements
                         loadDesignElements(data.designData);
+                    } else if (data.type === 'chat_message') {
+                        // Chat messages are for dashboard, ignore in OBS source
+                        console.log('[OBS] Chat message received (ignored in OBS source)');
+                    } else {
+                        console.warn('[OBS] Unknown message type:', data.type);
                     }
                 } catch (error) {
                     console.error('[OBS] Error parsing message:', error);
+                    console.error('[OBS] Raw message:', event.data);
                 }
             };
 
@@ -249,9 +263,26 @@
 
         // Handle command trigger
         function handleCommandTrigger(commandData) {
-            if (commandData.type === 'audio_command') {
-                playAudioCommand(commandData);
+            console.log('[OBS] ========================================');
+            console.log('[OBS] handleCommandTrigger called with:', commandData);
+            console.log('[OBS] Command type:', commandData?.type);
+            console.log('[OBS] Full command data:', JSON.stringify(commandData, null, 2));
+            
+            if (!commandData || !commandData.type) {
+                console.error('[OBS] Invalid command data - missing type:', commandData);
+                return;
             }
+            
+            if (commandData.type === 'audio_command') {
+                console.log('[OBS] Processing audio command');
+                playAudioCommand(commandData);
+            } else if (commandData.type === 'gif_command') {
+                console.log('[OBS] Processing GIF command');
+                showGifCommand(commandData);
+            } else {
+                console.warn('[OBS] Unknown command type:', commandData?.type);
+            }
+            console.log('[OBS] ========================================');
         }
 
         // Play audio command
@@ -296,6 +327,111 @@
             setTimeout(() => {
                 feedback.classList.remove('show');
             }, 2000);
+        }
+
+        // Show GIF command
+        function showGifCommand(commandData) {
+            console.log('[OBS] showGifCommand called with:', commandData);
+            
+            const { gifUrl, duration = 5000, position = 'center', size = 'medium' } = commandData;
+            
+            if (!gifUrl) {
+                console.error('[OBS] No gifUrl provided in commandData:', commandData);
+                return;
+            }
+            
+            console.log(`[OBS] Showing GIF: ${gifUrl} for ${duration}ms at position: ${position}, size: ${size}`);
+
+            const gifContainer = document.getElementById('gif-container');
+            if (!gifContainer) {
+                console.error('[OBS] GIF container not found!');
+                return;
+            }
+            
+            console.log('[OBS] GIF container found:', gifContainer);
+
+            // Clear any existing GIFs first
+            gifContainer.innerHTML = '';
+            console.log('[OBS] Cleared existing GIFs');
+
+            // Calculate position styles based on position option
+            const positionStyles = getPositionStyles(position);
+            
+            // Calculate size styles based on size option
+            const sizeStyles = getSizeStyles(size);
+            
+            // Create GIF element with position and size
+            const gifElement = document.createElement('img');
+            gifElement.src = gifUrl;
+            gifElement.style.cssText = `
+                position: absolute;
+                ${positionStyles}
+                ${sizeStyles}
+                object-fit: contain;
+                pointer-events: none;
+                z-index: 9999;
+            `;
+            
+            console.log('[OBS] Created GIF element with src:', gifUrl);
+
+            // Add load and error handlers for debugging
+            gifElement.onload = () => {
+                console.log('[OBS] GIF loaded successfully');
+            };
+            
+            gifElement.onerror = (error) => {
+                console.error('[OBS] Error loading GIF:', error);
+                console.error('[OBS] GIF URL:', gifUrl);
+            };
+
+            gifContainer.appendChild(gifElement);
+            console.log('[OBS] ✓ GIF element appended to container');
+            console.log('[OBS] Container children count:', gifContainer.children.length);
+            console.log('[OBS] GIF element HTML:', gifElement.outerHTML.substring(0, 200));
+            
+            // Verify it's actually in the DOM
+            const verifyElement = document.getElementById('gif-container');
+            if (verifyElement && verifyElement.contains(gifElement)) {
+                console.log('[OBS] ✓ Verified: GIF element is in the DOM');
+            } else {
+                console.error('[OBS] ✗ ERROR: GIF element NOT found in DOM after append!');
+            }
+
+            // Remove GIF after duration
+            setTimeout(() => {
+                console.log('[OBS] Removing GIF after duration');
+                if (gifElement.parentNode) {
+                    gifElement.parentNode.removeChild(gifElement);
+                    console.log('[OBS] GIF removed');
+                }
+            }, duration);
+        }
+
+        // Get CSS styles for position
+        function getPositionStyles(position) {
+            const positions = {
+                'top-left': 'top: 5%; left: 5%; transform: translate(0, 0);',
+                'top-center': 'top: 5%; left: 50%; transform: translate(-50%, 0);',
+                'top-right': 'top: 5%; right: 5%; transform: translate(0, 0);',
+                'center-left': 'top: 50%; left: 5%; transform: translate(0, -50%);',
+                'center': 'top: 50%; left: 50%; transform: translate(-50%, -50%);',
+                'center-right': 'top: 50%; right: 5%; transform: translate(0, -50%);',
+                'bottom-left': 'bottom: 5%; left: 5%; transform: translate(0, 0);',
+                'bottom-center': 'bottom: 5%; left: 50%; transform: translate(-50%, 0);',
+                'bottom-right': 'bottom: 5%; right: 5%; transform: translate(0, 0);'
+            };
+            return positions[position] || positions['center'];
+        }
+
+        // Get CSS styles for size (preserves aspect ratio)
+        function getSizeStyles(size) {
+            const sizes = {
+                'small': 'max-width: 128px; max-height: 128px; width: auto; height: auto;',
+                'medium': 'max-width: 512px; max-height: 512px; width: auto; height: auto;',
+                'large': 'max-width: 1024px; max-height: 1024px; width: auto; height: auto;',
+                'original': 'max-width: 90%; max-height: 90%; width: auto; height: auto;'
+            };
+            return sizes[size] || sizes['medium'];
         }
 
         // Preload audio files (optional - can be enabled if needed)

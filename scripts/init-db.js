@@ -39,7 +39,7 @@ async function initializeDatabase() {
     const tables = await checkTables();
     console.log(`Found ${tables.length} tables: ${tables.join(', ') || 'None'}`);
 
-    const requiredTables = ['users', 'audio_commands', 'obs_tokens', 'user_images', 'design_elements'];
+    const requiredTables = ['users', 'audio_commands', 'obs_tokens', 'user_images', 'design_elements', 'gif_commands'];
     const missingTables = requiredTables.filter(table => !tables.includes(table));
 
     if (missingTables.length > 0) {
@@ -73,6 +73,15 @@ async function initializeDatabase() {
         const designTable = readFileSync(designTablePath, 'utf8');
         await pool.query(designTable);
         console.log('✓ design_elements table created');
+      }
+      
+      // Run gif_commands table migration if needed
+      if (missingTables.includes('gif_commands')) {
+        console.log('Adding gif_commands table...');
+        const gifTablePath = join(__dirname, '..', 'database', 'add_gif_commands_table.sql');
+        const gifTable = readFileSync(gifTablePath, 'utf8');
+        await pool.query(gifTable);
+        console.log('✓ gif_commands table created');
       }
       
       const newTables = await checkTables();

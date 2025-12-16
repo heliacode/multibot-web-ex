@@ -72,6 +72,9 @@ function renderAudioCommands() {
                 </div>
                 <div class="flex items-center gap-2 responsive-command-buttons">
                     <audio id="audio-${cmd.id}" src="${cmd.file_path}" preload="metadata"></audio>
+                    <button class="btn btn-sm btn-info text-white" onclick="testAudioCommand('${escapeHtml(cmd.command)}')" title="Test command in chat">
+                        <i class="fas fa-vial"></i> Test
+                    </button>
                     <button class="btn btn-sm btn-success text-white" onclick="playAudioCommand(${cmd.id}, ${cmd.volume})">
                         <i class="fas fa-play"></i>
                     </button>
@@ -468,4 +471,44 @@ function handleCommandTrigger(commandData) {
         }
     }
 }
+
+// Test audio command by simulating a chat message
+async function testAudioCommand(command) {
+    try {
+        const response = await fetch('/api/test/simulate-command', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ command })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success feedback
+            const buttons = document.querySelectorAll(`button[onclick*="testAudioCommand('${command}')"]`);
+            buttons.forEach(button => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Sent';
+                button.classList.add('btn-success');
+                button.classList.remove('btn-info');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('btn-success');
+                    button.classList.add('btn-info');
+                }, 2000);
+            });
+        } else {
+            alert(`Failed to test command: ${data.error || 'Unknown error'}`);
+        }
+    } catch (error) {
+        console.error('Error testing command:', error);
+        alert('Failed to test command. Please try again.');
+    }
+}
+
+window.testAudioCommand = testAudioCommand;
 

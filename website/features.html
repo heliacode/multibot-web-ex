@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - MultiBot</title>
+    <meta name="description" content="Discover all the powerful features MultiBot offers for Twitch stream management.">
+    
+    <!-- Tailwind CSS & DaisyUI -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.4.19/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body class="gradient-bg">
+    <!-- Header -->
+    <div id="header-placeholder"></div>
+    
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-20">
+        <!-- Page Header -->
+        <div class="text-center mb-16">
+            <h1 class="text-5xl font-bold text-white mb-4">Features</h1>
+            <p class="text-xl text-white/80 max-w-2xl mx-auto">
+                Everything you need to manage and enhance your Twitch stream
+            </p>
+        </div>
+        
+        <!-- Features Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            <!-- Audio Commands -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-music"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Audio Commands</h2>
+                <p class="text-white/80 mb-4">
+                    Create custom audio commands that play sounds when triggered in chat. Perfect for memes, alerts, and audience engagement.
+                </p>
+                <ul class="list-disc list-inside text-white/70 space-y-1 ml-4">
+                    <li>Upload custom audio files (up to 500KB)</li>
+                    <li>Set custom trigger commands</li>
+                    <li>Preview before publishing</li>
+                    <li>Manage all commands from one dashboard</li>
+                </ul>
+            </div>
+            
+            <!-- GIF Commands -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-images"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">GIF Commands</h2>
+                <p class="text-white/80 mb-4">
+                    Add animated GIFs to your stream with custom commands. Integrate with Giphy for endless possibilities.
+                </p>
+                <ul class="list-disc list-inside text-white/70 space-y-1 ml-4">
+                    <li>Search and add GIFs from Giphy</li>
+                    <li>Custom positioning on stream</li>
+                    <li>Set trigger commands</li>
+                    <li>Control duration and effects</li>
+                </ul>
+            </div>
+            
+            <!-- OBS Integration -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-broadcast-tower"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">OBS Integration</h2>
+                <p class="text-white/80 mb-4">
+                    Seamlessly integrate with OBS Studio using browser sources. Display commands, alerts, and more on your stream.
+                </p>
+                <ul class="list-disc list-inside text-white/70 space-y-1 ml-4">
+                    <li>Browser source URLs for OBS</li>
+                    <li>Secure token-based authentication</li>
+                    <li>Real-time updates via WebSocket</li>
+                    <li>Customizable display options</li>
+                </ul>
+            </div>
+            
+            <!-- Chat Integration -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Chat Integration</h2>
+                <p class="text-white/80 mb-4">
+                    Real-time chat monitoring and interaction. Connect directly to your Twitch chat with WebSocket support.
+                </p>
+                <ul class="list-disc list-inside text-white/70 space-y-1 ml-4">
+                    <li>Real-time chat message display</li>
+                    <li>WebSocket connection for live updates</li>
+                    <li>Chat debugging tools</li>
+                    <li>Auto-reconnect functionality</li>
+                </ul>
+            </div>
+            
+            <!-- Design Canvas -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Design Canvas</h2>
+                <p class="text-white/80 mb-4">
+                    Visual design tools to create and position elements on your stream. Drag, resize, and customize everything.
+                </p>
+                <ul class="list-disc list-inside text-white/70 space-y-1 ml-4">
+                    <li>Drag and drop interface</li>
+                    <li>Resize and rotate elements</li>
+                    <li>Layer management</li>
+                    <li>Real-time preview</li>
+                </ul>
+            </div>
+            
+            <!-- Image Management -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-image"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Image Management</h2>
+                <p class="text-white/80 mb-4">
+                    Upload and manage images for your stream. Use them in your design canvas or as command responses.
+                </p>
+                <ul class="list-disc list-inside text-white/70 space-y-1 ml-4">
+                    <li>Upload custom images</li>
+                    <li>Image gallery management</li>
+                    <li>Use in design canvas</li>
+                    <li>Easy deletion and organization</li>
+                </ul>
+            </div>
+            
+            <!-- Security -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Security & Reliability</h2>
+                <p class="text-white/80 mb-4">
+                    Enterprise-grade security with encrypted token storage. Your data is safe and your stream is always online.
+                </p>
+                <ul class="list-disc list-inside text-white/70 space-y-1 ml-4">
+                    <li>Encrypted token storage</li>
+                    <li>Secure OAuth authentication</li>
+                    <li>Session management</li>
+                    <li>99.9% uptime guarantee</li>
+                </ul>
+            </div>
+            
+            <!-- Dashboard -->
+            <div class="glass-card rounded-3xl p-8">
+                <div class="text-5xl mb-4 text-cyan-400">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-white mb-3">Unified Dashboard</h2>
+                <p class="text-white/80 mb-4">
+                    Manage everything from one beautiful, intuitive dashboard. All your tools in one place.
+                </p>
+                <ul class="list-disc list-inside text-white/70 space-y-1 ml-4">
+                    <li>Single dashboard for all features</li>
+                    <li>Modern, responsive design</li>
+                    <li>Mobile-friendly interface</li>
+                    <li>Real-time updates</li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- CTA Section -->
+        <div class="text-center mt-16">
+            <h2 class="text-3xl font-bold text-white mb-4">Ready to Get Started?</h2>
+            <p class="text-xl text-white/80 mb-8">
+                Start using MultiBot today and enhance your Twitch stream
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <a href="/dashboard" class="btn btn-primary btn-lg text-white">
+                    <i class="fas fa-rocket"></i>
+                    <span class="ml-2">Get Started</span>
+                </a>
+                <a href="/pricing.html" class="btn btn-outline btn-lg text-white border-white/50 hover:bg-white/10">
+                    <span>View Pricing</span>
+                </a>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Footer -->
+    <div id="footer-placeholder"></div>
+    
+    <!-- Scripts -->
+    <script src="/assets/js/header-component.js"></script>
+    <script src="/assets/js/footer-component.js"></script>
+</body>
+</html>

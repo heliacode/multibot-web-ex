@@ -8,10 +8,12 @@ import indexRoutes from './routes/index.js';
 import dashboardRoutes from './routes/dashboard.js';
 import chatRoutes from './routes/chat.js';
 import audioCommandRoutes from './routes/audioCommands.js';
+import gifCommandRoutes from './routes/gifCommands.js';
 import obsTokenRoutes from './routes/obsToken.js';
 import obsSourceRoutes from './routes/obsSource.js';
 import imageRoutes from './routes/images.js';
 import designRoutes from './routes/design.js';
+import testRoutes from './routes/test.js';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import { setWebSocketServer } from './services/twitchChat.js';
@@ -49,18 +51,23 @@ app.use('/api/audio-commands', (req, res, next) => {
   console.log(`[ROUTE DEBUG] /api/audio-commands - Method: ${req.method}, Path: ${req.path}, OriginalUrl: ${req.originalUrl}`);
   next();
 }, audioCommandRoutes);
+app.use('/api/gif-commands', gifCommandRoutes);
 app.use('/api/obs-token', (req, res, next) => {
   console.log(`[ROUTE DEBUG] /api/obs-token - Method: ${req.method}, Path: ${req.path}, OriginalUrl: ${req.originalUrl}`);
   next();
 }, obsTokenRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/design', designRoutes);
+app.use('/api/test', testRoutes);
 app.use('/auth', authRoutes);
 app.use('/obs-source', obsSourceRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/', indexRoutes);
 
-// Static files - comes after routes to avoid catching API requests
+// Website static files (marketing site) - serve as root
+app.use(express.static(path.join(__dirname, 'website')));
+
+// Public static files (dashboard/app) - comes after website
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Error handling middleware
