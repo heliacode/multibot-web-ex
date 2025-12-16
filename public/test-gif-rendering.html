@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GIF Position/Size Test</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: monospace; 
+            padding: 20px;
+            overflow: hidden;
+        }
+        .test-container { 
+            width: 1920px; 
+            height: 1080px; 
+            position: relative; 
+            border: 2px solid #444; 
+            background: #111; 
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        .test-info { 
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 10000;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 400px;
+        }
+        .test-result { 
+            padding: 5px; 
+            margin: 5px 0; 
+            border-radius: 4px; 
+            font-size: 12px;
+        }
+        .pass { background: #0a5; color: white; }
+        .fail { background: #a50; color: white; }
+        #gif-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 1920px;
+            height: 1080px;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: visible;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h2>GIF Position/Size Test</h2>
+        <div id="test-results">Running tests...</div>
+    </div>
+    <div class="test-container">
+        <div id="gif-container"></div>
+    </div>
+    
+    <script>
+        const testResults = [];
+        let testIndex = 0;
+        
+        // Copy the exact functions from obs-source.html
+        function getPositionStyles(position) {
+            const positions = {
+                'top-left': 'top: 10px; left: 10px; transform: translate(0, 0);',
+                'top-center': 'top: 10px; left: 50%; transform: translate(-50%, 0);',
+                'top-right': 'top: 10px; right: 10px; transform: translate(0, 0);',
+                'center-left': 'top: 50%; left: 10px; transform: translate(0, -50%);',
+                'center': 'top: 50%; left: 50%; transform: translate(-50%, -50%);',
+                'center-right': 'top: 50%; right: 10px; transform: translate(0, -50%);',
+                'bottom-left': 'bottom: 10px; left: 10px; transform: translate(0, 0);',
+                'bottom-center': 'bottom: 10px; left: 50%; transform: translate(-50%, 0);',
+                'bottom-right': 'bottom: 10px; right: 10px; transform: translate(0, 0);'
+            };
+            return positions[position] || positions['center'];
+        }
+        
+        function getSizeStyles(size) {
+            const sizes = {
+                'small': 'max-width: 128px; max-height: 128px; width: auto; height: auto;',
+                'medium': 'max-width: 512px; max-height: 512px; width: auto; height: auto;',
+                'original': 'max-width: 90%; max-height: 90%; width: auto; height: auto;'
+            };
+            return sizes[size] || sizes['medium'];
+        }
+        
+        function showGifCommand(commandData) {
+            console.log('[TEST] showGifCommand called with:', JSON.stringify(commandData, null, 2));
+            
+            // Extract values - same logic as obs-source.html
+            const gifUrl = commandData.gifUrl;
+            const duration = commandData.duration || 5000;
+            
+            let position = 'center';
+            if (commandData.position) {
+                if (typeof commandData.position === 'string' && commandData.position.trim() !== '') {
+                    position = commandData.position.trim();
+                } else if (commandData.position !== null && commandData.position !== undefined) {
+                    position = String(commandData.position).trim();
+                }
+            }
+            
+            let size = 'medium';
+            if (commandData.size) {
+                if (typeof commandData.size === 'string' && commandData.size.trim() !== '') {
+                    size = commandData.size.trim();
+                } else if (commandData.size !== null && commandData.size !== undefined) {
+                    size = String(commandData.size).trim();
+                }
+            }
+            
+            console.log('[TEST] Extracted - position:', position, 'size:', size);
+            
+            const gifContainer = document.getElementById('gif-container');
+            if (!gifContainer) {
+                console.error('[TEST] GIF container not found!');
+                return;
+            }
+            
+            gifContainer.innerHTML = '';
+            
+            const positionStyles = getPositionStyles(position);
+            const sizeStyles = getSizeStyles(size);
+            
+            const gifElement = document.createElement('img');
+            gifElement.src = gifUrl;
+            
+            const finalStyles = `
+                position: absolute;
+                ${positionStyles}
+                ${sizeStyles}
+                object-fit: contain;
+                pointer-events: none;
+                z-index: 9999;
+            `;
+            
+            console.log('[TEST] Final CSS:', finalStyles);
+            gifElement.style.cssText = finalStyles;
+            
+            gifContainer.appendChild(gifElement);
+            
+            // Verify after load
+            gifElement.onload = () => {
+                const computed = window.getComputedStyle(gifElement);
+                const result = {
+                    position: position,
+                    size: size,
+                    computed: {
+                        position: computed.position,
+                        top: computed.top,
+                        left: computed.left,
+                        right: computed.right,
+                        bottom: computed.bottom,
+                        maxWidth: computed.maxWidth,
+                        maxHeight: computed.maxHeight,
+                        width: computed.width,
+                        height: computed.height
+                    },
+                    passed: true,
+                    errors: []
+                };
+                
+                // Verify position - check that element is positioned correctly
+                // Since getComputedStyle returns pixels, we check for reasonable values
+                const topPx = parseFloat(computed.top) || 0;
+                const leftPx = parseFloat(computed.left) || 0;
+                const rightPx = parseFloat(computed.right) || 0;
+                const bottomPx = parseFloat(computed.bottom) || 0;
+                const container = gifContainer;
+                const containerHeight = container.offsetHeight || 1080;
+                const containerWidth = container.offsetWidth || 1920;
+                
+                if (position === 'top-left') {
+                    // Should be positioned near top-left (not at 0,0 but offset by ~5%)
+                    if (topPx === 0 && leftPx === 0) {
+                        result.passed = false;
+                        result.errors.push('Position appears to be at 0,0 (not positioned)');
+                    } else if (topPx > containerHeight * 0.1 || leftPx > containerWidth * 0.1) {
+                        result.passed = false;
+                        result.errors.push(`Position too far from top-left (top: ${computed.top}, left: ${computed.left})`);
+                    }
+                } else if (position === 'top-right') {
+                    if (topPx === 0 && rightPx === 0) {
+                        result.passed = false;
+                        result.errors.push('Position appears to be at 0,0 (not positioned)');
+                    } else if (topPx > containerHeight * 0.1 || rightPx > containerWidth * 0.1) {
+                        result.passed = false;
+                        result.errors.push(`Position too far from top-right (top: ${computed.top}, right: ${computed.right})`);
+                    }
+                } else if (position === 'bottom-left') {
+                    if (bottomPx === 0 && leftPx === 0) {
+                        result.passed = false;
+                        result.errors.push('Position appears to be at 0,0 (not positioned)');
+                    } else if (bottomPx > containerHeight * 0.1 || leftPx > containerWidth * 0.1) {
+                        result.passed = false;
+                        result.errors.push(`Position too far from bottom-left (bottom: ${computed.bottom}, left: ${computed.left})`);
+                    }
+                } else if (position === 'bottom-right') {
+                    if (bottomPx === 0 && rightPx === 0) {
+                        result.passed = false;
+                        result.errors.push('Position appears to be at 0,0 (not positioned)');
+                    } else if (bottomPx > containerHeight * 0.1 || rightPx > containerWidth * 0.1) {
+                        result.passed = false;
+                        result.errors.push(`Position too far from bottom-right (bottom: ${computed.bottom}, right: ${computed.right})`);
+                    }
+                } else if (position === 'center') {
+                    // Center should be around middle of container (allow some tolerance)
+                    const centerTop = Math.abs(topPx - containerHeight * 0.5);
+                    const centerLeft = Math.abs(leftPx - containerWidth * 0.5);
+                    if (centerTop > containerHeight * 0.2 || centerLeft > containerWidth * 0.2) {
+                        result.passed = false;
+                        result.errors.push(`Position not centered (top: ${computed.top}, left: ${computed.left})`);
+                    }
+                }
+                
+                // Verify size - check that max-width/max-height constraints are reasonable
+                // The actual rendered size may be smaller than max if image is smaller
+                const maxWidthNum = parseFloat(computed.maxWidth) || 0;
+                const maxHeightNum = parseFloat(computed.maxHeight) || 0;
+                const actualWidth = parseFloat(computed.width) || 0;
+                const actualHeight = parseFloat(computed.height) || 0;
+                
+                if (size === 'small') {
+                    // Max should be <= 128px, or if 'none', check actual size
+                    if (maxWidthNum > 0 && maxWidthNum > 150) {
+                        result.passed = false;
+                        result.errors.push(`Max width too large for small (${computed.maxWidth})`);
+                    } else if (maxHeightNum > 0 && maxHeightNum > 150) {
+                        result.passed = false;
+                        result.errors.push(`Max height too large for small (${computed.maxHeight})`);
+                    } else if (maxWidthNum === 0 && maxHeightNum === 0 && (actualWidth > 150 || actualHeight > 150)) {
+                        result.passed = false;
+                        result.errors.push(`Actual size too large for small (${computed.width} x ${computed.height})`);
+                    }
+                } else if (size === 'medium') {
+                    if (maxWidthNum > 0 && maxWidthNum > 550) {
+                        result.passed = false;
+                        result.errors.push(`Max width too large for medium (${computed.maxWidth})`);
+                    } else if (maxHeightNum > 0 && maxHeightNum > 550) {
+                        result.passed = false;
+                        result.errors.push(`Max height too large for medium (${computed.maxHeight})`);
+                    } else if (maxWidthNum === 0 && maxHeightNum === 0 && (actualWidth > 550 || actualHeight > 550)) {
+                        result.passed = false;
+                        result.errors.push(`Actual size too large for medium (${computed.width} x ${computed.height})`);
+                    }
+                } else if (size === 'original') {
+                    // Original should allow larger sizes (90% of container)
+                    // Just verify it's not constrained to small values
+                    if (maxWidthNum > 0 && maxWidthNum < 500 && actualWidth < 500) {
+                        result.passed = false;
+                        result.errors.push(`Size seems too constrained for original (maxWidth: ${computed.maxWidth})`);
+                    }
+                }
+                
+                testResults.push(result);
+                displayResults();
+                
+                // Continue to next test
+                setTimeout(() => {
+                    testIndex++;
+                    if (testIndex < testCases.length) {
+                        gifContainer.innerHTML = '';
+                        runTest(testCases[testIndex]);
+                    } else {
+                        console.log('[TEST] All tests completed');
+                        finalizeResults();
+                    }
+                }, 2000);
+            };
+            
+            gifElement.onerror = () => {
+                testResults.push({
+                    position: position,
+                    size: size,
+                    passed: false,
+                    errors: ['GIF failed to load']
+                });
+                displayResults();
+                testIndex++;
+                if (testIndex < testCases.length) {
+                    setTimeout(() => runTest(testCases[testIndex]), 1000);
+                }
+            };
+        }
+        
+        function displayResults() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = testResults.map((r, i) => `
+                <div class="test-result ${r.passed ? 'pass' : 'fail'}">
+                    Test ${i + 1}: Position=${r.position}, Size=${r.size}<br>
+                    ${r.passed ? '✅ PASS' : '❌ FAIL'}<br>
+                    ${r.errors ? r.errors.join('<br>') : ''}<br>
+                    Top: ${r.computed?.top || 'N/A'}, Left: ${r.computed?.left || 'N/A'}<br>
+                    MaxW: ${r.computed?.maxWidth || 'N/A'}, MaxH: ${r.computed?.maxHeight || 'N/A'}
+                </div>
+            `).join('');
+        }
+        
+        function finalizeResults() {
+            const passed = testResults.filter(r => r.passed).length;
+            const failed = testResults.filter(r => !r.passed).length;
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML += `
+                <div class="test-result" style="background: #333; margin-top: 10px;">
+                    <strong>Final: ${passed} passed, ${failed} failed</strong>
+                </div>
+            `;
+            
+            // Make results available globally for screenshot
+            window.testResults = testResults;
+            window.testComplete = true;
+        }
+        
+        const testCases = [
+            { position: 'top-left', size: 'small', gifUrl: 'https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif' },
+            { position: 'top-right', size: 'medium', gifUrl: 'https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif' },
+            { position: 'center', size: 'original', gifUrl: 'https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif' }
+        ];
+        
+        function runTest(testCase) {
+            console.log(`[TEST] Running test: position=${testCase.position}, size=${testCase.size}`);
+            showGifCommand({
+                type: 'gif_command',
+                gifUrl: testCase.gifUrl,
+                position: testCase.position,
+                size: testCase.size,
+                duration: 10000
+            });
+        }
+        
+        // Start tests
+        window.addEventListener('load', () => {
+            setTimeout(() => runTest(testCases[0]), 500);
+        });
+    </script>
+</body>
+</html>

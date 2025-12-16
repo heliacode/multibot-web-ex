@@ -323,7 +323,6 @@
                                     >
                                         <option value="small" style="background-color: #1f2937; color: white;">Small (128x128 max)</option>
                                         <option value="medium" style="background-color: #1f2937; color: white;">Medium (512x512 max)</option>
-                                        <option value="large" style="background-color: #1f2937; color: white;">Large (1024x1024 max)</option>
                                         <option value="original" style="background-color: #1f2937; color: white;">Original Size</option>
                                     </select>
                                     <label class="label">
@@ -374,6 +373,96 @@
                         </form>
                     </dialog>
 
+                    <!-- Bit Trigger Modal -->
+                    <dialog id="bit-trigger-modal" class="modal">
+                        <div class="modal-box glass-card max-w-2xl">
+                            <h3 class="font-bold text-2xl text-white mb-4">
+                                <i class="fas fa-coins"></i>
+                                <span id="bit-trigger-modal-title">Add Bits Trigger</span>
+                            </h3>
+                            
+                            <form id="bit-trigger-form" onsubmit="event.preventDefault(); saveBitTrigger();">
+                                <!-- Bit Amount -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90 font-semibold">
+                                            <i class="fas fa-coins"></i>
+                                            Bit Amount
+                                        </span>
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="bit-amount" 
+                                        class="input input-bordered bg-white/10 text-white border-white/20 w-full" 
+                                        placeholder="50" 
+                                        min="1" 
+                                        required
+                                    />
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Minimum bits to trigger this command</span>
+                                    </label>
+                                </div>
+
+                                <!-- Command Type -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90 font-semibold">
+                                            <i class="fas fa-list"></i>
+                                            Command Type
+                                        </span>
+                                    </label>
+                                    <select 
+                                        id="bit-command-type" 
+                                        class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
+                                        style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
+                                        onchange="updateBitCommandList()"
+                                        required
+                                    >
+                                        <option value="" style="background-color: #1f2937; color: white;">Select type...</option>
+                                        <option value="audio" style="background-color: #1f2937; color: white;">Audio Command</option>
+                                        <option value="gif" style="background-color: #1f2937; color: white;">GIF Command</option>
+                                    </select>
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Type of command to trigger</span>
+                                    </label>
+                                </div>
+
+                                <!-- Command Selection -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90 font-semibold">
+                                            <i class="fas fa-command"></i>
+                                            Command
+                                        </span>
+                                    </label>
+                                    <select 
+                                        id="bit-command-id" 
+                                        class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
+                                        style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
+                                        required
+                                    >
+                                        <option value="" style="background-color: #1f2937; color: white;">Select a command...</option>
+                                    </select>
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Command to trigger when bits are donated</span>
+                                    </label>
+                                </div>
+
+                                <!-- Modal Actions -->
+                                <div class="modal-action responsive-buttons">
+                                    <button type="button" class="btn btn-ghost text-white" onclick="closeBitTriggerModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-primary text-white">
+                                        <i class="fas fa-save"></i>
+                                        Save Trigger
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <form method="dialog" class="modal-backdrop">
+                            <button onclick="closeBitTriggerModal()">close</button>
+                        </form>
+                    </dialog>
+
                     <!-- Jump Scare Bot Section -->
                     <div id="jumpscare-section" class="glass-card rounded-3xl shadow-2xl">
                         <div class="card-body p-8">
@@ -386,6 +475,29 @@
                             <div class="text-center py-12 text-white/60">
                                 <i class="fas fa-cog text-6xl mb-4 animate-float"></i>
                                 <p>Jump Scare Bot configuration coming soon...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bits Triggers Section -->
+                    <div id="bits-section" class="glass-card rounded-3xl shadow-2xl">
+                        <div class="card-body p-8">
+                            <div class="flex items-center justify-between mb-6 responsive-header">
+                                <div>
+                                    <h2 class="card-title text-2xl text-white mb-2">
+                                        <i class="fas fa-coins text-white/80"></i>
+                                        Bits Triggers
+                                    </h2>
+                                    <p class="text-white/80">Trigger commands when viewers donate bits (e.g., 50 bits = play sound)</p>
+                                </div>
+                                <button class="btn btn-primary text-white" onclick="showAddBitTriggerModal()">
+                                    <i class="fas fa-plus"></i>
+                                    Add Trigger
+                                </button>
+                            </div>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div id="bit-triggers-list" class="space-y-4">
+                                <!-- Bit triggers will be loaded here -->
                             </div>
                         </div>
                     </div>
@@ -919,6 +1031,12 @@
                             </a>
                         </li>
                         <li>
+                            <a href="#bits-section" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('bits-section', event)">
+                                <i class="fas fa-coins"></i>
+                                Bits Triggers
+                            </a>
+                        </li>
+                        <li>
                             <a href="#jumpscare" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('jumpscare', event)">
                                 <i class="fas fa-ghost"></i>
                                 Jump Scare Bot
@@ -966,6 +1084,7 @@
     <script src="/js/chatDebug.js"></script>
     <script src="/js/audioCommands.js"></script>
     <script src="/js/gifCommands.js"></script>
+    <script src="/js/bitTriggers.js"></script>
     <script src="/js/obsToken.js"></script>
     <script src="/js/designCanvas.js"></script>
     <script src="/js/imageManager.js"></script>

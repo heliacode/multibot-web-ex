@@ -3,6 +3,7 @@ import { getUserByTwitchId } from '../models/user.js';
 import { twitchConfig } from '../config/twitch.js';
 import { getActiveAudioCommandsByTwitchUserId } from '../models/audioCommand.js';
 import { getActiveGifCommandsByTwitchUserId } from '../models/gifCommand.js';
+import { findBitTriggerForAmount } from '../models/bitTrigger.js';
 
 // Store active chat connections per user
 const activeConnections = new Map();
@@ -191,18 +192,31 @@ export async function processCommand(twitchUserId, message) {
     console.log(`[TwitchChat] Broadcasting GIF command: ${handler.command}`, {
       gifUrl: handler.gifUrl,
       duration: handler.duration,
-      position: handler.position
+      position: handler.position,
+      size: handler.size
     });
-    broadcastCommandTrigger(twitchUserId, {
+    
+    // Ensure position and size are valid strings, not null/undefined/empty
+    const position = (handler.position && String(handler.position).trim() !== '') 
+      ? String(handler.position).trim() 
+      : 'center';
+    const size = (handler.size && String(handler.size).trim() !== '') 
+      ? String(handler.size).trim() 
+      : 'medium';
+    
+    const commandData = {
       type: 'gif_command',
       command: handler.command,
       gifUrl: handler.gifUrl,
       gifId: handler.gifId,
       duration: handler.duration,
-      position: handler.position || 'center',
-      size: handler.size || 'medium',
+      position: position,
+      size: size,
       id: handler.id
-    });
+    };
+    
+    console.log(`[TwitchChat] GIF command data - position: "${commandData.position}", size: "${commandData.size}"`);
+    broadcastCommandTrigger(twitchUserId, commandData);
   }
   
   return handler;
@@ -222,7 +236,10 @@ function broadcastCommandTrigger(twitchUserId, commandData) {
   
   let sentCount = 0;
   console.log(`[Chat] Broadcasting command trigger to clients for user ${twitchUserId}`);
-  console.log(`[Chat] Command data:`, commandData);
+  console.log(`[Chat] Command data:`, JSON.stringify(commandData, null, 2));
+  if (commandData.type === 'gif_command') {
+    console.log(`[Chat] GIF command details - position: "${commandData.position}", size: "${commandData.size}"`);
+  }
   console.log(`[Chat] Total WebSocket clients:`, wssInstance.clients.size);
   
   wssInstance.clients.forEach((client) => {
@@ -243,7 +260,10 @@ function broadcastCommandTrigger(twitchUserId, commandData) {
           type: 'command_trigger',
           command: commandData
         };
-        console.log(`[Chat] Sending message to client:`, message);
+        if (commandData.type === 'gif_command') {
+          console.log(`[Chat] Sending GIF command - position: "${commandData.position}", size: "${commandData.size}"`);
+        }
+        console.log(`[Chat] Sending message to client:`, JSON.stringify(message, null, 2));
         client.send(JSON.stringify(message));
         sentCount++;
         if (client.isObsSource) {
@@ -425,6 +445,89 @@ function setupKeepAlive(twitchUserId, connection) {
 }
 
 /**
+ * Process bits donation and trigger appropriate command
+ */
+export async function processBitsDonation(twitchUserId, bits, username) {
+  console.log(`[TwitchChat] Processing bits donation: ${bits} bits from ${username} for user ${twitchUserId}`);
+  
+  try {
+    const bitTrigger = await findBitTriggerForAmount(twitchUserId, bits);
+    
+    if (!bitTrigger) {
+      console.log(`[TwitchChat] No bit trigger found for ${bits} bits`);
+      return null;
+    }
+    
+    console.log(`[TwitchChat] Found bit trigger: ${bitTrigger.bit_amount} bits -> ${bitTrigger.command_type} command ${bitTrigger.command_id}`);
+    
+    // Get the full command details based on type
+    if (bitTrigger.command_type === 'audio') {
+      const { getAudioCommandById } = await import('../models/audioCommand.js');
+      const audioCommand = await getAudioCommandById(bitTrigger.command_id, null);
+      
+      if (audioCommand && audioCommand.is_active) {
+        broadcastCommandTrigger(twitchUserId, {
+          type: 'audio_command',
+          command: audioCommand.command,
+          filePath: audioCommand.file_path,
+          volume: audioCommand.volume,
+          id: audioCommand.id,
+          triggeredBy: 'bits',
+          bits: bits,
+          username: username
+        });
+        return { type: 'audio', command: audioCommand.command };
+      }
+    } else if (bitTrigger.command_type === 'gif') {
+      const { getGifCommandById } = await import('../models/gifCommand.js');
+      const gifCommand = await getGifCommandById(bitTrigger.command_id, null);
+      
+      if (gifCommand && gifCommand.is_active) {
+        console.log(`[TwitchChat] GIF command details:`, {
+          command: gifCommand.command,
+          position: gifCommand.position,
+          size: gifCommand.size,
+          hasPosition: gifCommand.position !== null && gifCommand.position !== undefined,
+          hasSize: gifCommand.size !== null && gifCommand.size !== undefined
+        });
+        
+        // Ensure position and size are valid strings, not null/undefined
+        const position = (gifCommand.position && String(gifCommand.position).trim() !== '') 
+          ? String(gifCommand.position).trim() 
+          : 'center';
+        const size = (gifCommand.size && String(gifCommand.size).trim() !== '') 
+          ? String(gifCommand.size).trim() 
+          : 'medium';
+        
+        const commandData = {
+          type: 'gif_command',
+          command: gifCommand.command,
+          gifUrl: gifCommand.gif_url,
+          gifId: gifCommand.gif_id,
+          duration: gifCommand.duration,
+          position: position,
+          size: size,
+          id: gifCommand.id,
+          triggeredBy: 'bits',
+          bits: bits,
+          username: username
+        };
+        
+        console.log(`[TwitchChat] Broadcasting GIF command with position: "${commandData.position}", size: "${commandData.size}"`);
+        console.log(`[TwitchChat] Full commandData:`, JSON.stringify(commandData, null, 2));
+        broadcastCommandTrigger(twitchUserId, commandData);
+        return { type: 'gif', command: gifCommand.command };
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`[TwitchChat] Error processing bits donation:`, error);
+    return null;
+  }
+}
+
+/**
  * Set up the message handler for a Twitch chat connection
  */
 function setupMessageHandler(connection, twitchUserId, onMessage) {
@@ -462,6 +565,17 @@ function setupMessageHandler(connection, twitchUserId, onMessage) {
 
       // Process commands (only if not from bot itself)
       if (!self) {
+        // Check for bits in the message (bits are included in tags.bits)
+        if (tags.bits && parseInt(tags.bits) > 0) {
+          const bits = parseInt(tags.bits);
+          console.log(`[TwitchChat] Bits detected in message: ${bits} bits from ${tags.username}`);
+          const bitsResult = await processBitsDonation(twitchUserId, bits, tags.username || 'unknown');
+          if (bitsResult) {
+            console.log(`[TwitchChat] ✓ Bits donation processed: ${bitsResult.type} - ${bitsResult.command}`);
+          }
+        }
+        
+        // Process text commands
         console.log(`[TwitchChat] Processing command for user ${twitchUserId}, message: "${message}"`);
         const commandResult = await processCommand(twitchUserId, message);
         if (commandResult) {
@@ -502,6 +616,27 @@ export async function connectToChat(twitchUserId, username, accessToken = null, 
 
     // Set up message handler (always, even if connection already exists)
     setupMessageHandler(connection, twitchUserId, onMessage);
+    
+    // Set up cheer (bits) handler
+    connection.client.removeAllListeners('cheer');
+    connection.client.on('cheer', async (channel, userstate, message) => {
+      console.log(`[TwitchChat] ========================================`);
+      console.log(`[TwitchChat] Cheer (bits) received in channel: ${channel}`);
+      console.log(`[TwitchChat] From user: ${userstate.username}`);
+      console.log(`[TwitchChat] Bits: ${userstate.bits}`);
+      console.log(`[TwitchChat] Message: "${message}"`);
+      
+      if (userstate.bits && parseInt(userstate.bits) > 0) {
+        const bits = parseInt(userstate.bits);
+        const bitsResult = await processBitsDonation(twitchUserId, bits, userstate.username || 'unknown');
+        if (bitsResult) {
+          console.log(`[TwitchChat] ✓ Bits donation processed: ${bitsResult.type} - ${bitsResult.command}`);
+        } else {
+          console.log(`[TwitchChat] ✗ No bit trigger found for ${bits} bits`);
+        }
+      }
+      console.log(`[TwitchChat] ========================================`);
+    });
 
     // Handle connection events
     connection.client.on('connected', async (addr, port) => {
@@ -516,6 +651,16 @@ export async function connectToChat(twitchUserId, username, accessToken = null, 
       // Ensure message handler is set up (in case of reconnection)
       console.log(`[TwitchChat] Ensuring message handler is set up for user ${twitchUserId} after connection`);
       setupMessageHandler(connection, twitchUserId, onMessage);
+      
+      // Re-setup cheer handler on reconnection
+      connection.client.removeAllListeners('cheer');
+      connection.client.on('cheer', async (channel, userstate, message) => {
+        console.log(`[TwitchChat] Cheer (bits) received: ${userstate.bits} bits from ${userstate.username}`);
+        if (userstate.bits && parseInt(userstate.bits) > 0) {
+          const bits = parseInt(userstate.bits);
+          await processBitsDonation(twitchUserId, bits, userstate.username || 'unknown');
+        }
+      });
       
       // Reload command handlers after reconnection
       await setupCommandHandlers(twitchUserId);

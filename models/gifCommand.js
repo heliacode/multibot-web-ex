@@ -86,14 +86,26 @@ export async function getActiveGifCommandsByTwitchUserId(twitchUserId) {
 /**
  * Get GIF command by ID
  */
-export async function getGifCommandById(id, userId) {
-  const query = `
-    SELECT * FROM gif_commands
-    WHERE id = $1 AND user_id = $2
-  `;
+export async function getGifCommandById(id, userId = null) {
+  let query;
+  let values;
+  
+  if (userId) {
+    query = `
+      SELECT * FROM gif_commands
+      WHERE id = $1 AND user_id = $2
+    `;
+    values = [id, userId];
+  } else {
+    query = `
+      SELECT * FROM gif_commands
+      WHERE id = $1
+    `;
+    values = [id];
+  }
 
   try {
-    const result = await pool.query(query, [id, userId]);
+    const result = await pool.query(query, values);
     if (result.rows.length === 0) {
       return null;
     }

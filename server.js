@@ -14,6 +14,7 @@ import obsSourceRoutes from './routes/obsSource.js';
 import imageRoutes from './routes/images.js';
 import designRoutes from './routes/design.js';
 import testRoutes from './routes/test.js';
+import bitTriggerRoutes from './routes/bitTriggers.js';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import { setWebSocketServer } from './services/twitchChat.js';
@@ -59,6 +60,7 @@ app.use('/api/obs-token', (req, res, next) => {
 app.use('/api/images', imageRoutes);
 app.use('/api/design', designRoutes);
 app.use('/api/test', testRoutes);
+app.use('/api/bit-triggers', bitTriggerRoutes);
 app.use('/auth', authRoutes);
 app.use('/obs-source', obsSourceRoutes);
 app.use('/dashboard', dashboardRoutes);

@@ -218,5 +218,57 @@ router.post('/simulate-command', async (req, res) => {
   }
 });
 
+// Test endpoint to simulate a bits donation
+router.post('/simulate-bits', async (req, res) => {
+  try {
+    // Get user from session
+    const twitchUserId = req.session.userId;
+    const username = req.session.username;
+    
+    if (!twitchUserId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+    
+    const { bits, username: donorUsername } = req.body;
+    
+    if (!bits || !donorUsername) {
+      return res.status(400).json({ error: 'bits and username are required' });
+    }
+    
+    const bitAmount = parseInt(bits);
+    if (isNaN(bitAmount) || bitAmount <= 0) {
+      return res.status(400).json({ error: 'bits must be a positive number' });
+    }
+    
+    console.log(`[Test] Simulating ${bitAmount} bits donation from ${donorUsername} for user ${twitchUserId} (${username})`);
+    
+    // Import and call processBitsDonation
+    // Since processBitsDonation is not exported, we'll need to import the service
+    const { processBitsDonation } = await import('../services/twitchChat.js');
+    
+    // Process the bits donation
+    const result = await processBitsDonation(twitchUserId, bitAmount, donorUsername);
+    
+    if (result) {
+      return res.json({
+        success: true,
+        message: `${bitAmount} bits donation processed successfully`,
+        commandType: result.type,
+        commandName: result.command,
+        donor: donorUsername
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        error: `No bit trigger found for ${bitAmount} bits`
+      });
+    }
+    
+  } catch (error) {
+    console.error('Test endpoint error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export default router;
 

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GIF Position/Size Test</title>
+    <style>
+        body { margin: 0; padding: 20px; background: #1a1a1a; color: white; font-family: monospace; }
+        .test-container { width: 1920px; height: 1080px; position: relative; border: 2px solid #444; background: #000; margin: 20px auto; }
+        .test-info { margin: 20px; }
+        .test-result { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .pass { background: #0a5; }
+        .fail { background: #a50; }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h1>GIF Position and Size Test</h1>
+        <div id="test-results"></div>
+    </div>
+    <div class="test-container" id="gif-container"></div>
+    
+    <script>
+        const testResults = [];
+        
+        // Test position styles
+        function getPositionStyles(position) {
+            const positions = {
+                'top-left': 'top: 10px; left: 10px; transform: translate(0, 0);',
+                'top-center': 'top: 10px; left: 50%; transform: translate(-50%, 0);',
+                'top-right': 'top: 10px; right: 10px; transform: translate(0, 0);',
+                'center-left': 'top: 50%; left: 10px; transform: translate(0, -50%);',
+                'center': 'top: 50%; left: 50%; transform: translate(-50%, -50%);',
+                'center-right': 'top: 50%; right: 10px; transform: translate(0, -50%);',
+                'bottom-left': 'bottom: 10px; left: 10px; transform: translate(0, 0);',
+                'bottom-center': 'bottom: 10px; left: 50%; transform: translate(-50%, 0);',
+                'bottom-right': 'bottom: 10px; right: 10px; transform: translate(0, 0);'
+            };
+            return positions[position] || positions['center'];
+        }
+        
+        function getSizeStyles(size) {
+            const sizes = {
+                'small': 'max-width: 128px; max-height: 128px; width: auto; height: auto;',
+                'medium': 'max-width: 512px; max-height: 512px; width: auto; height: auto;',
+                'original': 'max-width: 90%; max-height: 90%; width: auto; height: auto;'
+            };
+            return sizes[size] || sizes['medium'];
+        }
+        
+        function testPositionSize(position, size, gifUrl) {
+            const container = document.getElementById('gif-container');
+            container.innerHTML = '';
+            
+            const positionStyles = getPositionStyles(position);
+            const sizeStyles = getSizeStyles(size);
+            
+            const gifElement = document.createElement('img');
+            gifElement.src = gifUrl || 'https://media.giphy.com/media/3o7aCTPPm4OHfRLSH6/giphy.gif';
+            gifElement.style.cssText = `
+                position: absolute;
+                ${positionStyles}
+                ${sizeStyles}
+                object-fit: contain;
+                pointer-events: none;
+                z-index: 9999;
+            `;
+            
+            container.appendChild(gifElement);
+            
+            // Wait for image to load, then check computed styles
+            gifElement.onload = () => {
+                const computed = window.getComputedStyle(gifElement);
+                const result = {
+                    position: position,
+                    size: size,
+                    computed: {
+                        position: computed.position,
+                        top: computed.top,
+                        left: computed.left,
+                        right: computed.right,
+                        bottom: computed.bottom,
+                        maxWidth: computed.maxWidth,
+                        maxHeight: computed.maxHeight,
+                        width: computed.width,
+                        height: computed.height
+                    },
+                    passed: true
+                };
+                
+                // Verify position
+                if (position === 'top-left') {
+                    result.passed = result.passed && (computed.top !== '0px' || computed.left !== '0px');
+                } else if (position === 'top-right') {
+                    result.passed = result.passed && (computed.right !== '0px');
+                } else if (position === 'bottom-left') {
+                    result.passed = result.passed && (computed.bottom !== '0px' || computed.left !== '0px');
+                } else if (position === 'bottom-right') {
+                    result.passed = result.passed && (computed.bottom !== '0px' && computed.right !== '0px');
+                } else if (position === 'center') {
+                    result.passed = result.passed && (computed.top.includes('50%') || computed.left.includes('50%'));
+                }
+                
+                // Verify size
+                if (size === 'small') {
+                    result.passed = result.passed && (parseInt(computed.maxWidth) <= 128 || parseInt(computed.maxHeight) <= 128);
+                } else if (size === 'medium') {
+                    result.passed = result.passed && (parseInt(computed.maxWidth) <= 512 || parseInt(computed.maxHeight) <= 512);
+                }
+                
+                testResults.push(result);
+                displayResults();
+            };
+        }
+        
+        function displayResults() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = testResults.map(r => `
+                <div class="test-result ${r.passed ? 'pass' : 'fail'}">
+                    <strong>Position: ${r.position}, Size: ${r.size}</strong><br>
+                    Top: ${r.computed.top}, Left: ${r.computed.left}, Right: ${r.computed.right}, Bottom: ${r.computed.bottom}<br>
+                    MaxWidth: ${r.computed.maxWidth}, MaxHeight: ${r.computed.maxHeight}<br>
+                    Width: ${r.computed.width}, Height: ${r.computed.height}<br>
+                    <strong>Result: ${r.passed ? 'PASS' : 'FAIL'}</strong>
+                </div>
+            `).join('');
+        }
+        
+        // Run tests
+        const testCases = [
+            { position: 'top-left', size: 'small' },
+            { position: 'top-right', size: 'medium' },
+            { position: 'center', size: 'original' }
+        ];
+        
+        let testIndex = 0;
+        function runNextTest() {
+            if (testIndex < testCases.length) {
+                const test = testCases[testIndex];
+                console.log(`Testing position: ${test.position}, size: ${test.size}`);
+                testPositionSize(test.position, test.size);
+                testIndex++;
+                setTimeout(runNextTest, 2000);
+            }
+        }
+        
+        // Start tests after page load
+        window.addEventListener('load', () => {
+            setTimeout(runNextTest, 500);
+        });
+    </script>
+</body>
+</html>

@@ -331,9 +331,37 @@
 
         // Show GIF command
         function showGifCommand(commandData) {
-            console.log('[OBS] showGifCommand called with:', commandData);
+            console.log('[OBS] showGifCommand called with:', JSON.stringify(commandData, null, 2));
+            console.log('[OBS] Position from commandData:', commandData.position, 'Type:', typeof commandData.position);
+            console.log('[OBS] Size from commandData:', commandData.size, 'Type:', typeof commandData.size);
             
-            const { gifUrl, duration = 5000, position = 'center', size = 'medium' } = commandData;
+            // Extract values with proper fallbacks for null/undefined/empty string
+            const gifUrl = commandData.gifUrl;
+            const duration = commandData.duration || 5000;
+            
+            // Handle position - check for string methods safely
+            let position = 'center';
+            if (commandData.position) {
+                if (typeof commandData.position === 'string' && commandData.position.trim() !== '') {
+                    position = commandData.position.trim();
+                } else if (commandData.position !== null && commandData.position !== undefined) {
+                    position = String(commandData.position).trim();
+                }
+            }
+            
+            // Handle size - check for string methods safely
+            let size = 'medium';
+            if (commandData.size) {
+                if (typeof commandData.size === 'string' && commandData.size.trim() !== '') {
+                    size = commandData.size.trim();
+                } else if (commandData.size !== null && commandData.size !== undefined) {
+                    size = String(commandData.size).trim();
+                }
+            }
+            
+            console.log('[OBS] Extracted values - position:', position, 'size:', size);
+            console.log('[OBS] Position styles will be:', getPositionStyles(position));
+            console.log('[OBS] Size styles will be:', getSizeStyles(size));
             
             if (!gifUrl) {
                 console.error('[OBS] No gifUrl provided in commandData:', commandData);
@@ -356,14 +384,17 @@
 
             // Calculate position styles based on position option
             const positionStyles = getPositionStyles(position);
+            console.log('[OBS] Position value:', position, '-> Position styles:', positionStyles);
             
             // Calculate size styles based on size option
             const sizeStyles = getSizeStyles(size);
+            console.log('[OBS] Size value:', size, '-> Size styles:', sizeStyles);
             
             // Create GIF element with position and size
             const gifElement = document.createElement('img');
             gifElement.src = gifUrl;
-            gifElement.style.cssText = `
+            
+            const finalStyles = `
                 position: absolute;
                 ${positionStyles}
                 ${sizeStyles}
@@ -372,7 +403,26 @@
                 z-index: 9999;
             `;
             
+            console.log('[OBS] Final CSS styles:', finalStyles);
+            gifElement.style.cssText = finalStyles;
+            
             console.log('[OBS] Created GIF element with src:', gifUrl);
+            
+            // Verify styles are applied after load
+            gifElement.onload = () => {
+                const computed = window.getComputedStyle(gifElement);
+                console.log('[OBS] GIF loaded - Computed styles:', {
+                    position: computed.position,
+                    top: computed.top,
+                    left: computed.left,
+                    right: computed.right,
+                    bottom: computed.bottom,
+                    maxWidth: computed.maxWidth,
+                    maxHeight: computed.maxHeight,
+                    width: computed.width,
+                    height: computed.height
+                });
+            };
 
             // Add load and error handlers for debugging
             gifElement.onload = () => {
@@ -410,15 +460,15 @@
         // Get CSS styles for position
         function getPositionStyles(position) {
             const positions = {
-                'top-left': 'top: 5%; left: 5%; transform: translate(0, 0);',
-                'top-center': 'top: 5%; left: 50%; transform: translate(-50%, 0);',
-                'top-right': 'top: 5%; right: 5%; transform: translate(0, 0);',
-                'center-left': 'top: 50%; left: 5%; transform: translate(0, -50%);',
+                'top-left': 'top: 10px; left: 10px; transform: translate(0, 0);',
+                'top-center': 'top: 10px; left: 50%; transform: translate(-50%, 0);',
+                'top-right': 'top: 10px; right: 10px; transform: translate(0, 0);',
+                'center-left': 'top: 50%; left: 10px; transform: translate(0, -50%);',
                 'center': 'top: 50%; left: 50%; transform: translate(-50%, -50%);',
-                'center-right': 'top: 50%; right: 5%; transform: translate(0, -50%);',
-                'bottom-left': 'bottom: 5%; left: 5%; transform: translate(0, 0);',
-                'bottom-center': 'bottom: 5%; left: 50%; transform: translate(-50%, 0);',
-                'bottom-right': 'bottom: 5%; right: 5%; transform: translate(0, 0);'
+                'center-right': 'top: 50%; right: 10px; transform: translate(0, -50%);',
+                'bottom-left': 'bottom: 10px; left: 10px; transform: translate(0, 0);',
+                'bottom-center': 'bottom: 10px; left: 50%; transform: translate(-50%, 0);',
+                'bottom-right': 'bottom: 10px; right: 10px; transform: translate(0, 0);'
             };
             return positions[position] || positions['center'];
         }
@@ -428,7 +478,6 @@
             const sizes = {
                 'small': 'max-width: 128px; max-height: 128px; width: auto; height: auto;',
                 'medium': 'max-width: 512px; max-height: 512px; width: auto; height: auto;',
-                'large': 'max-width: 1024px; max-height: 1024px; width: auto; height: auto;',
                 'original': 'max-width: 90%; max-height: 90%; width: auto; height: auto;'
             };
             return sizes[size] || sizes['medium'];
