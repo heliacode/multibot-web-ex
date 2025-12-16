@@ -13,14 +13,15 @@ export async function createGifCommand(gifCommandData) {
     gifTitle = null,
     duration = 5000,
     position = 'center',
-    size = 'medium'
+    size = 'medium',
+    isBitsOnly = false
   } = gifCommandData;
 
   const query = `
     INSERT INTO gif_commands (
-      user_id, twitch_user_id, command, gif_url, gif_id, gif_title, duration, position, size
+      user_id, twitch_user_id, command, gif_url, gif_id, gif_title, duration, position, size, is_bits_only
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
     RETURNING *
   `;
 
@@ -33,7 +34,8 @@ export async function createGifCommand(gifCommandData) {
     gifTitle,
     duration,
     position,
-    size
+    size,
+    isBitsOnly
   ];
 
   try {
@@ -53,7 +55,7 @@ export async function createGifCommand(gifCommandData) {
 export async function getGifCommandsByUserId(userId) {
   const query = `
     SELECT * FROM gif_commands
-    WHERE user_id = $1
+    WHERE user_id = $1 AND (is_bits_only = false OR is_bits_only IS NULL)
     ORDER BY created_at DESC
   `;
 
@@ -71,7 +73,7 @@ export async function getGifCommandsByUserId(userId) {
 export async function getActiveGifCommandsByTwitchUserId(twitchUserId) {
   const query = `
     SELECT * FROM gif_commands
-    WHERE twitch_user_id = $1 AND is_active = true
+    WHERE twitch_user_id = $1 AND is_active = true AND (is_bits_only = false OR is_bits_only IS NULL)
     ORDER BY command ASC
   `;
 

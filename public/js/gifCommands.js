@@ -64,7 +64,7 @@ function renderGifCommands() {
                         <span class="badge ${cmd.is_active ? 'badge-success' : 'badge-error'}">${cmd.is_active ? 'Active' : 'Inactive'}</span>
                     </div>
                     <div class="flex items-center gap-4 text-sm text-white/70 flex-wrap">
-                        <span><i class="fas fa-clock"></i> ${cmd.duration || 5000}ms</span>
+                        <span><i class="fas fa-clock"></i> ${Math.round((cmd.duration || 5000) / 1000)}s</span>
                         <span><i class="fas fa-crosshairs"></i> ${cmd.position || 'center'}</span>
                         <span><i class="fas fa-expand-arrows-alt"></i> ${cmd.size || 'medium'}</span>
                         ${cmd.gif_title ? `<span><i class="fas fa-info-circle"></i> ${escapeHtml(cmd.gif_title)}</span>` : ''}
@@ -128,7 +128,8 @@ function editGifCommand(id) {
     
     if (form) {
         document.getElementById('gif-command-name').value = cmd.command;
-        document.getElementById('gif-duration').value = cmd.duration || 5000;
+        // Convert milliseconds to seconds for display
+        document.getElementById('gif-duration').value = Math.round((cmd.duration || 5000) / 1000);
         const positionInput = document.getElementById('gif-position');
         if (positionInput) positionInput.value = cmd.position || 'center';
         const sizeInput = document.getElementById('gif-size');
@@ -287,7 +288,8 @@ async function saveGifCommand() {
     if (!commandInput || !durationInput || !positionInput || !sizeInput) return;
     
     const command = commandInput.value.trim();
-    const duration = parseInt(durationInput.value) || 5000;
+    // Convert seconds to milliseconds for backend
+    const duration = (parseInt(durationInput.value) || 5) * 1000;
     const position = positionInput.value || 'center';
     const size = sizeInput.value || 'medium';
     

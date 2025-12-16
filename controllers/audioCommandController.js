@@ -44,7 +44,7 @@ export async function createCommand(req, res) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { command, volume, fileUrl } = req.body;
+    const { command, volume, fileUrl, isBitsOnly } = req.body;
     const file = req.file;
 
     if (!command) {
@@ -99,7 +99,8 @@ export async function createCommand(req, res) {
       filePath,
       fileUrl: fileUrl || null,
       fileSize,
-      volume: volume ? parseFloat(volume) : 0.5
+      volume: volume ? parseFloat(volume) : 0.5,
+      isBitsOnly: isBitsOnly === 'true' || isBitsOnly === true
     });
 
     // Reload command handlers for this user

@@ -2,6 +2,7 @@ import express from 'express';
 import {
   createCommand,
   getCommands,
+  getCommand,
   updateCommand,
   deleteCommand
 } from '../controllers/gifController.js';
@@ -20,6 +21,7 @@ router.put('/:id', updateCommand);
 router.delete('/:id', deleteCommand);
 
 // Giphy API proxy routes (to avoid CORS and hide API key)
+// These must come before the /:id route to avoid conflicts
 router.get('/giphy/search', async (req, res) => {
   try {
     const { q, limit = 25, rating = 'g' } = req.query;
@@ -90,6 +92,9 @@ router.get('/giphy/:id', async (req, res) => {
     });
   }
 });
+
+// Get a single GIF command by ID (must come after giphy routes)
+router.get('/:id', getCommand);
 
 export default router;
 

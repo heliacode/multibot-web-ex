@@ -9,23 +9,18 @@ export async function createBitTrigger(bitTriggerData) {
     twitchUserId,
     bitAmount,
     commandType,
-    commandId,
-    isDedicated = false,
-    dedicatedGifUrl,
-    dedicatedGifId,
-    dedicatedGifTitle,
-    dedicatedGifPosition,
-    dedicatedGifSize,
-    dedicatedGifDuration
+    commandId
   } = bitTriggerData;
+
+  if (!commandType || !commandId) {
+    throw new Error('commandType and commandId are required');
+  }
 
   const query = `
     INSERT INTO bit_triggers (
-      user_id, twitch_user_id, bit_amount, command_type, command_id,
-      is_dedicated, dedicated_gif_url, dedicated_gif_id, dedicated_gif_title,
-      dedicated_gif_position, dedicated_gif_size, dedicated_gif_duration
+      user_id, twitch_user_id, bit_amount, command_type, command_id
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    VALUES ($1, $2, $3, $4, $5)
     RETURNING *
   `;
 
@@ -33,15 +28,8 @@ export async function createBitTrigger(bitTriggerData) {
     userId,
     twitchUserId,
     bitAmount,
-    isDedicated ? null : commandType,
-    isDedicated ? null : commandId,
-    isDedicated,
-    isDedicated ? dedicatedGifUrl : null,
-    isDedicated ? (dedicatedGifId || null) : null,
-    isDedicated ? (dedicatedGifTitle || 'Thank You!') : null,
-    isDedicated ? (dedicatedGifPosition || 'center') : null,
-    isDedicated ? (dedicatedGifSize || 'medium') : null,
-    isDedicated ? (dedicatedGifDuration || 5000) : null
+    commandType,
+    commandId
   ];
 
   try {
@@ -181,9 +169,7 @@ export async function findBitTriggerForAmount(twitchUserId, bitAmount) {
  */
 export async function updateBitTrigger(id, userId, updateData) {
   const allowedFields = [
-    'bit_amount', 'command_type', 'command_id', 'is_active',
-    'is_dedicated', 'dedicated_gif_url', 'dedicated_gif_id', 'dedicated_gif_title',
-    'dedicated_gif_position', 'dedicated_gif_size', 'dedicated_gif_duration'
+    'bit_amount', 'command_type', 'command_id', 'is_active'
   ];
   const updates = [];
   const values = [];

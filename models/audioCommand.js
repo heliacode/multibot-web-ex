@@ -11,14 +11,15 @@ export async function createAudioCommand(audioCommandData) {
     filePath,
     fileUrl,
     fileSize,
-    volume = 0.5
+    volume = 0.5,
+    isBitsOnly = false
   } = audioCommandData;
 
   const query = `
     INSERT INTO audio_commands (
-      user_id, twitch_user_id, command, file_path, file_url, file_size, volume
+      user_id, twitch_user_id, command, file_path, file_url, file_size, volume, is_bits_only
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *
   `;
 
@@ -32,7 +33,8 @@ export async function createAudioCommand(audioCommandData) {
     filePath,
     fileUrl || null,
     fileSize,
-    volume
+    volume,
+    isBitsOnly
   ];
 
   try {
@@ -52,7 +54,7 @@ export async function createAudioCommand(audioCommandData) {
 export async function getAudioCommandsByUserId(userId) {
   const query = `
     SELECT * FROM audio_commands
-    WHERE user_id = $1
+    WHERE user_id = $1 AND (is_bits_only = false OR is_bits_only IS NULL)
     ORDER BY created_at DESC
   `;
 
@@ -70,7 +72,7 @@ export async function getAudioCommandsByUserId(userId) {
 export async function getActiveAudioCommandsByTwitchUserId(twitchUserId) {
   const query = `
     SELECT * FROM audio_commands
-    WHERE twitch_user_id = $1 AND is_active = true
+    WHERE twitch_user_id = $1 AND is_active = true AND (is_bits_only = false OR is_bits_only IS NULL)
     ORDER BY command ASC
   `;
 

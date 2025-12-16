@@ -31,7 +31,7 @@ export async function createCommand(req, res) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const { command, gifUrl, gifId, gifTitle, duration, position, size } = req.body;
+    const { command, gifUrl, gifId, gifTitle, duration, position, size, isBitsOnly } = req.body;
 
     if (!command || !gifUrl) {
       return res.status(400).json({ error: 'Command and GIF URL are required' });
@@ -51,7 +51,8 @@ export async function createCommand(req, res) {
       gifTitle: gifTitle || null,
       duration: duration || 5000,
       position: position || 'center',
-      size: size || 'medium'
+      size: size || 'medium',
+      isBitsOnly: isBitsOnly === true || isBitsOnly === 'true'
     });
 
     // Reload command handlers to include the new GIF command
@@ -96,6 +97,43 @@ export async function getCommands(req, res) {
     console.error('Error getting GIF commands:', error);
     res.status(500).json({
       error: 'Failed to get GIF commands',
+      message: error.message
+    });
+  }
+}
+
+/**
+ * Get a single GIF command by ID
+ */
+export async function getCommand(req, res) {
+  try {
+    const twitchUserId = req.session.userId;
+    
+    if (!twitchUserId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { id } = req.params;
+
+    const user = await getUserByTwitchId(twitchUserId);
+    if (!user || !user.id) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const command = await getGifCommandById(id, user.id);
+
+    if (!command) {
+      return res.status(404).json({ error: 'GIF command not found' });
+    }
+
+    res.json({
+      success: true,
+      command
+    });
+  } catch (error) {
+    console.error('Error getting GIF command:', error);
+    res.status(500).json({
+      error: 'Failed to get GIF command',
       message: error.message
     });
   }

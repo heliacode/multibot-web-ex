@@ -46,8 +46,8 @@
                 <div id="content-area" class="space-y-6">
                     <!-- Dashboard Cards View -->
                     <div id="dashboard-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                        <!-- Text-to-Speech Bot Card -->
-                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('tts', event)">
+                        <!-- Text-to-Speech Bot Card (Hidden) -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('tts', event)" style="display: none;">
                             <div class="card-body p-6 md:p-8 text-center">
                                 <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
                                     <i class="fas fa-volume-up text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
@@ -101,8 +101,8 @@
                             </div>
                         </div>
 
-                        <!-- Celebration Bot Card -->
-                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('celebration', event)">
+                        <!-- Celebration Bot Card (Hidden) -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('celebration', event)" style="display: none;">
                             <div class="card-body p-6 md:p-8 text-center">
                                 <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
                                     <i class="fas fa-fireworks text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
@@ -181,10 +181,65 @@
                             <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
                             
                             <!-- Audio Commands List -->
-                            <div id="audio-commands-list" class="space-y-4">
+                            <div id="audio-commands-list" class="space-y-4 mb-6">
                                 <div class="text-center py-12 text-white/60">
                                     <i class="fas fa-music text-6xl mb-4 animate-float"></i>
                                     <p>No audio commands yet. Click "Add Command" to create one.</p>
+                                </div>
+                            </div>
+
+                            <!-- Where to Find More Audio -->
+                            <div class="collapse collapse-arrow glass-card rounded-xl mb-4">
+                                <input type="checkbox" />
+                                <div class="collapse-title text-xl font-semibold text-white">
+                                    <i class="fas fa-info-circle text-white/80 mr-2"></i>
+                                    Where to Find More Audio
+                                </div>
+                                <div class="collapse-content">
+                                    <div class="space-y-3 text-white/90">
+                                        <p class="text-white/70 mb-3">Here are some clean, SFW websites where you can find free audio files for your commands:</p>
+                                        <ul class="space-y-2">
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://freesound.org" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Freesound</a>
+                                                    <p class="text-sm text-white/60">Large collection of free sound effects and audio clips</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://pixabay.com/music" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Pixabay Music</a>
+                                                    <p class="text-sm text-white/60">Free music and sound effects, no attribution required</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://mixkit.co/free-sound-effects" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Mixkit</a>
+                                                    <p class="text-sm text-white/60">Free sound effects library with high-quality audio</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://www.zapsplat.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Zapsplat</a>
+                                                    <p class="text-sm text-white/60">Professional sound effects library (free with account)</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://www.soundjay.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">SoundJay</a>
+                                                    <p class="text-sm text-white/60">Free sound effects and music loops</p>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                        <p class="text-sm text-white/60 mt-4 pt-3 border-t border-white/20">
+                                            <i class="fas fa-lightbulb text-yellow-400"></i>
+                                            <strong>Tip:</strong> Make sure to check the license terms for each website. Most require attribution or have specific usage terms.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -365,20 +420,20 @@
                                 <!-- Duration -->
                                 <div class="form-control mb-4">
                                     <label class="label">
-                                        <span class="label-text text-white/90">Display Duration (ms)</span>
+                                        <span class="label-text text-white/90">Display Duration (seconds)</span>
                                     </label>
                                     <input 
                                         type="number" 
                                         id="gif-duration" 
                                         class="input input-bordered bg-white/10 text-white border-white/20" 
-                                        value="5000"
-                                        min="1000"
-                                        max="30000"
-                                        step="1000"
+                                        value="5"
+                                        min="1"
+                                        max="30"
+                                        step="1"
                                         required
                                     />
                                     <label class="label">
-                                        <span class="label-text-alt text-white/60">How long the GIF should display (1000-30000ms)</span>
+                                        <span class="label-text-alt text-white/60">How long the GIF should display (1-30 seconds)</span>
                                     </label>
                                 </div>
 
@@ -475,15 +530,141 @@
                         </form>
                     </dialog>
 
-                    <!-- Bit Trigger Modal -->
-                    <dialog id="bit-trigger-modal" class="modal">
-                        <div class="modal-box glass-card max-w-2xl">
+                    <!-- GIF Bit Trigger Modal -->
+                    <dialog id="bit-gif-trigger-modal" class="modal">
+                        <div class="modal-box glass-card max-w-4xl">
                             <h3 class="font-bold text-2xl text-white mb-4">
-                                <i class="fas fa-coins"></i>
-                                <span id="bit-trigger-modal-title">Add Bits Trigger</span>
+                                <i class="fas fa-images"></i>
+                                <span id="bit-gif-trigger-modal-title">Add GIF Bits Trigger</span>
                             </h3>
                             
-                            <form id="bit-trigger-form" onsubmit="event.preventDefault(); saveBitTrigger();">
+                            <form id="bit-gif-trigger-form" onsubmit="event.preventDefault(); saveGifBitTrigger();">
+                                <!-- Trigger Name -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90 font-semibold">
+                                            <i class="fas fa-tag"></i>
+                                            Trigger Name
+                                        </span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="bit-gif-trigger-name" 
+                                        class="input input-bordered bg-white/10 text-white border-white/20" 
+                                        placeholder="Thank You GIF"
+                                        required
+                                    />
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Give your trigger a descriptive name</span>
+                                    </label>
+                                </div>
+
+                                <!-- Duration -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90">Display Duration (seconds)</span>
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="bit-gif-trigger-duration" 
+                                        class="input input-bordered bg-white/10 text-white border-white/20" 
+                                        value="5"
+                                        min="1"
+                                        max="30"
+                                        step="1"
+                                        required
+                                    />
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">How long the GIF should display (1-30 seconds)</span>
+                                    </label>
+                                </div>
+
+                                <!-- Position -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90 font-semibold">
+                                            <i class="fas fa-crosshairs"></i>
+                                            Position
+                                        </span>
+                                    </label>
+                                    <select 
+                                        id="bit-gif-trigger-position" 
+                                        class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
+                                        style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
+                                    >
+                                        <option value="center" style="background-color: #1f2937; color: white;">Center</option>
+                                        <option value="top-left" style="background-color: #1f2937; color: white;">Top Left</option>
+                                        <option value="top-center" style="background-color: #1f2937; color: white;">Top Center</option>
+                                        <option value="top-right" style="background-color: #1f2937; color: white;">Top Right</option>
+                                        <option value="center-left" style="background-color: #1f2937; color: white;">Center Left</option>
+                                        <option value="center-right" style="background-color: #1f2937; color: white;">Center Right</option>
+                                        <option value="bottom-left" style="background-color: #1f2937; color: white;">Bottom Left</option>
+                                        <option value="bottom-center" style="background-color: #1f2937; color: white;">Bottom Center</option>
+                                        <option value="bottom-right" style="background-color: #1f2937; color: white;">Bottom Right</option>
+                                    </select>
+                                </div>
+
+                                <!-- Size -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90 font-semibold">
+                                            <i class="fas fa-expand-arrows-alt"></i>
+                                            Size
+                                        </span>
+                                    </label>
+                                    <select 
+                                        id="bit-gif-trigger-size" 
+                                        class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
+                                        style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
+                                    >
+                                        <option value="small" style="background-color: #1f2937; color: white;">Small (128x128 max)</option>
+                                        <option value="medium" style="background-color: #1f2937; color: white;">Medium (512x512 max)</option>
+                                        <option value="original" style="background-color: #1f2937; color: white;">Original Size</option>
+                                    </select>
+                                </div>
+
+                                <!-- Giphy Search -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90">Search GIFs</span>
+                                    </label>
+                                    <div class="flex gap-2">
+                                        <input 
+                                            type="text" 
+                                            id="bit-gif-trigger-giphy-search" 
+                                            class="input input-bordered bg-white/10 text-white border-white/20 flex-1" 
+                                            placeholder="Search for GIFs..."
+                                            oninput="searchGiphyForGifBitTrigger(this.value)"
+                                        />
+                                        <button type="button" class="btn btn-primary text-white" onclick="loadTrendingGifsForGifBitTrigger()">
+                                            <i class="fas fa-fire"></i>
+                                            Trending
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- GIF Search Results -->
+                                <div id="bit-gif-trigger-giphy-results" class="mb-4 max-h-64 overflow-y-auto p-4 bg-black/30 rounded-lg" style="display: none;">
+                                </div>
+
+                                <!-- Selected GIF Preview -->
+                                <div id="bit-gif-trigger-preview" class="mb-4 hidden">
+                                    <div class="glass-card rounded-lg p-4">
+                                        <div class="flex items-center justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <img id="bit-gif-trigger-preview-img" src="" alt="Selected GIF" class="w-20 h-20 object-cover rounded" />
+                                                <div>
+                                                    <p class="text-white font-semibold">Selected GIF</p>
+                                                    <p id="bit-gif-trigger-url" class="text-white/60 text-sm truncate max-w-xs"></p>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-ghost text-white" onclick="clearGifBitTriggerGif()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Bit Amount -->
                                 <div class="form-control mb-4">
                                     <label class="label">
@@ -494,210 +675,193 @@
                                     </label>
                                     <input 
                                         type="number" 
-                                        id="bit-amount" 
+                                        id="bit-gif-trigger-amount" 
                                         class="input input-bordered bg-white/10 text-white border-white/20 w-full" 
                                         placeholder="50" 
                                         min="1" 
                                         required
                                     />
                                     <label class="label">
-                                        <span class="label-text-alt text-white/60">Minimum bits to trigger this command</span>
+                                        <span class="label-text-alt text-white/60">Minimum bits to trigger this GIF</span>
                                     </label>
-                                </div>
-
-                                <!-- Trigger Type Selection -->
-                                <div class="form-control mb-4">
-                                    <label class="label">
-                                        <span class="label-text text-white/90 font-semibold">
-                                            <i class="fas fa-list"></i>
-                                            Trigger Type
-                                        </span>
-                                    </label>
-                                    <select 
-                                        id="bit-trigger-type" 
-                                        class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
-                                        style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
-                                        onchange="toggleBitTriggerType()"
-                                        required
-                                    >
-                                        <option value="command" style="background-color: #1f2937; color: white;">Trigger Existing Command</option>
-                                        <option value="dedicated" style="background-color: #1f2937; color: white;">Bits Only (Dedicated GIF)</option>
-                                    </select>
-                                    <label class="label">
-                                        <span class="label-text-alt text-white/60">Choose to trigger a command or show a dedicated GIF only for bits</span>
-                                    </label>
-                                </div>
-
-                                <!-- Command Selection Section -->
-                                <div id="bit-command-section">
-                                    <!-- Command Type -->
-                                    <div class="form-control mb-4">
-                                        <label class="label">
-                                            <span class="label-text text-white/90 font-semibold">
-                                                <i class="fas fa-list"></i>
-                                                Command Type
-                                            </span>
-                                        </label>
-                                        <select 
-                                            id="bit-command-type" 
-                                            class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
-                                            style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
-                                            onchange="updateBitCommandList()"
-                                        >
-                                            <option value="" style="background-color: #1f2937; color: white;">Select type...</option>
-                                            <option value="audio" style="background-color: #1f2937; color: white;">Audio Command</option>
-                                            <option value="gif" style="background-color: #1f2937; color: white;">GIF Command</option>
-                                        </select>
-                                        <label class="label">
-                                            <span class="label-text-alt text-white/60">Type of command to trigger</span>
-                                        </label>
-                                    </div>
-
-                                    <!-- Command Selection -->
-                                    <div class="form-control mb-4">
-                                        <label class="label">
-                                            <span class="label-text text-white/90 font-semibold">
-                                                <i class="fas fa-command"></i>
-                                                Command
-                                            </span>
-                                        </label>
-                                        <select 
-                                            id="bit-command-id" 
-                                            class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
-                                            style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
-                                        >
-                                            <option value="" style="background-color: #1f2937; color: white;">Select a command...</option>
-                                        </select>
-                                        <label class="label">
-                                            <span class="label-text-alt text-white/60">Command to trigger when bits are donated</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <!-- Dedicated GIF Section -->
-                                <div id="bit-dedicated-section" style="display: none;">
-                                    <!-- Giphy Search -->
-                                    <div class="form-control mb-4">
-                                        <label class="label">
-                                            <span class="label-text text-white/90">Search GIFs</span>
-                                        </label>
-                                        <div class="flex gap-2">
-                                            <input 
-                                                type="text" 
-                                                id="bit-dedicated-giphy-search" 
-                                                class="input input-bordered bg-white/10 text-white border-white/20 flex-1" 
-                                                placeholder="Search for GIFs..."
-                                                oninput="searchGiphyForBitTrigger(this.value)"
-                                            />
-                                            <button type="button" class="btn btn-primary text-white" onclick="loadTrendingGifsForBitTrigger()">
-                                                <i class="fas fa-fire"></i>
-                                                Trending
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <!-- GIF Search Results -->
-                                    <div id="bit-dedicated-giphy-results" class="mb-4 max-h-64 overflow-y-auto p-4 bg-black/30 rounded-lg">
-                                        <div class="text-center py-8 text-white/60">
-                                            <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                                            <p>Loading trending GIFs...</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Selected GIF Preview -->
-                                    <div id="bit-dedicated-gif-preview" class="mb-4 hidden">
-                                        <div class="glass-card rounded-lg p-4">
-                                            <div class="flex items-center justify-between">
-                                                <div class="flex items-center gap-3">
-                                                    <img id="bit-dedicated-gif-preview-img" src="" alt="Selected GIF" class="w-20 h-20 object-cover rounded" />
-                                                    <div>
-                                                        <p class="text-white font-semibold">Selected GIF</p>
-                                                        <p id="bit-dedicated-gif-url" class="text-white/60 text-sm truncate max-w-xs"></p>
-                                                    </div>
-                                                </div>
-                                                <button type="button" class="btn btn-sm btn-ghost text-white" onclick="clearBitDedicatedGif()">
-                                                    <i class="fas fa-times"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Position -->
-                                    <div class="form-control mb-4">
-                                        <label class="label">
-                                            <span class="label-text text-white/90 font-semibold">
-                                                <i class="fas fa-crosshairs"></i>
-                                                Position
-                                            </span>
-                                        </label>
-                                        <select 
-                                            id="bit-dedicated-position" 
-                                            class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
-                                            style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
-                                        >
-                                            <option value="center" style="background-color: #1f2937; color: white;">Center</option>
-                                            <option value="top-left" style="background-color: #1f2937; color: white;">Top Left</option>
-                                            <option value="top-center" style="background-color: #1f2937; color: white;">Top Center</option>
-                                            <option value="top-right" style="background-color: #1f2937; color: white;">Top Right</option>
-                                            <option value="center-left" style="background-color: #1f2937; color: white;">Center Left</option>
-                                            <option value="center-right" style="background-color: #1f2937; color: white;">Center Right</option>
-                                            <option value="bottom-left" style="background-color: #1f2937; color: white;">Bottom Left</option>
-                                            <option value="bottom-center" style="background-color: #1f2937; color: white;">Bottom Center</option>
-                                            <option value="bottom-right" style="background-color: #1f2937; color: white;">Bottom Right</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Size -->
-                                    <div class="form-control mb-4">
-                                        <label class="label">
-                                            <span class="label-text text-white/90 font-semibold">
-                                                <i class="fas fa-expand-arrows-alt"></i>
-                                                Size
-                                            </span>
-                                        </label>
-                                        <select 
-                                            id="bit-dedicated-size" 
-                                            class="select select-bordered bg-gray-800 text-white border-white/20 w-full"
-                                            style="color: white !important; background-color: rgba(31, 41, 55, 0.9) !important;"
-                                        >
-                                            <option value="small" style="background-color: #1f2937; color: white;">Small (128x128 max)</option>
-                                            <option value="medium" style="background-color: #1f2937; color: white;">Medium (512x512 max)</option>
-                                            <option value="original" style="background-color: #1f2937; color: white;">Original Size</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Duration -->
-                                    <div class="form-control mb-4">
-                                        <label class="label">
-                                            <span class="label-text text-white/90">Display Duration (ms)</span>
-                                        </label>
-                                        <input 
-                                            type="number" 
-                                            id="bit-dedicated-duration" 
-                                            class="input input-bordered bg-white/10 text-white border-white/20" 
-                                            value="5000"
-                                            min="1000"
-                                            max="30000"
-                                            step="1000"
-                                        />
-                                        <label class="label">
-                                            <span class="label-text-alt text-white/60">How long the GIF should display (1000-30000ms)</span>
-                                        </label>
-                                    </div>
                                 </div>
 
                                 <!-- Modal Actions -->
                                 <div class="modal-action responsive-buttons">
-                                    <button type="button" class="btn btn-ghost text-white" onclick="closeBitTriggerModal()">Cancel</button>
+                                    <button type="button" class="btn btn-ghost text-white" onclick="closeGifBitTriggerModal()">Cancel</button>
                                     <button type="submit" class="btn btn-primary text-white">
                                         <i class="fas fa-save"></i>
-                                        Save Trigger
+                                        Save GIF Trigger
                                     </button>
                                 </div>
                             </form>
                         </div>
                         <form method="dialog" class="modal-backdrop">
-                            <button onclick="closeBitTriggerModal()">close</button>
+                            <button onclick="closeGifBitTriggerModal()">close</button>
+                        </form>
+                    </dialog>
+
+                    <!-- Audio Bit Trigger Modal -->
+                    <dialog id="bit-audio-trigger-modal" class="modal">
+                        <div class="modal-box glass-card max-w-4xl">
+                            <h3 class="font-bold text-2xl text-white mb-4">
+                                <i class="fas fa-music"></i>
+                                <span id="bit-audio-trigger-modal-title">Add Audio Bits Trigger</span>
+                            </h3>
+                            
+                            <form id="bit-audio-trigger-form" onsubmit="event.preventDefault(); saveAudioBitTrigger();">
+                                <!-- Trigger Name -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90 font-semibold">
+                                            <i class="fas fa-tag"></i>
+                                            Trigger Name
+                                        </span>
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="bit-audio-trigger-name" 
+                                        class="input input-bordered bg-white/10 text-white border-white/20" 
+                                        placeholder="Thank You Sound"
+                                        required
+                                    />
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Give your trigger a descriptive name</span>
+                                    </label>
+                                </div>
+
+                                <!-- File Upload Methods Tabs -->
+                                <div class="tabs tabs-boxed bg-white/10 mb-4">
+                                    <a class="tab tab-active text-white" onclick="switchAudioBitTriggerUploadMethod('file')">Upload File</a>
+                                    <a class="tab text-white" onclick="switchAudioBitTriggerUploadMethod('url')">From URL</a>
+                                </div>
+
+                                <!-- File Upload Section -->
+                                <div id="bit-audio-trigger-file-upload-section" class="mb-4" style="display: block;">
+                                    <div 
+                                        id="bit-audio-trigger-drop-zone" 
+                                        class="border-2 border-dashed border-white/30 rounded-xl p-8 text-center cursor-pointer hover:border-white/50 transition-colors bg-white/5"
+                                        ondrop="handleAudioBitTriggerDrop(event)" 
+                                        ondragover="handleAudioBitTriggerDragOver(event)"
+                                        ondragleave="handleAudioBitTriggerDragLeave(event)"
+                                        onclick="document.getElementById('bit-audio-trigger-file-input').click()"
+                                    >
+                                        <i class="fas fa-cloud-upload-alt text-4xl text-white/60 mb-2"></i>
+                                        <p class="text-white/80 mb-1">Drag and drop MP3 file here</p>
+                                        <p class="text-white/60 text-sm">or click to browse</p>
+                                        <p class="text-white/50 text-xs mt-2">Max file size: 500KB</p>
+                                    </div>
+                                    <input 
+                                        type="file" 
+                                        id="bit-audio-trigger-file-input" 
+                                        class="hidden" 
+                                        accept="audio/mpeg,audio/mp3,.mp3"
+                                        onchange="handleAudioBitTriggerFileSelect(event)"
+                                    />
+                                    <div id="bit-audio-trigger-file-info" class="mt-2 p-3 glass-card rounded-lg hidden">
+                                        <div class="flex items-center justify-between responsive-file-info">
+                                            <div class="flex items-center gap-2 flex-wrap">
+                                                <i class="fas fa-file-audio text-white/80"></i>
+                                                <span id="bit-audio-trigger-file-name" class="text-white/90 break-words"></span>
+                                                <span id="bit-audio-trigger-file-size" class="text-white/60 text-sm"></span>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-ghost text-white" onclick="clearAudioBitTriggerFile()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- URL Input Section -->
+                                <div id="bit-audio-trigger-url-upload-section" class="mb-4 hidden" style="display: none;">
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text text-white/90">Audio File URL</span>
+                                        </label>
+                                        <input 
+                                            type="url" 
+                                            id="bit-audio-trigger-url-input" 
+                                            class="input input-bordered bg-white/10 text-white border-white/20" 
+                                            placeholder="https://example.com/sound.mp3"
+                                        />
+                                        <label class="label">
+                                            <span class="label-text-alt text-white/60">Enter a direct URL to an MP3 file</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Volume Slider -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90">Volume</span>
+                                        <span id="bit-audio-trigger-volume-value" class="text-white/90">50%</span>
+                                    </label>
+                                    <input 
+                                        type="range" 
+                                        id="bit-audio-trigger-volume-slider" 
+                                        min="0" 
+                                        max="100" 
+                                        value="50" 
+                                        class="range range-primary"
+                                        oninput="updateAudioBitTriggerVolumeDisplay(this.value)"
+                                    />
+                                    <div class="w-full flex justify-between text-xs px-2 text-white/60">
+                                        <span>0%</span>
+                                        <span>50%</span>
+                                        <span>100%</span>
+                                    </div>
+                                </div>
+
+                                <!-- Audio Preview -->
+                                <div id="bit-audio-trigger-preview-section" class="mb-4 hidden">
+                                    <div class="glass-card rounded-lg p-4">
+                                        <div class="flex items-center gap-4 responsive-audio-controls">
+                                            <audio id="bit-audio-trigger-preview" controls class="flex-1"></audio>
+                                            <div class="flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-success text-white" onclick="playAudioBitTriggerPreview()">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-error text-white" onclick="stopAudioBitTriggerPreview()">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bit Amount -->
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90 font-semibold">
+                                            <i class="fas fa-coins"></i>
+                                            Bit Amount
+                                        </span>
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="bit-audio-trigger-amount" 
+                                        class="input input-bordered bg-white/10 text-white border-white/20 w-full" 
+                                        placeholder="50" 
+                                        min="1" 
+                                        required
+                                    />
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Minimum bits to trigger this audio</span>
+                                    </label>
+                                </div>
+
+                                <!-- Modal Actions -->
+                                <div class="modal-action responsive-buttons">
+                                    <button type="button" class="btn btn-ghost text-white" onclick="closeAudioBitTriggerModal()">Cancel</button>
+                                    <button type="submit" class="btn btn-primary text-white">
+                                        <i class="fas fa-save"></i>
+                                        Save Audio Trigger
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        <form method="dialog" class="modal-backdrop">
+                            <button onclick="closeAudioBitTriggerModal()">close</button>
                         </form>
                     </dialog>
 
@@ -720,18 +884,34 @@
                     <!-- Bits Triggers Section -->
                     <div id="bits-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
                         <div class="card-body p-8">
-                            <div class="flex items-center justify-between mb-6 responsive-header">
-                                <div>
+                            <div class="mb-6">
+                                <div class="mb-4">
                                     <h2 class="card-title text-2xl text-white mb-2">
                                         <i class="fas fa-coins text-white/80"></i>
                                         Bits Triggers
                                     </h2>
                                     <p class="text-white/80">Trigger commands when viewers donate bits (e.g., 50 bits = play sound)</p>
                                 </div>
-                                <button class="btn btn-primary text-white" onclick="showAddBitTriggerModal()">
-                                    <i class="fas fa-plus"></i>
-                                    Add Trigger
-                                </button>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div class="glass-card rounded-3xl shadow-2xl cursor-pointer hover:scale-105 transition-transform" onclick="showAddGifBitTriggerModal()">
+                                        <div class="card-body p-6 text-center">
+                                            <div class="flex flex-col items-center justify-center min-h-[120px]">
+                                                <i class="fas fa-images text-4xl md:text-5xl text-white/80 mb-3"></i>
+                                                <h3 class="text-lg md:text-xl font-bold text-white mb-1">Add GIF Trigger</h3>
+                                                <p class="text-white/70 text-xs md:text-sm">Create a GIF trigger for bits</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="glass-card rounded-3xl shadow-2xl cursor-pointer hover:scale-105 transition-transform" onclick="showAddAudioBitTriggerModal()">
+                                        <div class="card-body p-6 text-center">
+                                            <div class="flex flex-col items-center justify-center min-h-[120px]">
+                                                <i class="fas fa-music text-4xl md:text-5xl text-white/80 mb-3"></i>
+                                                <h3 class="text-lg md:text-xl font-bold text-white mb-1">Add Audio Trigger</h3>
+                                                <p class="text-white/70 text-xs md:text-sm">Create an audio trigger for bits</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
                             <div id="bit-triggers-list" class="space-y-4">
@@ -762,10 +942,65 @@
                             <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
                             
                             <!-- GIF Commands List -->
-                            <div id="gif-commands-list" class="space-y-4">
+                            <div id="gif-commands-list" class="space-y-4 mb-6">
                                 <div class="text-center py-12 text-white/60">
                                     <i class="fas fa-spinner fa-spin text-6xl mb-4"></i>
                                     <p>Loading GIF commands...</p>
+                                </div>
+                            </div>
+
+                            <!-- Where to Find More GIFs -->
+                            <div class="collapse collapse-arrow glass-card rounded-xl mb-4">
+                                <input type="checkbox" />
+                                <div class="collapse-title text-xl font-semibold text-white">
+                                    <i class="fas fa-info-circle text-white/80 mr-2"></i>
+                                    Where to Find More GIFs
+                                </div>
+                                <div class="collapse-content">
+                                    <div class="space-y-3 text-white/90">
+                                        <p class="text-white/70 mb-3">Here are some clean, SFW websites where you can find GIFs for your commands:</p>
+                                        <ul class="space-y-2">
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://giphy.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Giphy</a>
+                                                    <p class="text-sm text-white/60">The largest collection of animated GIFs (already integrated in this bot!)</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://tenor.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Tenor</a>
+                                                    <p class="text-sm text-white/60">Popular GIF search engine with millions of animated GIFs</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://gfycat.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Gfycat</a>
+                                                    <p class="text-sm text-white/60">High-quality GIFs and short videos</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Imgur</a>
+                                                    <p class="text-sm text-white/60">Image and GIF hosting with a large community collection</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://reddit.com/r/gifs" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Reddit r/gifs</a>
+                                                    <p class="text-sm text-white/60">Curated GIFs from the Reddit community</p>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                        <p class="text-sm text-white/60 mt-4 pt-3 border-t border-white/20">
+                                            <i class="fas fa-lightbulb text-yellow-400"></i>
+                                            <strong>Tip:</strong> You can use the direct GIF URL from these sites in the "From URL" option when adding commands. Make sure the URL ends with .gif for best compatibility.
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1302,7 +1537,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="#obs-setup" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('obs-setup', event)">
+                            <a href="#obs-setup" class="text-purple-300 hover:bg-purple-500/20 rounded-lg" onclick="showSection('obs-setup', event)">
                                 <i class="fas fa-desktop"></i>
                                 OBS Setup
                             </a>

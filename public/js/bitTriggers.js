@@ -153,7 +153,7 @@ function renderBitTriggers() {
                         ` : ''}
                     ` : `
                         <div class="text-sm text-white/70">
-                            <span><i class="fas fa-command"></i> ${trigger.command_name || 'Unknown command'}</span>
+                            <span><i class="fas fa-tag"></i> <strong>${trigger.command_name || 'Unnamed Trigger'}</strong></span>
                         </div>
                     `}
                 </div>
@@ -174,117 +174,164 @@ function renderBitTriggers() {
     }).join('');
 }
 
-// Dedicated GIF state
-let selectedDedicatedGif = null;
+// Bit trigger state - GIF modal
+let gifBitTriggerSelectedGif = null;
+let gifBitTriggerSearchTimeout = null;
 
-function toggleBitTriggerType() {
-    const triggerType = document.getElementById('bit-trigger-type').value;
-    const commandSection = document.getElementById('bit-command-section');
-    const dedicatedSection = document.getElementById('bit-dedicated-section');
-    
-    if (triggerType === 'dedicated') {
-        commandSection.style.display = 'none';
-        dedicatedSection.style.display = 'block';
-        // Remove required from command fields
-        document.getElementById('bit-command-type').removeAttribute('required');
-        document.getElementById('bit-command-id').removeAttribute('required');
-        // Load trending GIFs
-        loadTrendingGifsForBitTrigger();
-    } else {
-        commandSection.style.display = 'block';
-        dedicatedSection.style.display = 'none';
-        // Add required back to command fields
-        document.getElementById('bit-command-type').setAttribute('required', 'required');
-        document.getElementById('bit-command-id').setAttribute('required', 'required');
-        // Clear dedicated GIF
-        clearBitDedicatedGif();
-    }
-}
+// Bit trigger state - Audio modal
+let audioBitTriggerSelectedFile = null;
+let audioBitTriggerUploadMethod = 'file';
 
-function showAddBitTriggerModal() {
+function showAddGifBitTriggerModal() {
     currentBitEditingId = null;
-    selectedDedicatedGif = null;
-    document.getElementById('bit-trigger-modal-title').textContent = 'Add Bits Trigger';
-    document.getElementById('bit-trigger-form').reset();
-    document.getElementById('bit-trigger-type').value = 'command';
-    document.getElementById('bit-command-id').innerHTML = '<option value="" style="background-color: #1f2937; color: white;">Select a command...</option>';
-    toggleBitTriggerType();
-    document.getElementById('bit-trigger-modal').showModal();
+    gifBitTriggerSelectedGif = null;
     
-    // Load commands for selection
-    loadCommandsForBitTrigger();
-}
-
-async function loadCommandsForBitTrigger() {
-    const commandType = document.getElementById('bit-command-type').value;
-    const commandSelect = document.getElementById('bit-command-id');
+    // Update modal title
+    document.getElementById('bit-gif-trigger-modal-title').textContent = 'Add GIF Bits Trigger';
     
-    if (!commandType) {
-        commandSelect.innerHTML = '<option value="" style="background-color: #1f2937; color: white;">Select a command...</option>';
-        return;
+    // Reset form
+    document.getElementById('bit-gif-trigger-form').reset();
+    
+    // Clear GIF results
+    const resultsDiv = document.getElementById('bit-gif-trigger-giphy-results');
+    if (resultsDiv) {
+        resultsDiv.innerHTML = '';
+        resultsDiv.style.display = 'none';
     }
     
-    try {
-        let commands = [];
-        if (commandType === 'audio') {
-            const response = await fetch('/api/audio-commands', { credentials: 'include' });
-            const data = await response.json();
-            commands = data.commands || [];
-        } else if (commandType === 'gif') {
-            const response = await fetch('/api/gif-commands', { credentials: 'include' });
-            const data = await response.json();
-            commands = data.commands || [];
-        }
-        
-        commandSelect.innerHTML = '<option value="" style="background-color: #1f2937; color: white;">Select a command...</option>' +
-            commands.filter(cmd => cmd.is_active).map(cmd => `
-                <option value="${cmd.id}" style="background-color: #1f2937; color: white;">
-                    !${cmd.command}
-                </option>
-            `).join('');
-    } catch (error) {
-        console.error('Error loading commands:', error);
+    // Clear preview
+    const previewDiv = document.getElementById('bit-gif-trigger-preview');
+    if (previewDiv) previewDiv.classList.add('hidden');
+    
+    // Open modal
+    document.getElementById('bit-gif-trigger-modal').showModal();
+    
+    // Load trending GIFs
+    loadTrendingGifsForGifBitTrigger();
+}
+
+function showAddAudioBitTriggerModal() {
+    currentBitEditingId = null;
+    audioBitTriggerSelectedFile = null;
+    audioBitTriggerUploadMethod = 'file';
+    
+    // Update modal title
+    document.getElementById('bit-audio-trigger-modal-title').textContent = 'Add Audio Bits Trigger';
+    
+    // Reset form
+    document.getElementById('bit-audio-trigger-form').reset();
+    
+    // Reset volume
+    const volumeSlider = document.getElementById('bit-audio-trigger-volume-slider');
+    if (volumeSlider) {
+        volumeSlider.value = 50;
+        updateAudioBitTriggerVolumeDisplay(50);
     }
+    
+    // Reset upload method
+    switchAudioBitTriggerUploadMethod('file');
+    
+    // Clear file info
+    clearAudioBitTriggerFile();
+    
+    // Open modal
+    document.getElementById('bit-audio-trigger-modal').showModal();
 }
 
-function updateBitCommandList() {
-    loadCommandsForBitTrigger();
-}
-
-function editBitTrigger(id) {
+async function editBitTrigger(id) {
     const trigger = bitTriggers.find(t => t.id === id);
     if (!trigger) return;
     
     currentBitEditingId = id;
-    document.getElementById('bit-trigger-modal-title').textContent = 'Edit Bits Trigger';
     
-    document.getElementById('bit-amount').value = trigger.bit_amount;
-    
-    // Check if it's a dedicated trigger or command-based
-    if (trigger.is_dedicated && trigger.dedicated_gif_url) {
-        document.getElementById('bit-trigger-type').value = 'dedicated';
-        selectedDedicatedGif = {
-            url: trigger.dedicated_gif_url,
-            id: trigger.dedicated_gif_id || null,
-            title: trigger.dedicated_gif_title || 'Thank You!'
-        };
-        document.getElementById('bit-dedicated-position').value = trigger.dedicated_gif_position || 'center';
-        document.getElementById('bit-dedicated-size').value = trigger.dedicated_gif_size || 'medium';
-        document.getElementById('bit-dedicated-duration').value = trigger.dedicated_gif_duration || 5000;
-        updateDedicatedGifPreview();
-    } else {
-        document.getElementById('bit-trigger-type').value = 'command';
-        document.getElementById('bit-command-type').value = trigger.command_type;
-        // Load commands and then set the selected command
-        loadCommandsForBitTrigger().then(() => {
-            setTimeout(() => {
-                document.getElementById('bit-command-id').value = trigger.command_id;
-            }, 100);
+    try {
+        // Fetch full trigger details including command data
+        const response = await fetch(`/api/bit-triggers/${id}`, {
+            credentials: 'include'
         });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load trigger details');
+        }
+        
+        const data = await response.json();
+        const fullTrigger = data.trigger;
+        
+        // Load command details based on type
+        if (fullTrigger.command_type === 'gif') {
+            // Fetch GIF command details
+            const gifResponse = await fetch(`/api/gif-commands/${fullTrigger.command_id}`, {
+                credentials: 'include'
+            });
+            
+            if (!gifResponse.ok) {
+                throw new Error('Failed to load GIF command');
+            }
+            
+            const gifData = await gifResponse.json();
+            const gifCommand = gifData.command;
+            
+            // Update modal title
+            document.getElementById('bit-gif-trigger-modal-title').textContent = 'Edit GIF Bits Trigger';
+            
+            // Populate form
+            document.getElementById('bit-gif-trigger-name').value = gifCommand.command || '';
+            document.getElementById('bit-gif-trigger-amount').value = fullTrigger.bit_amount;
+            document.getElementById('bit-gif-trigger-duration').value = Math.round((gifCommand.duration || 5000) / 1000);
+            document.getElementById('bit-gif-trigger-position').value = gifCommand.position || 'center';
+            document.getElementById('bit-gif-trigger-size').value = gifCommand.size || 'medium';
+            
+            // Set selected GIF
+            gifBitTriggerSelectedGif = {
+                id: gifCommand.gif_id || null,
+                url: gifCommand.gif_url,
+                title: gifCommand.command || 'Selected GIF'
+            };
+            updateGifBitTriggerPreview();
+            
+            // Open modal
+            document.getElementById('bit-gif-trigger-modal').showModal();
+            
+            // Load trending GIFs
+            loadTrendingGifsForGifBitTrigger();
+            
+        } else if (fullTrigger.command_type === 'audio') {
+            // Fetch Audio command details
+            const audioResponse = await fetch(`/api/audio-commands/${fullTrigger.command_id}`, {
+                credentials: 'include'
+            });
+            
+            if (!audioResponse.ok) {
+                throw new Error('Failed to load audio command');
+            }
+            
+            const audioData = await audioResponse.json();
+            const audioCommand = audioData.command;
+            
+            // Update modal title
+            document.getElementById('bit-audio-trigger-modal-title').textContent = 'Edit Audio Bits Trigger';
+            
+            // Populate form
+            document.getElementById('bit-audio-trigger-name').value = audioCommand.command || '';
+            document.getElementById('bit-audio-trigger-amount').value = fullTrigger.bit_amount;
+            document.getElementById('bit-audio-trigger-volume-slider').value = Math.round((audioCommand.volume || 0.5) * 100);
+            updateAudioBitTriggerVolumeDisplay(Math.round((audioCommand.volume || 0.5) * 100));
+            
+            // Set file URL if available
+            if (audioCommand.file_url) {
+                document.getElementById('bit-audio-trigger-url-input').value = audioCommand.file_url;
+                switchAudioBitTriggerUploadMethod('url');
+            } else {
+                switchAudioBitTriggerUploadMethod('file');
+            }
+            
+            // Open modal
+            document.getElementById('bit-audio-trigger-modal').showModal();
+        }
+    } catch (error) {
+        console.error('Error loading trigger for edit:', error);
+        alert('Failed to load trigger details. Please try again.');
     }
-    
-    toggleBitTriggerType();
-    document.getElementById('bit-trigger-modal').showModal();
 }
 
 async function deleteBitTrigger(id) {
@@ -310,78 +357,292 @@ async function deleteBitTrigger(id) {
     }
 }
 
-async function saveBitTrigger() {
-    const bitAmount = parseInt(document.getElementById('bit-amount').value);
-    const triggerType = document.getElementById('bit-trigger-type').value;
+async function saveGifBitTrigger() {
+    const triggerName = document.getElementById('bit-gif-trigger-name').value.trim();
+    const bitAmount = parseInt(document.getElementById('bit-gif-trigger-amount').value);
     
-    if (!bitAmount) {
-        alert('Please enter a bit amount');
+    if (!triggerName) {
+        alert('Please enter a trigger name');
         return;
     }
     
-    let requestBody = { bitAmount };
+    if (!bitAmount || bitAmount < 1) {
+        alert('Please enter a valid bit amount');
+        return;
+    }
     
-    if (triggerType === 'dedicated') {
-        if (!selectedDedicatedGif || !selectedDedicatedGif.url) {
-            alert('Please select a GIF for the dedicated trigger');
-            return;
-        }
-        requestBody.isDedicated = true;
-        requestBody.dedicatedGifUrl = selectedDedicatedGif.url;
-        requestBody.dedicatedGifId = selectedDedicatedGif.id || null;
-        requestBody.dedicatedGifTitle = selectedDedicatedGif.title || 'Thank You!';
-        requestBody.dedicatedGifPosition = document.getElementById('bit-dedicated-position').value;
-        requestBody.dedicatedGifSize = document.getElementById('bit-dedicated-size').value;
-        requestBody.dedicatedGifDuration = parseInt(document.getElementById('bit-dedicated-duration').value) || 5000;
-    } else {
-        const commandType = document.getElementById('bit-command-type').value;
-        const commandId = parseInt(document.getElementById('bit-command-id').value);
-        
-        if (!commandType || !commandId) {
-            alert('Please select a command type and command');
-            return;
-        }
-        
-        requestBody.isDedicated = false;
-        requestBody.commandType = commandType;
-        requestBody.commandId = commandId;
+    if (!gifBitTriggerSelectedGif || !gifBitTriggerSelectedGif.url) {
+        alert('Please select a GIF');
+        return;
     }
     
     try {
-        const url = currentBitEditingId 
-            ? `/api/bit-triggers/${currentBitEditingId}`
-            : '/api/bit-triggers';
-        
-        const method = currentBitEditingId ? 'PUT' : 'POST';
-        
-        const response = await fetch(url, {
-            method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify(requestBody)
-        });
-        
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'Failed to save bit trigger');
+        if (currentBitEditingId) {
+            // Update existing trigger
+            const triggerResponse = await fetch(`/api/bit-triggers/${currentBitEditingId}`, {
+                credentials: 'include'
+            });
+            
+            if (!triggerResponse.ok) {
+                throw new Error('Failed to load trigger');
+            }
+            
+            const triggerData = await triggerResponse.json();
+            const existingTrigger = triggerData.trigger;
+            
+            // Update GIF command
+            const gifResponse = await fetch(`/api/gif-commands/${existingTrigger.command_id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    command: triggerName,
+                    gifId: gifBitTriggerSelectedGif.id,
+                    gifUrl: gifBitTriggerSelectedGif.url,
+                    duration: (parseInt(document.getElementById('bit-gif-trigger-duration').value) || 5) * 1000,
+                    position: document.getElementById('bit-gif-trigger-position').value || 'center',
+                    size: document.getElementById('bit-gif-trigger-size').value || 'medium'
+                })
+            });
+            
+            if (!gifResponse.ok) {
+                const error = await gifResponse.json();
+                throw new Error(error.error || 'Failed to update GIF command');
+            }
+            
+            // Update bit trigger
+            const response = await fetch(`/api/bit-triggers/${currentBitEditingId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    bitAmount
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update bit trigger');
+            }
+        } else {
+            // Create new trigger
+            const gifResponse = await fetch('/api/gif-commands', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    command: triggerName,
+                    gifId: gifBitTriggerSelectedGif.id,
+                    gifUrl: gifBitTriggerSelectedGif.url,
+                    duration: (parseInt(document.getElementById('bit-gif-trigger-duration').value) || 5) * 1000,
+                    position: document.getElementById('bit-gif-trigger-position').value || 'center',
+                    size: document.getElementById('bit-gif-trigger-size').value || 'medium',
+                    isBitsOnly: true
+                })
+            });
+            
+            if (!gifResponse.ok) {
+                const error = await gifResponse.json();
+                throw new Error(error.error || 'Failed to create GIF command');
+            }
+            
+            const gifData = await gifResponse.json();
+            const commandId = gifData.command.id;
+            
+            // Create the bit trigger
+            const response = await fetch('/api/bit-triggers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    bitAmount,
+                    isDedicated: false,
+                    commandType: 'gif',
+                    commandId: commandId
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to save bit trigger');
+            }
         }
         
-        closeBitTriggerModal();
-        triggersLoaded = false; // Reset to allow reload
+        closeGifBitTriggerModal();
+        triggersLoaded = false;
         await loadBitTriggers();
     } catch (error) {
-        console.error('Error saving bit trigger:', error);
-        alert(`Failed to save bit trigger: ${error.message}`);
+        console.error('Error saving GIF bit trigger:', error);
+        alert(`Failed to save GIF trigger: ${error.message}`);
     }
 }
 
-function closeBitTriggerModal() {
-    document.getElementById('bit-trigger-modal').close();
+async function saveAudioBitTrigger() {
+    const triggerName = document.getElementById('bit-audio-trigger-name').value.trim();
+    const bitAmount = parseInt(document.getElementById('bit-audio-trigger-amount').value);
+    
+    if (!triggerName) {
+        alert('Please enter a trigger name');
+        return;
+    }
+    
+    if (!bitAmount || bitAmount < 1) {
+        alert('Please enter a valid bit amount');
+        return;
+    }
+    
+    // Validate audio
+    if (audioBitTriggerUploadMethod === 'file' && !audioBitTriggerSelectedFile) {
+        alert('Please select an audio file');
+        return;
+    }
+    if (audioBitTriggerUploadMethod === 'url') {
+        const url = document.getElementById('bit-audio-trigger-url-input').value;
+        if (!url) {
+            alert('Please enter an audio file URL');
+            return;
+        }
+    }
+    
+    try {
+        if (currentBitEditingId) {
+            // Update existing trigger
+            const triggerResponse = await fetch(`/api/bit-triggers/${currentBitEditingId}`, {
+                credentials: 'include'
+            });
+            
+            if (!triggerResponse.ok) {
+                throw new Error('Failed to load trigger');
+            }
+            
+            const triggerData = await triggerResponse.json();
+            const existingTrigger = triggerData.trigger;
+            
+            // Update audio command
+            const formData = new FormData();
+            
+            if (audioBitTriggerUploadMethod === 'file' && audioBitTriggerSelectedFile) {
+                formData.append('file', audioBitTriggerSelectedFile);
+            } else if (audioBitTriggerUploadMethod === 'url') {
+                formData.append('url', document.getElementById('bit-audio-trigger-url-input').value);
+            }
+            
+            formData.append('command', triggerName);
+            formData.append('volume', document.getElementById('bit-audio-trigger-volume-slider').value / 100);
+            
+            const audioResponse = await fetch(`/api/audio-commands/${existingTrigger.command_id}`, {
+                method: 'PUT',
+                credentials: 'include',
+                body: formData
+            });
+            
+            if (!audioResponse.ok) {
+                const error = await audioResponse.json();
+                throw new Error(error.error || 'Failed to update audio command');
+            }
+            
+            // Update bit trigger
+            const response = await fetch(`/api/bit-triggers/${currentBitEditingId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    bitAmount
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update bit trigger');
+            }
+        } else {
+            // Create new trigger
+            const formData = new FormData();
+            
+            if (audioBitTriggerUploadMethod === 'file' && audioBitTriggerSelectedFile) {
+                formData.append('file', audioBitTriggerSelectedFile);
+            } else if (audioBitTriggerUploadMethod === 'url') {
+                formData.append('url', document.getElementById('bit-audio-trigger-url-input').value);
+            }
+            
+            formData.append('command', triggerName);
+            formData.append('volume', document.getElementById('bit-audio-trigger-volume-slider').value / 100);
+            formData.append('isBitsOnly', 'true');
+            
+            const audioResponse = await fetch('/api/audio-commands', {
+                method: 'POST',
+                credentials: 'include',
+                body: formData
+            });
+            
+            if (!audioResponse.ok) {
+                const error = await audioResponse.json();
+                throw new Error(error.error || 'Failed to create audio command');
+            }
+            
+            const audioData = await audioResponse.json();
+            const commandId = audioData.command.id;
+            
+            // Create the bit trigger
+            const response = await fetch('/api/bit-triggers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({
+                    bitAmount,
+                    isDedicated: false,
+                    commandType: 'audio',
+                    commandId: commandId
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to save bit trigger');
+            }
+        }
+        
+        closeAudioBitTriggerModal();
+        triggersLoaded = false;
+        await loadBitTriggers();
+    } catch (error) {
+        console.error('Error saving audio bit trigger:', error);
+        alert(`Failed to save audio trigger: ${error.message}`);
+    }
+}
+
+function closeGifBitTriggerModal() {
+    document.getElementById('bit-gif-trigger-modal').close();
     currentBitEditingId = null;
-    selectedDedicatedGif = null;
-    clearBitDedicatedGif();
+    gifBitTriggerSelectedGif = null;
+    document.getElementById('bit-gif-trigger-form').reset();
+    const resultsDiv = document.getElementById('bit-gif-trigger-giphy-results');
+    if (resultsDiv) {
+        resultsDiv.innerHTML = '';
+        resultsDiv.style.display = 'none';
+    }
+    const previewDiv = document.getElementById('bit-gif-trigger-preview');
+    if (previewDiv) previewDiv.classList.add('hidden');
+}
+
+function closeAudioBitTriggerModal() {
+    document.getElementById('bit-audio-trigger-modal').close();
+    currentBitEditingId = null;
+    audioBitTriggerSelectedFile = null;
+    document.getElementById('bit-audio-trigger-form').reset();
+    clearAudioBitTriggerFile();
 }
 
 // Test bit trigger by simulating a bits donation
@@ -425,44 +686,43 @@ async function testBitTrigger(bitAmount) {
     }
 }
 
-// Giphy search for dedicated triggers
-let bitTriggerSearchTimeout = null;
-
-async function searchGiphyForBitTrigger(query) {
-    if (!query || query.trim().length < 2) {
-        return;
-    }
+// GIF Bit Trigger Functions
+async function searchGiphyForGifBitTrigger(query) {
+    if (!query || query.trim().length < 2) return;
     
-    if (bitTriggerSearchTimeout) {
-        clearTimeout(bitTriggerSearchTimeout);
-    }
+    if (gifBitTriggerSearchTimeout) clearTimeout(gifBitTriggerSearchTimeout);
     
-    bitTriggerSearchTimeout = setTimeout(async () => {
+    gifBitTriggerSearchTimeout = setTimeout(async () => {
         try {
             const response = await fetch(`/api/gif-commands/giphy/search?q=${encodeURIComponent(query)}&limit=25`, {
                 credentials: 'include'
             });
             
-            if (!response.ok) {
-                throw new Error('Failed to search GIFs');
-            }
+            if (!response.ok) throw new Error('Failed to search GIFs');
             
             const data = await response.json();
-            renderGiphyResultsForBitTrigger(data.gifs || []);
+            renderGiphyResultsForGifBitTrigger(data.gifs || []);
         } catch (error) {
             console.error('Error searching GIFs:', error);
-            document.getElementById('bit-dedicated-giphy-results').innerHTML = `
-                <div class="text-center py-8 text-white/60">
-                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                    <p>Error searching GIFs. Please try again.</p>
-                </div>
-            `;
+            const resultsDiv = document.getElementById('bit-gif-trigger-giphy-results');
+            if (resultsDiv) {
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = `
+                    <div class="text-center py-8 text-white/60">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>Error searching GIFs. Please try again.</p>
+                    </div>
+                `;
+            }
         }
     }, 300);
 }
 
-async function loadTrendingGifsForBitTrigger() {
-    const resultsDiv = document.getElementById('bit-dedicated-giphy-results');
+async function loadTrendingGifsForGifBitTrigger() {
+    const resultsDiv = document.getElementById('bit-gif-trigger-giphy-results');
+    if (!resultsDiv) return;
+    
+    resultsDiv.style.display = 'block';
     resultsDiv.innerHTML = `
         <div class="text-center py-8 text-white/60">
             <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
@@ -475,12 +735,10 @@ async function loadTrendingGifsForBitTrigger() {
             credentials: 'include'
         });
         
-        if (!response.ok) {
-            throw new Error('Failed to load trending GIFs');
-        }
+        if (!response.ok) throw new Error('Failed to load trending GIFs');
         
         const data = await response.json();
-        renderGiphyResultsForBitTrigger(data.gifs || []);
+        renderGiphyResultsForGifBitTrigger(data.gifs || []);
     } catch (error) {
         console.error('Error loading trending GIFs:', error);
         resultsDiv.innerHTML = `
@@ -492,8 +750,11 @@ async function loadTrendingGifsForBitTrigger() {
     }
 }
 
-function renderGiphyResultsForBitTrigger(gifs) {
-    const resultsDiv = document.getElementById('bit-dedicated-giphy-results');
+function renderGiphyResultsForGifBitTrigger(gifs) {
+    const resultsDiv = document.getElementById('bit-gif-trigger-giphy-results');
+    if (!resultsDiv) return;
+    
+    resultsDiv.style.display = 'block';
     
     if (!gifs || gifs.length === 0) {
         resultsDiv.innerHTML = `
@@ -507,7 +768,7 @@ function renderGiphyResultsForBitTrigger(gifs) {
     resultsDiv.innerHTML = `
         <div class="grid grid-cols-3 gap-2">
             ${gifs.map(gif => `
-                <div class="cursor-pointer hover:opacity-80 transition-opacity" onclick="selectDedicatedGif({
+                <div class="cursor-pointer hover:opacity-80 transition-opacity" onclick="selectGifBitTriggerGif({
                     id: '${gif.id}',
                     url: '${gif.url.replace(/'/g, "\\'")}',
                     title: '${(gif.title || 'GIF').replace(/'/g, "\\'")}'
@@ -519,43 +780,165 @@ function renderGiphyResultsForBitTrigger(gifs) {
     `;
 }
 
-function selectDedicatedGif(gif) {
-    selectedDedicatedGif = gif;
-    updateDedicatedGifPreview();
+function selectGifBitTriggerGif(gif) {
+    gifBitTriggerSelectedGif = gif;
+    updateGifBitTriggerPreview();
 }
 
-function updateDedicatedGifPreview() {
-    const previewDiv = document.getElementById('bit-dedicated-gif-preview');
-    const previewImg = document.getElementById('bit-dedicated-gif-preview-img');
-    const previewUrl = document.getElementById('bit-dedicated-gif-url');
+function updateGifBitTriggerPreview() {
+    const previewDiv = document.getElementById('bit-gif-trigger-preview');
+    const previewImg = document.getElementById('bit-gif-trigger-preview-img');
+    const previewUrl = document.getElementById('bit-gif-trigger-url');
     
-    if (selectedDedicatedGif && selectedDedicatedGif.url) {
+    if (!previewDiv || !previewImg || !previewUrl) return;
+    
+    if (gifBitTriggerSelectedGif && gifBitTriggerSelectedGif.url) {
         previewDiv.classList.remove('hidden');
-        previewImg.src = selectedDedicatedGif.url;
-        previewUrl.textContent = selectedDedicatedGif.title || selectedDedicatedGif.url;
+        previewImg.src = gifBitTriggerSelectedGif.url;
+        previewUrl.textContent = gifBitTriggerSelectedGif.title || gifBitTriggerSelectedGif.url;
     } else {
         previewDiv.classList.add('hidden');
     }
 }
 
-function clearBitDedicatedGif() {
-    selectedDedicatedGif = null;
-    updateDedicatedGifPreview();
+function clearGifBitTriggerGif() {
+    gifBitTriggerSelectedGif = null;
+    updateGifBitTriggerPreview();
+}
+
+// Audio Bit Trigger Functions
+function switchAudioBitTriggerUploadMethod(method) {
+    audioBitTriggerUploadMethod = method;
+    const fileSection = document.getElementById('bit-audio-trigger-file-upload-section');
+    const urlSection = document.getElementById('bit-audio-trigger-url-upload-section');
+    const tabs = document.querySelectorAll('#bit-audio-trigger-modal .tab');
+    
+    tabs.forEach(tab => tab.classList.remove('tab-active'));
+    
+    if (method === 'file') {
+        fileSection.style.display = 'block';
+        urlSection.style.display = 'none';
+        if (tabs[0]) tabs[0].classList.add('tab-active');
+    } else {
+        fileSection.style.display = 'none';
+        urlSection.style.display = 'block';
+        if (tabs[1]) tabs[1].classList.add('tab-active');
+    }
+}
+
+function handleAudioBitTriggerDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.add('border-white/60');
+}
+
+function handleAudioBitTriggerDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('border-white/60');
+}
+
+function handleAudioBitTriggerDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('border-white/60');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        handleAudioBitTriggerFile(files[0]);
+    }
+}
+
+function handleAudioBitTriggerFileSelect(e) {
+    if (e.target.files.length > 0) {
+        handleAudioBitTriggerFile(e.target.files[0]);
+    }
+}
+
+function handleAudioBitTriggerFile(file) {
+    if (!file.type.includes('audio') && !file.name.endsWith('.mp3')) {
+        alert('Please select an MP3 audio file');
+        return;
+    }
+
+    if (file.size > 500 * 1024) {
+        alert('File size exceeds 500KB limit');
+        return;
+    }
+
+    audioBitTriggerSelectedFile = file;
+    document.getElementById('bit-audio-trigger-file-name').textContent = file.name;
+    document.getElementById('bit-audio-trigger-file-size').textContent = formatFileSize(file.size);
+    document.getElementById('bit-audio-trigger-file-info').classList.remove('hidden');
+
+    // Set up preview
+    const url = URL.createObjectURL(file);
+    const audioPreview = document.getElementById('bit-audio-trigger-preview');
+    if (audioPreview) {
+        audioPreview.src = url;
+        document.getElementById('bit-audio-trigger-preview-section').classList.remove('hidden');
+    }
+}
+
+function clearAudioBitTriggerFile() {
+    audioBitTriggerSelectedFile = null;
+    const fileInfo = document.getElementById('bit-audio-trigger-file-info');
+    const previewSection = document.getElementById('bit-audio-trigger-preview-section');
+    if (fileInfo) fileInfo.classList.add('hidden');
+    if (previewSection) previewSection.classList.add('hidden');
+    const fileInput = document.getElementById('bit-audio-trigger-file-input');
+    if (fileInput) fileInput.value = '';
+}
+
+function updateAudioBitTriggerVolumeDisplay(value) {
+    const volumeValue = document.getElementById('bit-audio-trigger-volume-value');
+    if (volumeValue) {
+        volumeValue.textContent = `${value}%`;
+    }
+    const audioPreview = document.getElementById('bit-audio-trigger-preview');
+    if (audioPreview) {
+        audioPreview.volume = value / 100;
+    }
+}
+
+function playAudioBitTriggerPreview() {
+    const audioPreview = document.getElementById('bit-audio-trigger-preview');
+    if (audioPreview) {
+        audioPreview.play();
+    }
+}
+
+function stopAudioBitTriggerPreview() {
+    const audioPreview = document.getElementById('bit-audio-trigger-preview');
+    if (audioPreview) {
+        audioPreview.pause();
+        audioPreview.currentTime = 0;
+    }
 }
 
 // Export functions for use in HTML
-window.showAddBitTriggerModal = showAddBitTriggerModal;
+window.showAddGifBitTriggerModal = showAddGifBitTriggerModal;
+window.showAddAudioBitTriggerModal = showAddAudioBitTriggerModal;
 window.editBitTrigger = editBitTrigger;
 window.deleteBitTrigger = deleteBitTrigger;
-window.closeBitTriggerModal = closeBitTriggerModal;
-window.updateBitCommandList = updateBitCommandList;
-window.saveBitTrigger = saveBitTrigger;
+window.closeGifBitTriggerModal = closeGifBitTriggerModal;
+window.closeAudioBitTriggerModal = closeAudioBitTriggerModal;
+window.saveGifBitTrigger = saveGifBitTrigger;
+window.saveAudioBitTrigger = saveAudioBitTrigger;
 window.testBitTrigger = testBitTrigger;
 window.reloadBitTriggers = reloadBitTriggers;
 window.ensureBitTriggersLoaded = ensureBitTriggersLoaded;
-window.toggleBitTriggerType = toggleBitTriggerType;
-window.searchGiphyForBitTrigger = searchGiphyForBitTrigger;
-window.loadTrendingGifsForBitTrigger = loadTrendingGifsForBitTrigger;
-window.selectDedicatedGif = selectDedicatedGif;
-window.clearBitDedicatedGif = clearBitDedicatedGif;
+window.searchGiphyForGifBitTrigger = searchGiphyForGifBitTrigger;
+window.loadTrendingGifsForGifBitTrigger = loadTrendingGifsForGifBitTrigger;
+window.selectGifBitTriggerGif = selectGifBitTriggerGif;
+window.clearGifBitTriggerGif = clearGifBitTriggerGif;
+window.switchAudioBitTriggerUploadMethod = switchAudioBitTriggerUploadMethod;
+window.handleAudioBitTriggerDrop = handleAudioBitTriggerDrop;
+window.handleAudioBitTriggerDragOver = handleAudioBitTriggerDragOver;
+window.handleAudioBitTriggerDragLeave = handleAudioBitTriggerDragLeave;
+window.handleAudioBitTriggerFileSelect = handleAudioBitTriggerFileSelect;
+window.clearAudioBitTriggerFile = clearAudioBitTriggerFile;
+window.updateAudioBitTriggerVolumeDisplay = updateAudioBitTriggerVolumeDisplay;
+window.playAudioBitTriggerPreview = playAudioBitTriggerPreview;
+window.stopAudioBitTriggerPreview = stopAudioBitTriggerPreview;
 

@@ -143,7 +143,13 @@ body {
     
     .responsive-token-info .flex-1 {
         display: none;
-    }
+}
+
+/* Tailwind's hidden class should handle this, but we ensure it works */
+#bit-audio-config.hidden,
+#bit-gif-config.hidden {
+    display: none;
+}
 }
 
 @media (max-width: 640px) {
