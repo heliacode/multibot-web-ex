@@ -322,7 +322,17 @@ async function editBitTrigger(id) {
                 document.getElementById('bit-audio-trigger-url-input').value = audioCommand.file_url;
                 switchAudioBitTriggerUploadMethod('url');
             } else {
+                // When editing, show file method but don't require a new file
                 switchAudioBitTriggerUploadMethod('file');
+                // Show existing file info if available
+                if (audioCommand.file_path) {
+                    const fileInfo = document.getElementById('bit-audio-trigger-file-info');
+                    if (fileInfo) {
+                        fileInfo.classList.remove('hidden');
+                        document.getElementById('bit-audio-trigger-file-name').textContent = audioCommand.file_path.split('/').pop() || 'Existing file';
+                        document.getElementById('bit-audio-trigger-file-size').textContent = audioCommand.file_size ? formatFileSize(audioCommand.file_size) : '';
+                    }
+                }
             }
             
             // Open modal
@@ -500,16 +510,26 @@ async function saveAudioBitTrigger() {
     }
     
     // Validate audio
-    if (audioBitTriggerUploadMethod === 'file' && !audioBitTriggerSelectedFile) {
-        alert('Please select an audio file');
-        return;
-    }
-    if (audioBitTriggerUploadMethod === 'url') {
-        const url = document.getElementById('bit-audio-trigger-url-input').value;
+    if (audioBitTriggerUploadMethod === 'file') {
+        if (!audioBitTriggerSelectedFile) {
+            alert('Please select an audio file');
+            return;
+        }
+        console.log('[BIT TRIGGER DEBUG] File selected:', {
+            name: audioBitTriggerSelectedFile.name,
+            size: audioBitTriggerSelectedFile.size,
+            type: audioBitTriggerSelectedFile.type
+        });
+    } else if (audioBitTriggerUploadMethod === 'url') {
+        const url = document.getElementById('bit-audio-trigger-url-input').value.trim();
         if (!url) {
             alert('Please enter an audio file URL');
             return;
         }
+        console.log('[BIT TRIGGER DEBUG] URL provided:', url);
+    } else {
+        alert('Please select an audio file or enter a URL');
+        return;
     }
     
     try {
@@ -530,9 +550,12 @@ async function saveAudioBitTrigger() {
             const formData = new FormData();
             
             if (audioBitTriggerUploadMethod === 'file' && audioBitTriggerSelectedFile) {
-                formData.append('file', audioBitTriggerSelectedFile);
+                formData.append('audioFile', audioBitTriggerSelectedFile);
             } else if (audioBitTriggerUploadMethod === 'url') {
-                formData.append('url', document.getElementById('bit-audio-trigger-url-input').value);
+                const url = document.getElementById('bit-audio-trigger-url-input').value;
+                if (url) {
+                    formData.append('fileUrl', url);
+                }
             }
             
             formData.append('command', triggerName);
@@ -545,8 +568,28 @@ async function saveAudioBitTrigger() {
             });
             
             if (!audioResponse.ok) {
-                const error = await audioResponse.json();
-                throw new Error(error.error || 'Failed to update audio command');
+                let errorMessage = 'Failed to update audio command';
+                try {
+                    const contentType = audioResponse.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const error = await audioResponse.json();
+                        errorMessage = error.error || error.message || errorMessage;
+                    } else {
+                        const text = await audioResponse.text();
+                        errorMessage = `Server error: ${audioResponse.status} ${audioResponse.statusText}`;
+                        console.error('Non-JSON error response:', text.substring(0, 200));
+                    }
+                } catch (parseError) {
+                    console.error('Error parsing error response:', parseError);
+                    errorMessage = `Server error: ${audioResponse.status} ${audioResponse.statusText}`;
+                }
+                throw new Error(errorMessage);
+            }
+            
+            // Verify response is JSON and has expected format
+            const updateAudioData = await audioResponse.json();
+            if (!updateAudioData.command && !updateAudioData.audioCommand) {
+                console.warn('Unexpected update response format:', updateAudioData);
             }
             
             // Update bit trigger
@@ -569,15 +612,44 @@ async function saveAudioBitTrigger() {
             // Create new trigger
             const formData = new FormData();
             
+            console.log('[BIT TRIGGER DEBUG] Creating audio trigger:', {
+                uploadMethod: audioBitTriggerUploadMethod,
+                hasFile: !!audioBitTriggerSelectedFile,
+                fileName: audioBitTriggerSelectedFile?.name,
+                fileSize: audioBitTriggerSelectedFile?.size,
+                triggerName,
+                bitAmount
+            });
+            
             if (audioBitTriggerUploadMethod === 'file' && audioBitTriggerSelectedFile) {
-                formData.append('file', audioBitTriggerSelectedFile);
+                formData.append('audioFile', audioBitTriggerSelectedFile);
+                console.log('[BIT TRIGGER DEBUG] Added file to FormData');
             } else if (audioBitTriggerUploadMethod === 'url') {
-                formData.append('url', document.getElementById('bit-audio-trigger-url-input').value);
+                const url = document.getElementById('bit-audio-trigger-url-input').value;
+                formData.append('fileUrl', url);
+                console.log('[BIT TRIGGER DEBUG] Added URL to FormData:', url);
+            } else {
+                console.error('[BIT TRIGGER DEBUG] No file or URL provided!', {
+                    uploadMethod: audioBitTriggerUploadMethod,
+                    hasFile: !!audioBitTriggerSelectedFile,
+                    urlValue: document.getElementById('bit-audio-trigger-url-input')?.value
+                });
+                alert('Please select an audio file or enter a URL');
+                return;
             }
             
             formData.append('command', triggerName);
-            formData.append('volume', document.getElementById('bit-audio-trigger-volume-slider').value / 100);
+            const volumeValue = document.getElementById('bit-audio-trigger-volume-slider').value / 100;
+            formData.append('volume', volumeValue.toString());
             formData.append('isBitsOnly', 'true');
+            
+            console.log('[BIT TRIGGER DEBUG] Sending request with FormData:', {
+                hasAudioFile: formData.has('audioFile'),
+                hasFileUrl: formData.has('fileUrl'),
+                command: formData.get('command'),
+                volume: formData.get('volume'),
+                isBitsOnly: formData.get('isBitsOnly')
+            });
             
             const audioResponse = await fetch('/api/audio-commands', {
                 method: 'POST',
@@ -586,12 +658,38 @@ async function saveAudioBitTrigger() {
             });
             
             if (!audioResponse.ok) {
-                const error = await audioResponse.json();
-                throw new Error(error.error || 'Failed to create audio command');
+                let errorMessage = 'Failed to create audio command';
+                let errorDetails = null;
+                try {
+                    const contentType = audioResponse.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const error = await audioResponse.json();
+                        errorMessage = error.error || error.message || errorMessage;
+                        errorDetails = error;
+                        console.error('[BIT TRIGGER DEBUG] Server error response:', error);
+                    } else {
+                        const text = await audioResponse.text();
+                        errorMessage = `Server error: ${audioResponse.status} ${audioResponse.statusText}`;
+                        errorDetails = { status: audioResponse.status, text: text.substring(0, 500) };
+                        console.error('[BIT TRIGGER DEBUG] Non-JSON error response:', text.substring(0, 500));
+                    }
+                } catch (parseError) {
+                    console.error('[BIT TRIGGER DEBUG] Error parsing error response:', parseError);
+                    errorMessage = `Server error: ${audioResponse.status} ${audioResponse.statusText}`;
+                }
+                console.error('[BIT TRIGGER DEBUG] Full error details:', {
+                    status: audioResponse.status,
+                    statusText: audioResponse.statusText,
+                    errorDetails
+                });
+                throw new Error(errorMessage);
             }
             
             const audioData = await audioResponse.json();
-            const commandId = audioData.command.id;
+            const commandId = audioData.command?.id || audioData.audioCommand?.id;
+            if (!commandId) {
+                throw new Error('Invalid response format from server');
+            }
             
             // Create the bit trigger
             const response = await fetch('/api/bit-triggers', {

@@ -38,9 +38,17 @@ export async function createAudioCommand(audioCommandData) {
   ];
 
   try {
+    console.log('[AUDIO CMD MODEL] Inserting with values:', values);
     const result = await pool.query(query, values);
+    console.log('[AUDIO CMD MODEL] Insert successful:', result.rows[0]?.id);
     return result.rows[0];
   } catch (error) {
+    console.error('[AUDIO CMD MODEL] Database error:', {
+      code: error.code,
+      message: error.message,
+      detail: error.detail,
+      constraint: error.constraint
+    });
     if (error.code === '23505') { // Unique violation
       throw new Error(`Command "${command}" already exists`);
     }

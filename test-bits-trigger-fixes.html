@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bits Trigger Bug Fix Tests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background: #1a4d1a;
+            border-left: 4px solid #4caf50;
+        }
+        .fail {
+            background: #4d1a1a;
+            border-left: 4px solid #f44336;
+        }
+        .info {
+            background: #1a3a4d;
+            border-left: 4px solid #2196f3;
+        }
+        button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .log {
+            background: #000;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bits Trigger Bug Fix Tests</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Create Audio Bit Trigger</h2>
+        <p>Tests creating a new audio bit trigger with file upload</p>
+        <button onclick="testCreateAudioTrigger()">Run Test</button>
+        <div id="test1-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 2: Edit Audio Bit Trigger</h2>
+        <p>Tests editing an existing audio bit trigger (without new file)</p>
+        <button onclick="testEditAudioTrigger()">Run Test</button>
+        <div id="test2-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test 3: Error Handling</h2>
+        <p>Tests that error responses are properly handled</p>
+        <button onclick="testErrorHandling()">Run Test</button>
+        <div id="test3-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Test Logs</h2>
+        <div id="logs" class="log"></div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f44336' : type === 'success' ? '#4caf50' : '#fff';
+            logs.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function showResult(testId, message, passed) {
+            const resultDiv = document.getElementById(testId);
+            resultDiv.innerHTML = `<div class="test-result ${passed ? 'pass' : 'fail'}">${message}</div>`;
+        }
+
+        async function testCreateAudioTrigger() {
+            log('Starting Test 1: Create Audio Bit Trigger', 'info');
+            showResult('test1-result', 'Running...', null);
+            
+            try {
+                // Create a test file
+                const testFile = new File(['test audio content'], 'test.mp3', { type: 'audio/mpeg' });
+                
+                const formData = new FormData();
+                formData.append('audioFile', testFile);
+                formData.append('command', `test_trigger_${Date.now()}`);
+                formData.append('volume', '0.5');
+                formData.append('isBitsOnly', 'true');
+                
+                log('Sending POST request to /api/audio-commands', 'info');
+                const response = await fetch('/api/audio-commands', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                log(`Response status: ${response.status}`, response.ok ? 'success' : 'error');
+                log(`Content-Type: ${response.headers.get('content-type')}`, 'info');
+                
+                if (!response.ok) {
+                    const contentType = response.headers.get('content-type');
+                    let errorMessage = 'Unknown error';
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        const error = await response.json();
+                        errorMessage = error.error || error.message || 'Unknown error';
+                        log(`JSON Error: ${JSON.stringify(error)}`, 'error');
+                    } else {
+                        const text = await response.text();
+                        errorMessage = `Non-JSON response: ${text.substring(0, 200)}`;
+                        log(`Non-JSON Error: ${text.substring(0, 200)}`, 'error');
+                    }
+                    
+                    showResult('test1-result', `FAIL: ${errorMessage}`, false);
+                    return;
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    log(`ERROR: Response is not JSON! Response: ${text.substring(0, 200)}`, 'error');
+                    showResult('test1-result', `FAIL: Response is not JSON`, false);
+                    return;
+                }
+                
+                const data = await response.json();
+                log(`Success! Response: ${JSON.stringify(data, null, 2)}`, 'success');
+                
+                if (data.command || data.audioCommand) {
+                    showResult('test1-result', 'PASS: Audio trigger created successfully', true);
+                } else {
+                    showResult('test1-result', 'FAIL: Invalid response format', false);
+                }
+            } catch (error) {
+                log(`Exception: ${error.message}`, 'error');
+                showResult('test1-result', `FAIL: ${error.message}`, false);
+            }
+        }
+
+        async function testEditAudioTrigger() {
+            log('Starting Test 2: Edit Audio Bit Trigger', 'info');
+            showResult('test2-result', 'Running...', null);
+            
+            try {
+                // First, get all bit triggers
+                log('Fetching bit triggers...', 'info');
+                const triggersResponse = await fetch('/api/bit-triggers', {
+                    credentials: 'include'
+                });
+                
+                if (!triggersResponse.ok) {
+                    showResult('test2-result', 'FAIL: Could not fetch triggers', false);
+                    return;
+                }
+                
+                const triggersData = await triggersResponse.json();
+                const triggers = triggersData.triggers || [];
+                log(`Found ${triggers.length} triggers`, 'info');
+                
+                if (triggers.length === 0) {
+                    showResult('test2-result', 'SKIP: No triggers found. Create one first.', null);
+                    return;
+                }
+                
+                // Find an audio trigger
+                const audioTrigger = triggers.find(t => t.command_type === 'audio');
+                if (!audioTrigger) {
+                    showResult('test2-result', 'SKIP: No audio triggers found', null);
+                    return;
+                }
+                
+                log(`Found audio trigger ID: ${audioTrigger.id}`, 'info');
+                
+                // Get trigger details
+                const triggerResponse = await fetch(`/api/bit-triggers/${audioTrigger.id}`, {
+                    credentials: 'include'
+                });
+                
+                if (!triggerResponse.ok) {
+                    showResult('test2-result', 'FAIL: Could not fetch trigger details', false);
+                    return;
+                }
+                
+                const triggerData = await triggerResponse.json();
+                log(`Trigger data: ${JSON.stringify(triggerData, null, 2)}`, 'info');
+                
+                if (!triggerData.trigger || !triggerData.trigger.command_id) {
+                    showResult('test2-result', 'FAIL: Invalid trigger data', false);
+                    return;
+                }
+                
+                // Get command details
+                const commandResponse = await fetch(`/api/audio-commands/${triggerData.trigger.command_id}`, {
+                    credentials: 'include'
+                });
+                
+                if (!commandResponse.ok) {
+                    showResult('test2-result', 'FAIL: Could not fetch command details', false);
+                    return;
+                }
+                
+                const commandData = await commandResponse.json();
+                log(`Command data: ${JSON.stringify(commandData, null, 2)}`, 'info');
+                
+                if (!commandData.command) {
+                    showResult('test2-result', 'FAIL: Invalid command data format', false);
+                    return;
+                }
+                
+                // Now test updating without a new file
+                const updateFormData = new FormData();
+                updateFormData.append('command', `updated_${commandData.command.command}`);
+                updateFormData.append('volume', '0.75');
+                // Note: Not providing a new file - should still work
+                
+                log('Sending PUT request to update command...', 'info');
+                const updateResponse = await fetch(`/api/audio-commands/${triggerData.trigger.command_id}`, {
+                    method: 'PUT',
+                    credentials: 'include',
+                    body: updateFormData
+                });
+                
+                log(`Update response status: ${updateResponse.status}`, updateResponse.ok ? 'success' : 'error');
+                
+                if (!updateResponse.ok) {
+                    const contentType = updateResponse.headers.get('content-type');
+                    let errorMessage = 'Unknown error';
+                    
+                    if (contentType && contentType.includes('application/json')) {
+                        const error = await updateResponse.json();
+                        errorMessage = error.error || error.message || 'Unknown error';
+                    } else {
+                        const text = await updateResponse.text();
+                        errorMessage = `Non-JSON: ${text.substring(0, 200)}`;
+                    }
+                    
+                    showResult('test2-result', `FAIL: ${errorMessage}`, false);
+                    return;
+                }
+                
+                const updateData = await updateResponse.json();
+                log(`Update success: ${JSON.stringify(updateData, null, 2)}`, 'success');
+                
+                if (updateData.command || updateData.audioCommand) {
+                    showResult('test2-result', 'PASS: Edit functionality works correctly', true);
+                } else {
+                    showResult('test2-result', 'FAIL: Invalid update response format', false);
+                }
+            } catch (error) {
+                log(`Exception: ${error.message}`, 'error');
+                showResult('test2-result', `FAIL: ${error.message}`, false);
+            }
+        }
+
+        async function testErrorHandling() {
+            log('Starting Test 3: Error Handling', 'info');
+            showResult('test3-result', 'Running...', null);
+            
+            try {
+                // Test with invalid data
+                const formData = new FormData();
+                formData.append('command', ''); // Empty command should fail
+                
+                const response = await fetch('/api/audio-commands', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+                
+                log(`Error test response status: ${response.status}`, 'info');
+                log(`Content-Type: ${response.headers.get('content-type')}`, 'info');
+                
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const error = await response.json();
+                    log(`Error response (JSON): ${JSON.stringify(error)}`, 'success');
+                    showResult('test3-result', 'PASS: Error handling returns JSON', true);
+                } else {
+                    const text = await response.text();
+                    log(`Error response (non-JSON): ${text.substring(0, 200)}`, 'error');
+                    showResult('test3-result', 'FAIL: Error handling returns non-JSON', false);
+                }
+            } catch (error) {
+                log(`Exception: ${error.message}`, 'error');
+                showResult('test3-result', `FAIL: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html>

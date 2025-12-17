@@ -18,9 +18,11 @@ router.get('/', requireAuth, getCommands);
 router.get('/:id', requireAuth, getCommand);
 
 // Create a new audio command (with optional file upload)
+// Note: multer expects 'audioFile' field name
 router.post('/', requireAuth, upload.single('audioFile'), createCommand);
 
 // Update an audio command (with optional file upload)
+// Note: multer expects 'audioFile' field name, but we also support updates without files
 router.put('/:id', requireAuth, upload.single('audioFile'), updateCommand);
 
 // Delete an audio command
