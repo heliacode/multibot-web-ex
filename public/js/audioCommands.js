@@ -283,7 +283,7 @@ function stopPreview() {
 async function saveAudioCommand(e) {
     e.preventDefault();
     
-    const command = document.getElementById('command-input').value.trim();
+    const command = document.getElementById('audio-command-input').value.trim();
     if (!command.startsWith('!')) {
         alert('Command must start with !');
         return;
@@ -359,7 +359,7 @@ function editAudioCommand(id) {
 
     currentEditingId = id;
     document.getElementById('modal-title').textContent = 'Edit Audio Command';
-    document.getElementById('command-input').value = cmd.command;
+    document.getElementById('audio-command-input').value = cmd.command;
     document.getElementById('volume-slider').value = Math.round(cmd.volume * 100);
     updateVolumeDisplay(Math.round(cmd.volume * 100));
 

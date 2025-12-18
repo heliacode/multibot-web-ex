@@ -3,7 +3,7 @@
 ## Step-by-Step Checklist
 
 ### 1. Frontend - Dashboard Card
-**Location:** `public/dashboard.html` - Inside `#dashboard-cards` grid
+**Location:** `views/dashboard/partials/content/dashboardCards.html` - Inside `#dashboard-cards` grid
 
 ```html
 <!-- [BOT_NAME] Bot Card -->
@@ -19,7 +19,7 @@
 ```
 
 ### 2. Frontend - Bot Section
-**Location:** `public/dashboard.html` - After dashboard cards, before modals
+**Location:** `views/dashboard/template.html` - After `{{> content/dashboardCards}}`, before sections/modals
 
 ```html
 <!-- [BOT_NAME] Bot Section -->
@@ -50,7 +50,7 @@
 ```
 
 ### 3. Frontend - Sidebar Navigation
-**Location:** `public/dashboard.html` - Inside sidebar `<ul class="menu">`
+**Location:** `views/dashboard/partials/chrome/sidebar.html` - Inside sidebar `<ul class="menu">`
 
 ```html
 <li>
@@ -103,7 +103,7 @@ case '[bot-id]-section':
 ```
 
 ### 6. Frontend - Script Tag
-**Location:** `public/dashboard.html` - Before `</body>`
+**Location:** `views/dashboard/partials/chrome/scripts.html` - Before `</body>`
 
 ```html
 <script src="/js/[botId].js"></script>

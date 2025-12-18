@@ -1,0 +1,107 @@
+        <!-- Sidebar -->
+        <div class="drawer-side">
+            <label for="drawer-toggle" class="drawer-overlay"></label>
+            <aside class="w-64 min-h-full glass-sidebar">
+                <div class="p-6">
+                    <!-- Logo -->
+                    <div class="flex items-center mb-8">
+                        <i class="fab fa-twitch text-white text-3xl"></i>
+                        <span class="text-2xl font-bold ml-2 text-white">MultiBot</span>
+                    </div>
+
+                    <!-- User Info -->
+                    <div class="mb-6 p-4 glass-card rounded-xl">
+                        <div class="flex items-center space-x-3">
+                            <div class="avatar">
+                                <div class="w-12 rounded-full border-2 border-white/30 overflow-hidden">
+                                    <img id="user-profile-image" src="{{PROFILE_IMAGE_URL}}" alt="Profile" class="w-full h-full object-cover" style="display: none;" />
+                                    <div id="user-avatar-placeholder" class="bg-white/20 text-white rounded-full w-full h-full flex items-center justify-center">
+                                        <span id="user-initial" class="text-lg font-semibold">{{USER_INITIAL}}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex-1">
+                                <p class="font-semibold text-sm text-white" id="user-name">{{USERNAME}}</p>
+                                <p class="text-xs text-white/70">Twitch Streamer</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Menu -->
+                    <ul class="menu p-0 w-full">
+                        <li>
+                            <a href="#dashboard" class="active text-white hover:bg-white/20 rounded-lg" onclick="showSection('dashboard', event)">
+                                <i class="fas fa-home"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#tts" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('tts', event)">
+                                <i class="fas fa-volume-up"></i>
+                                Text-to-Speech Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#audio" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('audio', event)">
+                                <i class="fas fa-music"></i>
+                                Audio Commands
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#gif" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('gif', event)">
+                                <i class="fas fa-images"></i>
+                                GIF Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#animated-text" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('animated-text', event)">
+                                <i class="fas fa-text-width"></i>
+                                Animated Text Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#bits-section" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('bits-section', event)">
+                                <i class="fas fa-coins"></i>
+                                Bits Triggers
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#jumpscare" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('jumpscare', event)">
+                                <i class="fas fa-ghost"></i>
+                                Jump Scare Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#celebration" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('celebration', event)">
+                                <i class="fas fa-fireworks"></i>
+                                Celebration Bot
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#chat-debug" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('chat-debug', event)">
+                                <i class="fas fa-comments"></i>
+                                Chat Debug
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#design" class="text-white hover:bg-white/20 rounded-lg" onclick="showSection('design', event)">
+                                <i class="fas fa-palette"></i>
+                                Design Stream
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#obs-setup" class="text-purple-300 hover:bg-purple-500/20 rounded-lg" onclick="showSection('obs-setup', event)">
+                                <i class="fas fa-desktop"></i>
+                                OBS Setup
+                            </a>
+                        </li>
+                        <li class="mt-auto pt-4 border-t border-white/20">
+                            <a href="/auth/logout" class="text-white hover:bg-white/20 rounded-lg">
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </aside>
+        </div>

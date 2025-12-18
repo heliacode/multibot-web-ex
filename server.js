@@ -9,6 +9,7 @@ import dashboardRoutes from './routes/dashboard.js';
 import chatRoutes from './routes/chat.js';
 import audioCommandRoutes from './routes/audioCommands.js';
 import gifCommandRoutes from './routes/gifCommands.js';
+import animatedTextCommandRoutes from './routes/animatedTextCommands.js';
 import obsTokenRoutes from './routes/obsToken.js';
 import obsSourceRoutes from './routes/obsSource.js';
 import imageRoutes from './routes/images.js';
@@ -53,6 +54,7 @@ app.use('/api/audio-commands', (req, res, next) => {
   next();
 }, audioCommandRoutes);
 app.use('/api/gif-commands', gifCommandRoutes);
+app.use('/api/animated-text-commands', animatedTextCommandRoutes);
 app.use('/api/obs-token', (req, res, next) => {
   console.log(`[ROUTE DEBUG] /api/obs-token - Method: ${req.method}, Path: ${req.path}, OriginalUrl: ${req.originalUrl}`);
   next();

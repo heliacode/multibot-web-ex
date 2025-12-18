@@ -76,7 +76,7 @@ The website uses the same design system as the MultiBot dashboard:
 
 - **Gradient Background**: Cyan/blue gradient matching the app
 - **Glass Morphism**: Glass-effect and glass-card classes
-- **Typography**: Inter font family
+- **Typography**: Varela Round font family
 - **Icons**: Font Awesome
 - **Framework**: Tailwind CSS + DaisyUI
 

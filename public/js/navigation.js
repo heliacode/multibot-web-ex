@@ -48,6 +48,13 @@ function showSection(section, event, skipHistory = false) {
                 }
             }
             
+            if (section === 'animated-text-section' || section === 'animated-text') {
+                // Ensure animated text commands are loaded when section is shown
+                if (window.ensureAnimatedTextCommandsLoaded) {
+                    setTimeout(() => window.ensureAnimatedTextCommandsLoaded(), 100);
+                }
+            }
+            
             setTimeout(() => {
                 targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);

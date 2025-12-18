@@ -12,7 +12,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dashboardPath = path.join(__dirname, '../public/dashboard.html');
+// Dashboard is now assembled server-side from a template + partials.
+const dashboardPath = path.join(__dirname, '../views/dashboard/template.html');
 const dashboardContent = fs.readFileSync(dashboardPath, 'utf8');
 
 // Extract sections based on comments

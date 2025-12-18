@@ -1,0 +1,287 @@
+<!-- Design Your Stream Section -->
+                    <div id="design-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-palette text-white/80"></i>
+                                Design Your Stream
+                            </h2>
+                            <p class="text-white/80 mb-4">Drag and drop elements to design your browser source overlay</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                                <!-- Element Library & Layers -->
+                                <div class="lg:col-span-1 space-y-6">
+                                    <!-- Add Elements -->
+                                    <div>
+                                        <h3 class="text-sm text-white mb-2 font-semibold">Elements</h3>
+                                        <div class="grid grid-cols-4 gap-1">
+                                            <button 
+                                                class="btn btn-xs btn-outline text-white border-white/30 hover:bg-white/20 p-1"
+                                                onclick="addTextElement()"
+                                                title="Add Text"
+                                            >
+                                                <i class="fas fa-font text-xs"></i>
+                                            </button>
+                                            <button 
+                                                class="btn btn-xs btn-outline text-white border-white/30 hover:bg-white/20 p-1"
+                                                onclick="addShapeElement('circle')"
+                                                title="Add Circle"
+                                            >
+                                                <i class="fas fa-circle text-xs"></i>
+                                            </button>
+                                            <button 
+                                                class="btn btn-xs btn-outline text-white border-white/30 hover:bg-white/20 p-1"
+                                                onclick="addShapeElement('square')"
+                                                title="Add Square"
+                                            >
+                                                <i class="fas fa-square text-xs"></i>
+                                            </button>
+                                            <button 
+                                                class="btn btn-xs btn-outline text-white border-white/30 hover:bg-white/20 p-1"
+                                                onclick="showImageSelector()"
+                                                title="Add Image"
+                                            >
+                                                <i class="fas fa-image text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Layers/Hierarchy Panel -->
+                                    <div>
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg text-white font-semibold">Layers</h3>
+                                            <span id="layer-count" class="text-xs text-white/60">0</span>
+                                        </div>
+                                        <div id="layers-list" class="glass-card rounded-xl p-2 max-h-64 overflow-y-auto">
+                                            <div class="text-center py-8 text-white/40 text-sm">
+                                                <i class="fas fa-layer-group text-2xl mb-2"></i>
+                                                <p>No elements yet</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Selected Element Properties -->
+                                    <div id="element-properties" class="mt-6 p-4 glass-card rounded-xl hidden">
+                                        <h4 class="text-white mb-3 font-semibold">Properties</h4>
+                                        <div class="space-y-3">
+                                            <div>
+                                                <label class="label">
+                                                    <span class="label-text text-white/90 text-sm">X Position</span>
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    id="prop-x" 
+                                                    class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                    onchange="updateElementProperty('x', this.value)"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label class="label">
+                                                    <span class="label-text text-white/90 text-sm">Y Position</span>
+                                                </label>
+                                                <input 
+                                                    type="number" 
+                                                    id="prop-y" 
+                                                    class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                    onchange="updateElementProperty('y', this.value)"
+                                                />
+                                            </div>
+                                            <div id="prop-size-group">
+                                                <div class="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label class="label">
+                                                            <span class="label-text text-white/90 text-sm">Width</span>
+                                                        </label>
+                                                        <input 
+                                                            type="number" 
+                                                            id="prop-width" 
+                                                            class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                            min="20"
+                                                            onchange="updateElementProperty('width', this.value)"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label class="label">
+                                                            <span class="label-text text-white/90 text-sm">Height</span>
+                                                        </label>
+                                                        <input 
+                                                            type="number" 
+                                                            id="prop-height" 
+                                                            class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                            min="20"
+                                                            onchange="updateElementProperty('height', this.value)"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="label">
+                                                    <span class="label-text text-white/90 text-sm">Rotation</span>
+                                                </label>
+                                                <input 
+                                                    type="range" 
+                                                    id="prop-rotation" 
+                                                    class="range range-primary range-sm"
+                                                    min="0"
+                                                    max="360"
+                                                    value="0"
+                                                    oninput="updateRotationSlider(this.value)"
+                                                />
+                                                <div class="flex justify-between text-xs text-white/60 px-2">
+                                                    <span>0°</span>
+                                                    <span id="rotation-value">0°</span>
+                                                    <span>360°</span>
+                                                </div>
+                                            </div>
+                                            <div id="prop-text-group">
+                                                <div>
+                                                    <label class="label">
+                                                        <span class="label-text text-white/90 text-sm">Text Content</span>
+                                                    </label>
+                                                    <input 
+                                                        type="text" 
+                                                        id="prop-text" 
+                                                        class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                        onchange="updateElementProperty('text', this.value)"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="label">
+                                                        <span class="label-text text-white/90 text-sm">Font Size</span>
+                                                    </label>
+                                                    <input 
+                                                        type="number" 
+                                                        id="prop-fontsize" 
+                                                        class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full"
+                                                        min="12"
+                                                        max="200"
+                                                        onchange="updateElementProperty('fontSize', this.value)"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="label">
+                                                    <span class="label-text text-white/90 text-sm">Color</span>
+                                                </label>
+                                                <input 
+                                                    type="color" 
+                                                    id="prop-color" 
+                                                    class="input input-bordered input-sm bg-white/10 text-white border-white/20 w-full h-10"
+                                                    onchange="updateElementProperty('color', this.value)"
+                                                />
+                                            </div>
+                                            <button 
+                                                class="btn btn-sm btn-error btn-block text-white mt-4"
+                                                onclick="deleteSelectedElement()"
+                                            >
+                                                <i class="fas fa-trash"></i>
+                                                Delete Element
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Image Selector Modal -->
+                                <dialog id="image-selector-modal" class="modal">
+                                    <div class="modal-box glass-card max-w-3xl">
+                                        <h3 class="font-bold text-2xl text-white mb-4">
+                                            <i class="fas fa-images"></i>
+                                            Select or Upload Image
+                                        </h3>
+                                        
+                                        <!-- Upload Section -->
+                                        <div class="mb-6">
+                                            <h4 class="text-lg text-white mb-3 font-semibold">Upload New Image</h4>
+                                            <div 
+                                                id="image-drop-zone" 
+                                                class="border-2 border-dashed border-white/30 rounded-xl p-6 text-center cursor-pointer hover:border-white/50 transition-colors bg-white/5"
+                                                ondrop="handleImageDrop(event)" 
+                                                ondragover="handleImageDragOver(event)"
+                                                ondragleave="handleImageDragLeave(event)"
+                                                onclick="document.getElementById('image-file-input').click()"
+                                            >
+                                                <i class="fas fa-cloud-upload-alt text-3xl text-white/60 mb-2"></i>
+                                                <p class="text-white/80 mb-1">Drag and drop image here</p>
+                                                <p class="text-white/60 text-sm">or click to browse</p>
+                                                <p class="text-white/50 text-xs mt-2">Max file size: 600KB (JPEG, PNG, GIF, WebP)</p>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                id="image-file-input" 
+                                                class="hidden" 
+                                                accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                                                onchange="handleImageFileSelect(event)"
+                                            />
+                                        </div>
+                                        
+                                        <!-- Image Gallery -->
+                                        <div class="mb-4">
+                                            <h4 class="text-lg text-white mb-3 font-semibold">Your Images</h4>
+                                            <div id="image-gallery" class="grid grid-cols-3 gap-3 max-h-96 overflow-y-auto p-2">
+                                                <div class="text-center py-8 text-white/40 text-sm col-span-3">
+                                                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                                                    <p>Loading images...</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Modal Actions -->
+                                        <div class="modal-action">
+                                            <button type="button" class="btn btn-ghost text-white" onclick="closeImageSelector()">Cancel</button>
+                                        </div>
+                                    </div>
+                                    <form method="dialog" class="modal-backdrop">
+                                        <button onclick="closeImageSelector()">close</button>
+                                    </form>
+                                </dialog>
+                                
+                                <!-- Design Canvas -->
+                                <div class="lg:col-span-4">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg text-white font-semibold">Canvas Preview</h3>
+                                        <div class="flex gap-2">
+                                            <button 
+                                                class="btn btn-sm btn-outline text-white border-white/30 hover:bg-white/20"
+                                                onclick="clearCanvas()"
+                                            >
+                                                <i class="fas fa-trash"></i>
+                                                Clear All
+                                            </button>
+                                            <button 
+                                                class="btn btn-sm btn-primary text-white"
+                                                onclick="saveDesign()"
+                                            >
+                                                <i class="fas fa-save"></i>
+                                                Save Design
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Canvas Container -->
+                                    <div 
+                                        id="design-canvas" 
+                                        class="relative bg-black/50 rounded-xl border-2 border-white/20 overflow-hidden"
+                                        style="width: 100%; aspect-ratio: 16/9; min-height: 400px; max-width: 1280px;"
+                                    >
+                                        <!-- Canvas will be populated with draggable elements -->
+                                        <div class="absolute inset-0 flex items-center justify-center text-white/30 pointer-events-none">
+                                            <div class="text-center">
+                                                <i class="fas fa-mouse-pointer text-4xl mb-2"></i>
+                                                <p>Drag elements here</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Position Display -->
+                                    <div class="mt-4 p-3 glass-card rounded-lg">
+                                        <div class="flex items-center gap-4 text-sm text-white/80">
+                                            <span id="selected-element-info" class="text-white/60">No element selected</span>
+                                            <span id="element-count" class="ml-auto">0 elements</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    

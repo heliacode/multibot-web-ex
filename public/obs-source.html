@@ -102,6 +102,9 @@
     <!-- GIF display container -->
     <div id="gif-container" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 9999; overflow: visible;"></div>
 
+    <!-- Animated text display container -->
+    <div id="animated-text-container" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 10000; overflow: visible;"></div>
+
     <script>
         // Get token from URL - handle both URLSearchParams and direct string extraction
         let token = null;
@@ -279,6 +282,9 @@
             } else if (commandData.type === 'gif_command') {
                 console.log('[OBS] Processing GIF command');
                 showGifCommand(commandData);
+            } else if (commandData.type === 'animated_text_command') {
+                console.log('[OBS] Processing animated text command');
+                showAnimatedTextCommand(commandData);
             } else {
                 console.warn('[OBS] Unknown command type:', commandData?.type);
             }
@@ -481,6 +487,159 @@
                 'original': 'max-width: 90%; max-height: 90%; width: auto; height: auto;'
             };
             return sizes[size] || sizes['medium'];
+        }
+
+        // Show animated text command
+        function showAnimatedTextCommand(commandData) {
+            console.log('[OBS] showAnimatedTextCommand called with:', JSON.stringify(commandData, null, 2));
+            
+            const {
+                textContent,
+                animationType = 'neon',
+                positionX = 960,
+                positionY = 540,
+                fontSize = 48,
+                duration = 5000,
+                color1 = '#ff005e',
+                color2 = '#00d4ff',
+                fontFamily = 'Arial'
+            } = commandData;
+
+            // Use textContent from commandData, or fallback to command name
+            const displayText = (textContent && textContent.trim() !== '') 
+                ? textContent 
+                : (commandData.command || 'Animated Text');
+            
+            if (!displayText || displayText.trim() === '') {
+                console.error('[OBS] No textContent provided in commandData');
+                return;
+            }
+
+            const container = document.getElementById('animated-text-container');
+            if (!container) {
+                console.error('[OBS] Animated text container not found!');
+                return;
+            }
+
+            // Create text element
+            const textElement = document.createElement('div');
+            textElement.style.cssText = `
+                position: absolute;
+                left: ${positionX}px;
+                top: ${positionY}px;
+                transform: translate(-50%, -50%);
+                font-size: ${fontSize}px;
+                font-family: ${fontFamily}, sans-serif;
+                color: #fff;
+                white-space: nowrap;
+                pointer-events: none;
+                z-index: 10000;
+            `;
+
+            if (animationType === 'neon') {
+                // Neon text animation
+                textElement.className = 'neon-text';
+                textElement.textContent = displayText;
+                textElement.style.textShadow = `0 0 5px ${color1}, 0 0 10px ${color1}, 0 0 20px ${color1}, 0 0 40px ${color1}, 0 0 80px ${color1}`;
+                
+                // Add animation keyframes dynamically
+                const styleId = 'neon-animation-style';
+                if (!document.getElementById(styleId)) {
+                    const style = document.createElement('style');
+                    style.id = styleId;
+                    style.textContent = `
+                        @keyframes neon-glow {
+                            0% {
+                                text-shadow: 0 0 5px ${color1}, 0 0 10px ${color1}, 0 0 20px ${color1}, 0 0 40px ${color1}, 0 0 80px ${color1};
+                            }
+                            100% {
+                                text-shadow: 0 0 10px ${color2}, 0 0 20px ${color2}, 0 0 40px ${color2}, 0 0 80px ${color2}, 0 0 160px ${color2};
+                            }
+                        }
+                        .neon-text {
+                            animation: neon-glow 1.5s infinite alternate;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                } else {
+                    // Update existing style
+                    const style = document.getElementById(styleId);
+                    style.textContent = `
+                        @keyframes neon-glow {
+                            0% {
+                                text-shadow: 0 0 5px ${color1}, 0 0 10px ${color1}, 0 0 20px ${color1}, 0 0 40px ${color1}, 0 0 80px ${color1};
+                            }
+                            100% {
+                                text-shadow: 0 0 10px ${color2}, 0 0 20px ${color2}, 0 0 40px ${color2}, 0 0 80px ${color2}, 0 0 160px ${color2};
+                            }
+                        }
+                        .neon-text {
+                            animation: neon-glow 1.5s infinite alternate;
+                        }
+                    `;
+                }
+            } else if (animationType === '3d') {
+                // 3D animated text
+                textElement.className = '3d-text';
+                
+                // Split text into individual characters for 3D effect
+                const chars = displayText.split('').map((char, index) => {
+                    if (char === ' ') {
+                        return '<span style="display: inline-block; width: 0.3em;"> </span>';
+                    }
+                    return `<span style="animation-delay: ${index * 0.1}s;">${char}</span>`;
+                }).join('');
+                
+                textElement.innerHTML = chars;
+                
+                // Add 3D animation styles
+                const styleId = '3d-animation-style';
+                if (!document.getElementById(styleId)) {
+                    const style = document.createElement('style');
+                    style.id = styleId;
+                    style.textContent = `
+                        @keyframes depth {
+                            0% {
+                                transform: translateX(0) translateY(0);
+                                font-variation-settings: "EDPT" 30;
+                            }
+                            100% {
+                                font-variation-settings: "EDPT" 200;
+                                transform: translateX(0.15em) translateY(0.1em);
+                            }
+                        }
+                        .3d-text span {
+                            display: inline-block;
+                            position: relative;
+                            animation: depth 1s ease-in-out alternate infinite;
+                            font-variation-settings: "EDPT" 30;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
+                // Load Nabla font if using it
+                if (fontFamily.toLowerCase().includes('nabla')) {
+                    const link = document.createElement('link');
+                    link.rel = 'stylesheet';
+                    link.href = 'https://fonts.googleapis.com/css2?family=Nabla:EDPT,EHLT@30..200,24&display=swap';
+                    if (!document.querySelector('link[href*="Nabla"]')) {
+                        document.head.appendChild(link);
+                    }
+                }
+            }
+
+            container.appendChild(textElement);
+            console.log('[OBS] Animated text element added to container');
+
+            // Remove text after duration
+            setTimeout(() => {
+                console.log('[OBS] Removing animated text after duration');
+                if (textElement.parentNode) {
+                    textElement.parentNode.removeChild(textElement);
+                    console.log('[OBS] Animated text removed');
+                }
+            }, duration);
         }
 
         // Preload audio files (optional - can be enabled if needed)

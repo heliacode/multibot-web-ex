@@ -1,0 +1,112 @@
+                    <!-- Dashboard Cards View -->
+                    <div id="dashboard-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        <!-- Text-to-Speech Bot Card (Hidden) -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('tts', event)" style="display: none;">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-volume-up text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Text-to-Speech Bot</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Configure your text-to-speech bot settings</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Audio Commands Card -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('audio', event)">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-music text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Audio Commands</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Manage your custom audio commands</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GIF Bot Card -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('gif', event)">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-images text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">GIF Bot</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Create commands that display GIFs from Giphy</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Animated Text Bot Card -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('animated-text', event)">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-text-width text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Animated Text Bot</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Create neon and 3D animated text commands</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bits Triggers Card -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('bits-section', event)">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-coins text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Bits Triggers</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Trigger commands when viewers donate bits</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Jump Scare Bot Card -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('jumpscare', event)">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-ghost text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Jump Scare Bot</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Configure jump scare triggers and sounds</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Celebration Bot Card (Hidden) -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('celebration', event)" style="display: none;">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-fireworks text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Celebration Bot</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Configure celebration effects and triggers</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Chat Debug Card -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('chat-debug', event)">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-comments text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Chat Debug</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Monitor Twitch chat messages in real-time</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Design Stream Card -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('design', event)">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-palette text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Design Stream</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Drag and drop elements to design your overlay</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- OBS Setup Card -->
+                        <div class="glass-card rounded-3xl shadow-2xl cursor-pointer" onclick="showSection('obs-setup', event)">
+                            <div class="card-body p-6 md:p-8 text-center">
+                                <div class="flex flex-col items-center justify-center min-h-[180px] md:min-h-[200px]">
+                                    <i class="fas fa-desktop text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                    <h3 class="text-xl md:text-2xl font-bold text-white mb-2">OBS Setup</h3>
+                                    <p class="text-white/70 text-xs md:text-sm px-2">Configure your OBS browser source</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>

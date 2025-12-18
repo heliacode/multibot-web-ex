@@ -1,0 +1,43 @@
+<!-- Chat Debug Section -->
+                    <div id="chat-debug-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
+                        <div class="card-body p-8">
+                            <div class="flex items-center justify-between mb-4 responsive-header">
+                                <div>
+                                    <h2 class="card-title text-2xl text-white mb-2">
+                                        <i class="fas fa-comments text-white/80"></i>
+                                        Chat Debug
+                                    </h2>
+                                    <p class="text-white/80">Monitor Twitch chat messages in real-time</p>
+                                </div>
+                                <div class="flex gap-2 responsive-buttons">
+                                    <button id="chat-connect-btn" class="btn btn-success text-white" onclick="connectToChat()">
+                                        <i class="fas fa-play"></i>
+                                        Connect
+                                    </button>
+                                    <button id="chat-disconnect-btn" class="btn btn-error text-white" onclick="disconnectFromChat()" style="display: none;">
+                                        <i class="fas fa-stop"></i>
+                                        Disconnect
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- Connection Status -->
+                            <div id="chat-status" class="mb-4 p-4 glass-card rounded-xl">
+                                <div class="flex items-center gap-2">
+                                    <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-500"></div>
+                                    <span id="status-text" class="text-white/80">Not connected</span>
+                                </div>
+                            </div>
+
+                            <!-- Chat Messages -->
+                            <div class="bg-black/30 rounded-xl p-4 h-96 overflow-y-auto" id="chat-messages">
+                                <div class="text-center text-white/50 py-8">
+                                    <i class="fas fa-comments text-4xl mb-2"></i>
+                                    <p>No messages yet. Click Connect to start monitoring chat.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    

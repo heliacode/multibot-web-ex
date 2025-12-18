@@ -12,11 +12,11 @@ export function generateAuthUrl(state, forcePrompt = false) {
     state: state
   });
 
-  // Add prompt parameter to force re-authentication if requested
-  // prompt=login forces Twitch to ask for credentials again
-  // prompt=consent forces user to re-authorize the app
+  // Add force_verify parameter to force re-authentication if requested
+  // Twitch uses force_verify=true (not prompt=consent) to force re-authentication
+  // This ensures Twitch asks for credentials and re-authorization
   if (forcePrompt) {
-    params.append('prompt', 'login');
+    params.append('force_verify', 'true');
   }
 
   return `${twitchConfig.authUrl}?${params.toString()}`;
@@ -177,5 +177,32 @@ export async function handleOAuthCallback(code) {
 
 export function generateState() {
   return crypto.randomBytes(32).toString('hex');
+}
+
+/**
+ * Revoke an access token or refresh token
+ * This invalidates the token on Twitch's side, forcing re-authentication
+ */
+export async function revokeToken(token) {
+  try {
+    await axios.post(
+      twitchConfig.revokeUrl,
+      new URLSearchParams({
+        client_id: twitchConfig.clientId,
+        token: token
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+    console.log('[TOKEN REVOCATION] Token revoked successfully');
+    return true;
+  } catch (error) {
+    // Log but don't throw - token might already be revoked or invalid
+    console.warn('[TOKEN REVOCATION] Error revoking token (may already be invalid):', error.response?.data || error.message);
+    return false;
+  }
 }
 

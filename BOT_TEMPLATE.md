@@ -4,7 +4,7 @@ This template provides a standardized way to add new bots to the MultiBot dashbo
 
 ## 1. Dashboard Card (Main Grid)
 
-Add this card to the `#dashboard-cards` grid in `public/dashboard.html`:
+Add this card to the `#dashboard-cards` grid in `views/dashboard/partials/content/dashboardCards.html`:
 
 ```html
 <!-- [BOT_NAME] Bot Card -->
@@ -70,7 +70,7 @@ Add this section after the dashboard cards, before the modals:
 
 ## 3. Sidebar Navigation Item
 
-Add this to the sidebar menu in `public/dashboard.html`:
+Add this to the sidebar menu in `views/dashboard/partials/chrome/sidebar.html`:
 
 ```html
 <li>
@@ -276,7 +276,7 @@ case '[bot-id]':
 
 ## 6. Add Script Tag
 
-In `public/dashboard.html`, add before the closing `</body>` tag:
+In `views/dashboard/partials/chrome/scripts.html`, add before the closing `</body>` tag:
 
 ```html
 <script src="/js/[botId].js"></script>
@@ -447,7 +447,7 @@ app.use('/api/[bot-id]', [botId]Routes);
 - [ ] Sidebar navigation item added
 - [ ] JavaScript file created (`public/js/[botId].js`)
 - [ ] Navigation.js updated
-- [ ] Script tag added to dashboard.html
+- [ ] Script tag added to `views/dashboard/partials/chrome/scripts.html`
 - [ ] Backend routes created
 - [ ] Backend controller created
 - [ ] Database model created

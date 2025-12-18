@@ -1,6 +1,6 @@
-import { generateAuthUrl, handleOAuthCallback, generateState, getUserInfo } from '../services/twitchAuth.js';
+import { generateAuthUrl, handleOAuthCallback, generateState, getUserInfo, revokeToken } from '../services/twitchAuth.js';
 import { createUser, getUserByTwitchId } from '../models/user.js';
-import { connectToChat } from '../services/twitchChat.js';
+import { connectToChat, disconnectFromChat } from '../services/twitchChat.js';
 
 export function initiateAuth(req, res) {
   // If user is already authenticated and not forcing re-auth, redirect to dashboard
@@ -86,7 +86,8 @@ export async function handleCallback(req, res) {
         });
 
       console.log('[OAUTH CALLBACK] Session created, redirecting to dashboard');
-      res.redirect('/dashboard');
+      // Clear any logout flags - user has successfully logged in
+      res.redirect('/dashboard?logged_in=true');
     });
   } catch (error) {
     console.error('OAuth callback error:', error);
@@ -109,11 +110,43 @@ export async function handleCallback(req, res) {
   }
 }
 
-export function logout(req, res) {
+export async function logout(req, res) {
   console.log('[LOGOUT] Logging out user', { userId: req.session?.userId });
   
-  // Clear session cookie before destroying session
+  // Disconnect chat connection first before revoking tokens
+  if (req.session && req.session.userId) {
+    const twitchUserId = req.session.userId;
+    console.log('[LOGOUT] Disconnecting chat for user', twitchUserId);
+    try {
+      await disconnectFromChat(twitchUserId);
+      console.log('[LOGOUT] Chat disconnected successfully');
+    } catch (error) {
+      console.warn('[LOGOUT] Error disconnecting chat (continuing anyway):', error.message);
+    }
+  }
+  
+  // Revoke tokens on Twitch's side before destroying session
+  // This ensures the user must re-authenticate next time
   if (req.session) {
+    const accessToken = req.session.accessToken;
+    const refreshToken = req.session.refreshToken;
+    
+    // Revoke both access and refresh tokens
+    if (accessToken) {
+      console.log('[LOGOUT] Revoking access token');
+      await revokeToken(accessToken).catch(err => {
+        console.warn('[LOGOUT] Failed to revoke access token:', err.message);
+      });
+    }
+    
+    if (refreshToken) {
+      console.log('[LOGOUT] Revoking refresh token');
+      await revokeToken(refreshToken).catch(err => {
+        console.warn('[LOGOUT] Failed to revoke refresh token:', err.message);
+      });
+    }
+    
+    // Clear session data
     const sessionId = req.sessionID;
     req.session.userId = null;
     req.session.username = null;

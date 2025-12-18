@@ -3,6 +3,7 @@ import { getUserByTwitchId } from '../models/user.js';
 import { twitchConfig } from '../config/twitch.js';
 import { getActiveAudioCommandsByTwitchUserId } from '../models/audioCommand.js';
 import { getActiveGifCommandsByTwitchUserId } from '../models/gifCommand.js';
+import { getActiveAnimatedTextCommandsByTwitchUserId } from '../models/animatedTextCommand.js';
 import { findBitTriggerForAmount } from '../models/bitTrigger.js';
 
 // Store active chat connections per user
@@ -41,7 +42,34 @@ function broadcastMessage(twitchUserId, message) {
 export async function getChatClient(twitchUserId, username, accessToken = null) {
   // Check if connection already exists
   if (activeConnections.has(twitchUserId)) {
-    return activeConnections.get(twitchUserId);
+    const existingConnection = activeConnections.get(twitchUserId);
+    
+    // If a new token is provided and it's different, disconnect and recreate
+    // This handles the case where tokens were revoked and user logged back in
+    if (accessToken && existingConnection.client) {
+      const existingToken = existingConnection.token;
+      if (existingToken && existingToken !== accessToken) {
+        console.log(`[TwitchChat] Token changed for user ${twitchUserId}, disconnecting old connection`);
+        try {
+          await existingConnection.client.disconnect();
+        } catch (error) {
+          console.warn('[TwitchChat] Error disconnecting old connection:', error.message);
+        }
+        activeConnections.delete(twitchUserId);
+        
+        // Clear keep-alive interval
+        if (keepAliveIntervals.has(twitchUserId)) {
+          clearInterval(keepAliveIntervals.get(twitchUserId));
+          keepAliveIntervals.delete(twitchUserId);
+        }
+      } else {
+        // Same token, return existing connection
+        return existingConnection;
+      }
+    } else {
+      // No new token provided, return existing connection
+      return existingConnection;
+    }
   }
 
   let token = accessToken;
@@ -87,6 +115,7 @@ export async function getChatClient(twitchUserId, username, accessToken = null) 
     client,
     channel: username.toLowerCase(),
     connected: false,
+    token: token, // Store token for comparison
     messageHistory: [],
     lastPingTime: Date.now(),
     lastMessageTime: Date.now(), // Track last message received to detect stale connections
@@ -107,9 +136,11 @@ async function setupCommandHandlers(twitchUserId) {
   try {
     const audioCommands = await getActiveAudioCommandsByTwitchUserId(twitchUserId);
     const gifCommands = await getActiveGifCommandsByTwitchUserId(twitchUserId);
+    const animatedTextCommands = await getActiveAnimatedTextCommandsByTwitchUserId(twitchUserId);
     console.log(`[TwitchChat] Loading command handlers for user ${twitchUserId}`);
     console.log(`[TwitchChat] Found ${audioCommands.length} audio commands`);
     console.log(`[TwitchChat] Found ${gifCommands.length} GIF commands`);
+    console.log(`[TwitchChat] Found ${animatedTextCommands.length} animated text commands`);
     
     const handlers = new Map();
     
@@ -138,6 +169,26 @@ async function setupCommandHandlers(twitchUserId) {
         id: cmd.id
       });
       console.log(`[TwitchChat] Loaded GIF command: !${cmd.command} -> ${cmd.gif_url} (position: ${cmd.position || 'center'}, size: ${cmd.size || 'medium'})`);
+    });
+    
+    // Add animated text commands
+    animatedTextCommands.forEach(cmd => {
+      handlers.set(cmd.command.toLowerCase(), {
+        type: 'animated_text',
+        command: cmd.command,
+        textContent: cmd.text_content || null, // Can be null for dynamic text
+        animationType: cmd.animation_type || 'neon',
+        positionX: cmd.position_x || 960,
+        positionY: cmd.position_y || 540,
+        fontSize: cmd.font_size || 48,
+        duration: cmd.duration || 5000,
+        color1: cmd.color1 || '#ff005e',
+        color2: cmd.color2 || '#00d4ff',
+        fontFamily: cmd.font_family || 'Arial',
+        id: cmd.id
+      });
+      const textInfo = cmd.text_content ? `"${cmd.text_content}"` : 'dynamic from chat';
+      console.log(`[TwitchChat] Loaded animated text command: !${cmd.command} -> ${textInfo} (type: ${cmd.animation_type || 'neon'})`);
     });
     
     commandHandlers.set(twitchUserId, handlers);
@@ -216,6 +267,49 @@ export async function processCommand(twitchUserId, message) {
     };
     
     console.log(`[TwitchChat] GIF command data - position: "${commandData.position}", size: "${commandData.size}"`);
+    broadcastCommandTrigger(twitchUserId, commandData);
+  } else if (handler.type === 'animated_text') {
+    // Extract text from message after the command
+    // If message is "!neon Hello World", extract "Hello World"
+    let textContent = handler.textContent || '';
+    
+    // If no default text, extract from chat message
+    if (!textContent || textContent.trim() === '') {
+      // Remove the command from the message and get the rest
+      const messageParts = message.trim().split(/\s+/);
+      if (messageParts.length > 1) {
+        // Join all parts after the command
+        textContent = messageParts.slice(1).join(' ');
+      }
+      
+      // If still empty, use a default
+      if (!textContent || textContent.trim() === '') {
+        textContent = handler.command; // Fallback to command name
+      }
+    }
+    
+    console.log(`[TwitchChat] Broadcasting animated text command: ${handler.command}`, {
+      textContent: textContent,
+      animationType: handler.animationType,
+      positionX: handler.positionX,
+      positionY: handler.positionY
+    });
+    
+    const commandData = {
+      type: 'animated_text_command',
+      command: handler.command,
+      textContent: textContent,
+      animationType: handler.animationType,
+      positionX: handler.positionX,
+      positionY: handler.positionY,
+      fontSize: handler.fontSize,
+      duration: handler.duration,
+      color1: handler.color1,
+      color2: handler.color2,
+      fontFamily: handler.fontFamily,
+      id: handler.id
+    };
+    
     broadcastCommandTrigger(twitchUserId, commandData);
   }
   
@@ -704,6 +798,23 @@ export async function connectToChat(twitchUserId, username, accessToken = null, 
       console.log(`[Chat] Disconnected from Twitch chat for ${username}:`, reason);
       connection.connected = false;
       
+      // If disconnected due to authentication failure, remove connection to prevent reconnection loops
+      if (reason && (reason.toLowerCase().includes('login') || reason.toLowerCase().includes('authentication') || reason.toLowerCase().includes('invalid'))) {
+        console.error(`[TwitchChat] Authentication failure detected for user ${twitchUserId}. Removing connection.`);
+        activeConnections.delete(twitchUserId);
+        
+        // Clear keep-alive interval
+        if (keepAliveIntervals.has(twitchUserId)) {
+          clearInterval(keepAliveIntervals.get(twitchUserId));
+          keepAliveIntervals.delete(twitchUserId);
+        }
+        
+        // Disable reconnection for this client
+        if (connection.client) {
+          connection.client.opts.connection.reconnect = false;
+        }
+      }
+      
       // Clear keep-alive interval
       if (keepAliveIntervals.has(twitchUserId)) {
         clearInterval(keepAliveIntervals.get(twitchUserId));
@@ -736,10 +847,47 @@ export async function connectToChat(twitchUserId, username, accessToken = null, 
     // Handle connection errors
     connection.client.on('notice', (channel, msgid, message) => {
       console.log(`Twitch notice for ${username}:`, msgid, message);
+      
+      // Handle authentication failures
+      if (msgid === 'login_failed' || message?.toLowerCase().includes('login authentication failed')) {
+        console.error(`[TwitchChat] Authentication failed for user ${twitchUserId}. Clearing connection.`);
+        connection.connected = false;
+        
+        // Disconnect and remove the connection
+        connection.client.disconnect().catch(() => {});
+        activeConnections.delete(twitchUserId);
+        
+        // Clear keep-alive interval
+        if (keepAliveIntervals.has(twitchUserId)) {
+          clearInterval(keepAliveIntervals.get(twitchUserId));
+          keepAliveIntervals.delete(twitchUserId);
+        }
+      }
+    });
+    
+    // Handle logon errors (authentication failures)
+    connection.client.on('logon', () => {
+      // Successful logon - connection is authenticated
+      console.log(`[TwitchChat] Successfully authenticated for user ${twitchUserId}`);
     });
 
     // Connect to chat
-    await connection.client.connect();
+    try {
+      await connection.client.connect();
+    } catch (error) {
+      // If connection fails due to authentication, clear it
+      if (error.message?.toLowerCase().includes('login') || error.message?.toLowerCase().includes('authentication')) {
+        console.error(`[TwitchChat] Authentication error during connect for user ${twitchUserId}:`, error.message);
+        activeConnections.delete(twitchUserId);
+        
+        // Clear keep-alive interval
+        if (keepAliveIntervals.has(twitchUserId)) {
+          clearInterval(keepAliveIntervals.get(twitchUserId));
+          keepAliveIntervals.delete(twitchUserId);
+        }
+      }
+      throw error;
+    }
     
     return connection;
   } catch (error) {

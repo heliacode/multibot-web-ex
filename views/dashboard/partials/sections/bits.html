@@ -1,0 +1,43 @@
+<!-- Bits Triggers Section -->
+                    <div id="bits-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
+                        <div class="card-body p-8">
+                            <div class="mb-6">
+                                <div class="mb-4">
+                                    <h2 class="card-title text-2xl text-white mb-2">
+                                        <i class="fas fa-coins text-white/80"></i>
+                                        Bits Triggers
+                                    </h2>
+                                    <p class="text-white/80">Trigger commands when viewers donate bits (e.g., 50 bits = play sound)</p>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                    <div class="glass-card rounded-3xl shadow-2xl cursor-pointer hover:scale-105 transition-transform" onclick="showAddGifBitTriggerModal()">
+                                        <div class="card-body p-6 text-center">
+                                            <div class="flex flex-col items-center justify-center min-h-[120px]">
+                                                <i class="fas fa-images text-4xl md:text-5xl text-white/80 mb-3"></i>
+                                                <h3 class="text-lg md:text-xl font-bold text-white mb-1">Add GIF Trigger</h3>
+                                                <p class="text-white/70 text-xs md:text-sm">Create a GIF trigger for bits</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="glass-card rounded-3xl shadow-2xl cursor-pointer hover:scale-105 transition-transform" onclick="showAddAudioBitTriggerModal()">
+                                        <div class="card-body p-6 text-center">
+                                            <div class="flex flex-col items-center justify-center min-h-[120px]">
+                                                <i class="fas fa-music text-4xl md:text-5xl text-white/80 mb-3"></i>
+                                                <h3 class="text-lg md:text-xl font-bold text-white mb-1">Add Audio Trigger</h3>
+                                                <p class="text-white/70 text-xs md:text-sm">Create an audio trigger for bits</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            <div id="bit-triggers-list" class="space-y-4">
+                                <div class="text-center py-12 text-white/60">
+                                    <i class="fas fa-spinner fa-spin text-6xl mb-4"></i>
+                                    <p>Loading bit triggers...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    

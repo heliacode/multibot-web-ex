@@ -1,12 +1,38 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { requireAuth } from '../middleware/auth.js';
 import { connectToChat, getChatStatus } from '../services/twitchChat.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function renderHtmlWithPartials(entryFilePath, partialsRootDir) {
+  const visited = new Set();
+
+  const renderFile = (filePath) => {
+    const abs = path.resolve(filePath);
+    if (visited.has(abs)) {
+      throw new Error(`Circular partial include detected: ${abs}`);
+    }
+    visited.add(abs);
+
+    let html = fs.readFileSync(abs, 'utf8');
+
+    // Syntax: {{> chrome/sidebar}} -> <partialsRootDir>/chrome/sidebar.html
+    html = html.replace(/\{\{>\s*([a-zA-Z0-9/_-]+)\s*\}\}/g, (_match, partialName) => {
+      const partialPath = path.join(partialsRootDir, `${partialName}.html`);
+      return renderFile(partialPath);
+    });
+
+    visited.delete(abs);
+    return html;
+  };
+
+  return renderFile(entryFilePath);
+}
 
 router.get('/', requireAuth, async (req, res) => {
   try {
@@ -32,12 +58,10 @@ router.get('/', requireAuth, async (req, res) => {
       }
     }
     
-    // Read the dashboard HTML file and replace placeholders
-    const fs = await import('fs');
-    let dashboardHtml = fs.readFileSync(
-      path.join(__dirname, '../public/dashboard.html'),
-      'utf8'
-    );
+    // Render dashboard template (supports partial includes)
+    const templatePath = path.join(__dirname, '../views/dashboard/template.html');
+    const partialsRoot = path.join(__dirname, '../views/dashboard/partials');
+    let dashboardHtml = renderHtmlWithPartials(templatePath, partialsRoot);
     
     // Replace user info placeholders
     const displayName = req.session.displayName || req.session.username || 'User';

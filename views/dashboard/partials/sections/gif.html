@@ -1,0 +1,84 @@
+<!-- GIF Bot Section -->
+                    <div id="gif-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
+                        <div class="card-body p-8">
+                            <div class="flex items-center justify-between mb-4 responsive-header">
+                                <div>
+                                    <h2 class="card-title text-2xl text-white mb-2">
+                                        <i class="fas fa-images text-white/80"></i>
+                                        GIF Bot
+                                    </h2>
+                                    <p class="text-white/80">Create commands that display GIFs from Giphy</p>
+                                </div>
+                                <button class="btn btn-primary text-white" onclick="showAddGifCommandModal()">
+                                    <i class="fas fa-plus"></i>
+                                    Add Command
+                                </button>
+                            </div>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- GIF Commands List -->
+                            <div id="gif-commands-list" class="space-y-4 mb-6">
+                                <div class="text-center py-12 text-white/60">
+                                    <i class="fas fa-spinner fa-spin text-6xl mb-4"></i>
+                                    <p>Loading GIF commands...</p>
+                                </div>
+                            </div>
+
+                            <!-- Where to Find More GIFs -->
+                            <div class="collapse collapse-arrow glass-card rounded-xl mb-4">
+                                <input type="checkbox" />
+                                <div class="collapse-title text-xl font-semibold text-white">
+                                    <i class="fas fa-info-circle text-white/80 mr-2"></i>
+                                    Where to Find More GIFs
+                                </div>
+                                <div class="collapse-content">
+                                    <div class="space-y-3 text-white/90">
+                                        <p class="text-white/70 mb-3">Here are some clean, SFW websites where you can find GIFs for your commands:</p>
+                                        <ul class="space-y-2">
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://giphy.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Giphy</a>
+                                                    <p class="text-sm text-white/60">The largest collection of animated GIFs (already integrated in this bot!)</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://tenor.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Tenor</a>
+                                                    <p class="text-sm text-white/60">Popular GIF search engine with millions of animated GIFs</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://gfycat.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Gfycat</a>
+                                                    <p class="text-sm text-white/60">High-quality GIFs and short videos</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://imgur.com" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Imgur</a>
+                                                    <p class="text-sm text-white/60">Image and GIF hosting with a large community collection</p>
+                                                </div>
+                                            </li>
+                                            <li class="flex items-start gap-2">
+                                                <i class="fas fa-external-link-alt text-white/60 mt-1"></i>
+                                                <div>
+                                                    <a href="https://reddit.com/r/gifs" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-semibold">Reddit r/gifs</a>
+                                                    <p class="text-sm text-white/60">Curated GIFs from the Reddit community</p>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                        <p class="text-sm text-white/60 mt-4 pt-3 border-t border-white/20">
+                                            <i class="fas fa-lightbulb text-yellow-400"></i>
+                                            <strong>Tip:</strong> You can use the direct GIF URL from these sites in the "From URL" option when adding commands. Make sure the URL ends with .gif for best compatibility.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    

@@ -1,0 +1,102 @@
+<!-- OBS Setup Section -->
+                    <div id="obs-setup-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
+                        <div class="card-body p-8">
+                            <h2 class="card-title text-2xl text-white mb-2">
+                                <i class="fas fa-desktop text-white/80"></i>
+                                OBS Browser Source Setup
+                            </h2>
+                            <p class="text-white/80 mb-4">Configure your OBS browser source to play audio commands</p>
+                            <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+                            
+                            <!-- Token Management -->
+                            <div class="mb-6">
+                                <h3 class="text-xl text-white mb-4">Your OBS Browser Source URL</h3>
+                                
+                                <div id="obs-token-loading" class="text-center py-8 text-white/60">
+                                    <i class="fas fa-spinner fa-spin text-4xl mb-2"></i>
+                                    <p>Loading token...</p>
+                                </div>
+
+                                <div id="obs-token-content" class="hidden">
+                                    <div class="glass-card rounded-xl p-4 mb-4">
+                                        <label class="label">
+                                            <span class="label-text text-white/90 font-semibold">Copy this URL to use in OBS:</span>
+                                        </label>
+                                        <div class="flex gap-2 responsive-input-group">
+                                            <input 
+                                                type="text" 
+                                                id="obs-url-input" 
+                                                class="input input-bordered flex-1 bg-white/10 text-white border-white/20" 
+                                                readonly
+                                            />
+                                            <button class="btn btn-primary text-white" onclick="copyObsUrl()">
+                                                <i class="fas fa-copy"></i>
+                                                Copy
+                                            </button>
+                                        </div>
+                                        <label class="label mt-2">
+                                            <span class="label-text-alt text-white/60">
+                                                <i class="fas fa-info-circle"></i>
+                                                Add this URL as a Browser Source in OBS Studio
+                                            </span>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Visual Feedback Option -->
+                                    <div class="glass-card rounded-xl p-4 mb-4">
+                                        <div class="form-control">
+                                            <label class="label cursor-pointer justify-start gap-3">
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="obs-show-feedback" 
+                                                    class="checkbox checkbox-primary" 
+                                                    checked
+                                                    onchange="updateObsUrl()"
+                                                />
+                                                <div class="label-text text-white/90">
+                                                    <span class="font-semibold">Show Command Text on Screen</span>
+                                                    <p class="text-sm text-white/60 mt-1">Display the command name (e.g., !sound) when triggered</p>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex gap-2 responsive-token-info">
+                                        <button class="btn btn-warning text-white" onclick="regenerateObsToken()">
+                                            <i class="fas fa-sync"></i>
+                                            Regenerate Token
+                                        </button>
+                                        <div class="flex-1"></div>
+                                        <div class="text-sm text-white/60 flex items-center gap-2">
+                                            <i class="fas fa-clock"></i>
+                                            <span id="obs-token-info"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Instructions -->
+                            <div class="glass-card rounded-xl p-6">
+                                <h3 class="text-lg text-white mb-4">
+                                    <i class="fas fa-question-circle"></i>
+                                    How to Set Up OBS Browser Source
+                                </h3>
+                                <ol class="list-decimal list-inside space-y-2 text-white/80 text-sm">
+                                    <li>Copy the URL above</li>
+                                    <li>Open OBS Studio</li>
+                                    <li>Right-click in Sources → Add → Browser Source</li>
+                                    <li>Name it "MultiBot Audio Commands"</li>
+                                    <li>Paste the URL in the URL field</li>
+                                    <li>Set Width: 1920, Height: 1080 (or your stream resolution)</li>
+                                    <li>Check "Shutdown source when not visible" (optional)</li>
+                                    <li>Click OK</li>
+                                    <li>Your audio commands will now play in OBS when triggered!</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        

@@ -16,6 +16,7 @@ export const twitchConfig = {
   ],
   authUrl: 'https://id.twitch.tv/oauth2/authorize',
   tokenUrl: 'https://id.twitch.tv/oauth2/token',
+  revokeUrl: 'https://id.twitch.tv/oauth2/revoke',
   validateUrl: 'https://id.twitch.tv/oauth2/validate',
   apiUrl: 'https://api.twitch.tv/helix'
 };
