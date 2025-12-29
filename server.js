@@ -27,18 +27,33 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+// Railway (and most PaaS) run behind a reverse proxy / TLS terminator.
+// This is required for secure cookies + correct client IP handling.
+if (IS_PROD) {
+  app.set('trust proxy', 1);
+}
+
+// Fail fast in production if critical secrets are missing (prevents "it deploys but auth is broken").
+if (IS_PROD && !process.env.SESSION_SECRET) {
+  console.error('[BOOT] Missing SESSION_SECRET (required in production).');
+  process.exit(1);
+}
 
 // Create HTTP server for WebSocket support
 const server = http.createServer(app);
 
 // Session configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  secret: process.env.SESSION_SECRET || 'dev-only-secret-change-me',
   resave: false,
   saveUninitialized: false,
+  proxy: IS_PROD,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: IS_PROD,
     httpOnly: true,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -46,6 +61,11 @@ app.use(session({
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Health check (used by Railway and uptime monitors)
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ ok: true });
+});
 
 // API Routes - MUST come before static files to avoid 404s
 app.use('/api/chat', chatRoutes);

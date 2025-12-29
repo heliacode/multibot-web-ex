@@ -67,6 +67,29 @@ ENCRYPTION_KEY=your_32_byte_encryption_key_here
 DATABASE_URL=postgresql://user:password@localhost:5432/multibot
 ```
 
+## Deploying on Railway
+
+This project is ready to deploy on Railway using Nixpacks (`railway.json` is included).
+
+### Required Railway Variables
+
+Set these in Railway → Service → Variables:
+
+- **NODE_ENV**: `production`
+- **SESSION_SECRET**: a long random string (required in production)
+- **ENCRYPTION_KEY**: stable key for encrypting tokens (required in production)
+  - Recommended format: **64 hex characters** (32 bytes)
+- **DATABASE_URL**: provided automatically if you add a Railway Postgres plugin (or set it manually)
+- **TWITCH_CLIENT_ID**
+- **TWITCH_CLIENT_SECRET**
+- **TWITCH_REDIRECT_URI**: must match your deployed URL, e.g. `https://<your-domain>/auth/twitch/callback`
+
+### Notes
+
+- **Port binding**: Railway injects `PORT`; the server listens on it automatically.
+- **Health check**: Railway will hit `GET /healthz`.
+- **Sessions**: in production the app runs behind Railway’s proxy; the server is configured to trust it so secure cookies work.
+
 ### 3. Set Up PostgreSQL Database
 
 1. Create a PostgreSQL database:
