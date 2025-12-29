@@ -10,15 +10,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <!-- External CSS -->
-    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/dashboard.css?v=2025-12-29-13">
     
     <!-- CRITICAL: Error suppression MUST run FIRST, before any other scripts or extensions -->
     <script src="/js/errorSuppression.js"></script>
     
 </head>
 <body class="gradient-bg">
-    <div class="drawer lg:drawer-open">
+    <div class="drawer">
         <input id="drawer-toggle" type="checkbox" class="drawer-toggle" />
+        
+        <!-- Sidebar - comes first for left-side placement -->
+        {{> chrome/sidebar}}
         
         <!-- Page content -->
         <div class="drawer-content flex flex-col">
@@ -39,8 +42,8 @@
 
             <!-- Main content -->
             <main class="flex-1 p-6 min-h-screen">
-                <!-- Dashboard Header -->
-                <div class="mb-6">
+                <!-- Dashboard Header (only visible on dashboard home) -->
+                <div id="dashboard-header" class="mb-6">
                     <h1 class="text-4xl font-bold text-white mb-2">Dashboard</h1>
                     <p class="text-white/90">Manage your Twitch bot features</p>
                 </div>
@@ -54,15 +57,12 @@
                     {{> sections/bits}}
                     {{> sections/gif}}
                     {{> sections/animatedText}}
-                    {{> sections/celebration}}
                     {{> sections/chatDebug}}
                     {{> sections/design}}
                     {{> sections/obsSetup}}
                 </div>
             </main>
         </div>
-
-        {{> chrome/sidebar}}
     </div>
 
     {{> chrome/scripts}}

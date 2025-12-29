@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MultiBot OBS Browser Source</title>
+    <!-- Preload fonts used by animated text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nabla:EDPT,EHLT@30..200,24&family=Varela+Round&family=Roboto:wght@400;700&family=Montserrat:wght@400;700&family=Oswald:wght@400;700&family=Bebas+Neue&family=Orbitron:wght@400;700&family=Press+Start+2P&family=Pacifico&display=swap">
+    <!-- animate.css (local vendored copy) -->
+    <link rel="stylesheet" href="/vendor/animate/animate.min.css">
     <style>
         * {
             margin: 0;
@@ -84,6 +90,119 @@
             0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(1.2); }
         }
+
+        /* Nabla (COLRv1) palette settings (only works on newer Chromium/CEF) */
+        @font-palette-values --Nabla {
+            font-family: Nabla;
+            base-palette: 2;
+        }
+        .nabla-font {
+            font-family: Nabla, sans-serif;
+            font-palette: --Nabla;
+        }
+
+        /* 3D animated text: per-letter spans (ONLY for Nabla variable font) */
+        @keyframes depth {
+            0% {
+                transform: translateX(0) translateY(0);
+                font-variation-settings: "EDPT" 30;
+            }
+            100% {
+                font-variation-settings: "EDPT" 200;
+                transform: translateX(0.15em) translateY(0.1em);
+            }
+        }
+        .animated-text-3d span {
+            display: inline-block;
+            position: relative;
+            animation: depth 1s ease-in-out alternate infinite;
+            font-variation-settings: "EDPT" 30;
+        }
+        
+        /* 3D text for non-Nabla fonts: whole text with stacked shadows */
+        @keyframes text3d-pulse {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+        .animated-text-3d-solid {
+            animation: text3d-pulse 2s ease-in-out infinite;
+        }
+
+        /* Text Block (wipe) animation - no hover, loops automatically */
+        .text-block {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0 0 10px 0;
+            border: 2px solid var(--tb-accent, #ff1ead);
+            border-radius: 6px;
+            background: transparent;
+            overflow: hidden;
+        }
+        .text-block::before,
+        .text-block::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 0%;
+            z-index: -1;
+        }
+        .text-block::before {
+            background: var(--tb-accent, #ff1ead);
+            animation: tbFill1 var(--tb-cycle, 2400ms) ease-in-out infinite;
+        }
+        .text-block::after {
+            background: var(--tb-secondary, #ffffff);
+            z-index: -2;
+            animation: tbFill2 var(--tb-cycle, 2400ms) ease-in-out infinite;
+        }
+        .text-block h1 {
+            margin: 0;
+            padding: 0 16px;
+            line-height: 1;
+            font-weight: 700;
+            /* stroke + gradient text fill like your demo */
+            -webkit-text-stroke: 2px white;
+            background-image: linear-gradient(transparent 50%, white 50%);
+            background-size: 100% 200%;
+            background-position: top;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: tbText var(--tb-cycle, 2400ms) ease-in-out infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes tbFill1 {
+            /* layer 1: starts later (like hover delay) */
+            0%   { height: 0%; }
+            20%  { height: 0%; }
+            45%  { height: 100%; }
+            70%  { height: 100%; }
+            90%  { height: 0%; }
+            100% { height: 0%; }
+        }
+        @keyframes tbFill2 {
+            /* layer 2: slightly earlier than layer 1 */
+            0%   { height: 0%; }
+            15%  { height: 0%; }
+            40%  { height: 100%; }
+            70%  { height: 100%; }
+            88%  { height: 0%; }
+            100% { height: 0%; }
+        }
+        @keyframes tbText {
+            0%   { background-position: top; }
+            35%  { background-position: top; }
+            60%  { background-position: bottom; }
+            100% { background-position: top; }
+        }
     </style>
 </head>
 <body>
@@ -106,6 +225,102 @@
     <div id="animated-text-container" style="position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 10000; overflow: visible;"></div>
 
     <script>
+        // Animated text transitions (fade / slide / pop)
+        // Implemented as a 2-step process (apply initial styles BEFORE append, then play-in AFTER append)
+        function buildAnimatedTextTransition(commandData) {
+            const preset = (commandData && commandData.transitionPreset) ? String(commandData.transitionPreset) : 'fade';
+            const inMsRaw = commandData?.transitionInMs;
+            const outMsRaw = commandData?.transitionOutMs;
+            const distRaw = commandData?.transitionDistance;
+
+            const safeInMs = Number.isFinite(inMsRaw) ? Math.max(0, Math.min(inMsRaw, 5000)) : Math.max(0, Math.min(parseInt(inMsRaw || 250, 10) || 250, 5000));
+            const safeOutMs = Number.isFinite(outMsRaw) ? Math.max(0, Math.min(outMsRaw, 5000)) : Math.max(0, Math.min(parseInt(outMsRaw || 400, 10) || 400, 5000));
+            const safeDistance = Number.isFinite(distRaw) ? Math.max(0, Math.min(distRaw, 500)) : Math.max(0, Math.min(parseInt(distRaw || 40, 10) || 40, 500));
+
+            // Base transform keeps the element centered at (x,y)
+            const base = 'translate(-50%, -50%)';
+
+            // Determine enter/exit deltas
+            let enterDx = 0, enterDy = 0, enterScale = 1;
+            let exitDx = 0, exitDy = 0, exitScale = 1;
+            let fade = false;
+
+            switch (preset) {
+                case 'fade':
+                    fade = true;
+                    exitScale = 1.03;
+                    break;
+                case 'fade-slide-up':
+                    fade = true;
+                    enterDy = safeDistance;
+                    exitDy = -safeDistance;
+                    break;
+                case 'fade-slide-down':
+                    fade = true;
+                    enterDy = -safeDistance;
+                    exitDy = safeDistance;
+                    break;
+                case 'fade-slide-left':
+                    fade = true;
+                    enterDx = safeDistance;
+                    exitDx = -safeDistance;
+                    break;
+                case 'fade-slide-right':
+                    fade = true;
+                    enterDx = -safeDistance;
+                    exitDx = safeDistance;
+                    break;
+                case 'pop':
+                    fade = true;
+                    enterScale = 0.96;
+                    exitScale = 1.06;
+                    break;
+                case 'slide-up':
+                    enterDy = safeDistance;
+                    exitDy = -safeDistance;
+                    break;
+                case 'slide-down':
+                    enterDy = -safeDistance;
+                    exitDy = safeDistance;
+                    break;
+                case 'slide-left':
+                    enterDx = safeDistance;
+                    exitDx = -safeDistance;
+                    break;
+                case 'slide-right':
+                    enterDx = -safeDistance;
+                    exitDx = safeDistance;
+                    break;
+                default:
+                    fade = true;
+                    break;
+            }
+
+            const applyInitial = (el) => {
+                el.style.willChange = 'transform, opacity';
+                el.style.transition = `opacity ${safeInMs}ms ease, transform ${safeInMs}ms ease`;
+                if (fade) el.style.opacity = '0';
+                el.style.transform = `${base} translate(${enterDx}px, ${enterDy}px) scale(${enterScale})`;
+            };
+
+            const playIn = (el) => {
+                requestAnimationFrame(() => {
+                    // In OBS/CEF, a single rAF is often enough when initial styles were applied pre-append
+                    if (fade) el.style.opacity = '1';
+                    el.style.transform = `${base} translate(0px, 0px) scale(1)`;
+                });
+            };
+
+            const startExit = (el) => {
+                el.style.transition = `opacity ${safeOutMs}ms ease, transform ${safeOutMs}ms ease`;
+                if (fade) el.style.opacity = '0';
+                el.style.transform = `${base} translate(${exitDx}px, ${exitDy}px) scale(${exitScale})`;
+                return safeOutMs;
+            };
+
+            return { preset, applyInitial, playIn, startExit, inMs: safeInMs, outMs: safeOutMs };
+        }
+
         // Get token from URL - handle both URLSearchParams and direct string extraction
         let token = null;
         
@@ -502,8 +717,24 @@
                 duration = 5000,
                 color1 = '#ff005e',
                 color2 = '#00d4ff',
-                fontFamily = 'Arial'
+                fontFamily = 'Arial',
+                customAnimationIn = null,
+                customAnimationOut = null
             } = commandData;
+
+            // Normalize animation type (handles legacy values like "3D")
+            const normalizedAnimationType = String(animationType || 'neon').trim().toLowerCase();
+
+            // Build a safe CSS font-family string (quotes fonts like: Press Start 2P)
+            function toCssFontFamily(family) {
+                const raw = (family && String(family).trim() !== '') ? String(family).trim() : 'Arial';
+                // If it contains anything besides letters/digits/space/hyphen/underscore, quote it.
+                // Also quote if it contains a digit-starting token (e.g. "2P") which can break unquoted family names.
+                const needsQuotes = /[^a-zA-Z0-9 _-]/.test(raw) || /\b\d/.test(raw) || /\s/.test(raw);
+                const quoted = needsQuotes ? `"${raw.replace(/"/g, '\\"')}"` : raw;
+                return `${quoted}, sans-serif`;
+            }
+            const cssFontFamily = toCssFontFamily(fontFamily);
 
             // Use textContent from commandData, or fallback to command name
             const displayText = (textContent && textContent.trim() !== '') 
@@ -529,14 +760,14 @@
                 top: ${positionY}px;
                 transform: translate(-50%, -50%);
                 font-size: ${fontSize}px;
-                font-family: ${fontFamily}, sans-serif;
+                font-family: ${cssFontFamily};
                 color: #fff;
                 white-space: nowrap;
                 pointer-events: none;
                 z-index: 10000;
             `;
 
-            if (animationType === 'neon') {
+            if (normalizedAnimationType === 'neon') {
                 // Neon text animation
                 textElement.className = 'neon-text';
                 textElement.textContent = displayText;
@@ -578,68 +809,171 @@
                         }
                     `;
                 }
-            } else if (animationType === '3d') {
+            } else if (normalizedAnimationType === '3d' || normalizedAnimationType === '3-d') {
                 // 3D animated text
-                textElement.className = '3d-text';
+                const wantsNabla = String(fontFamily || '').toLowerCase().includes('nabla');
                 
-                // Split text into individual characters for 3D effect
-                const chars = displayText.split('').map((char, index) => {
-                    if (char === ' ') {
-                        return '<span style="display: inline-block; width: 0.3em;"> </span>';
-                    }
-                    return `<span style="animation-delay: ${index * 0.1}s;">${char}</span>`;
-                }).join('');
-                
-                textElement.innerHTML = chars;
-                
-                // Add 3D animation styles
-                const styleId = '3d-animation-style';
-                if (!document.getElementById(styleId)) {
-                    const style = document.createElement('style');
-                    style.id = styleId;
-                    style.textContent = `
-                        @keyframes depth {
-                            0% {
-                                transform: translateX(0) translateY(0);
-                                font-variation-settings: "EDPT" 30;
-                            }
-                            100% {
-                                font-variation-settings: "EDPT" 200;
-                                transform: translateX(0.15em) translateY(0.1em);
-                            }
+                if (wantsNabla) {
+                    // Nabla: Use per-letter spans with depth animation (variable font magic)
+                    textElement.className = 'animated-text-3d';
+
+                    const h1 = document.createElement('h1');
+                    h1.style.margin = '0';
+                    h1.style.padding = '0';
+                    h1.style.lineHeight = '1';
+                    h1.style.fontSize = `${fontSize}px`;
+                    h1.style.fontFamily = cssFontFamily;
+                    h1.style.color = '#fff';
+                    h1.classList.add('nabla-font');
+                    textElement.appendChild(h1);
+
+                    // If fonts API is available, warn when Nabla isn't available (OBS/CEF too old)
+                    try {
+                        if (document.fonts && !document.fonts.check('16px Nabla')) {
+                            console.warn('[OBS] Nabla font not available yet (or unsupported by this OBS/CEF). If it never renders, update OBS to a newer version.');
                         }
-                        .3d-text span {
-                            display: inline-block;
-                            position: relative;
-                            animation: depth 1s ease-in-out alternate infinite;
-                            font-variation-settings: "EDPT" 30;
-                        }
-                    `;
-                    document.head.appendChild(style);
-                }
-                
-                // Load Nabla font if using it
-                if (fontFamily.toLowerCase().includes('nabla')) {
-                    const link = document.createElement('link');
-                    link.rel = 'stylesheet';
-                    link.href = 'https://fonts.googleapis.com/css2?family=Nabla:EDPT,EHLT@30..200,24&display=swap';
-                    if (!document.querySelector('link[href*="Nabla"]')) {
-                        document.head.appendChild(link);
+                    } catch (e) {
+                        // ignore
                     }
+
+                    const chars = displayText.split('');
+                    chars.forEach((char, index) => {
+                        if (char === ' ') {
+                            h1.appendChild(document.createTextNode(' '));
+                            return;
+                        }
+                        const span = document.createElement('span');
+                        span.textContent = char;
+                        span.style.animationDelay = `${index * 0.1}s`;
+                        h1.appendChild(span);
+                    });
+                } else {
+                    // Non-Nabla fonts: Use whole text with stacked shadows for actual 3D look
+                    textElement.className = 'animated-text-3d-solid';
+
+                    const h1 = document.createElement('h1');
+                    h1.textContent = displayText;
+                    h1.style.margin = '0';
+                    h1.style.padding = '0';
+                    h1.style.lineHeight = '1';
+                    h1.style.fontSize = `${fontSize}px`;
+                    h1.style.fontFamily = cssFontFamily;
+                    h1.style.color = '#fff';
+                    h1.style.fontWeight = 'bold';
+                    // Stacked text-shadow for 3D depth effect
+                    h1.style.textShadow =
+                        '0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0,0,0,.1), 0 0 5px rgba(0,0,0,.1), 0 1px 3px rgba(0,0,0,.3), 0 3px 5px rgba(0,0,0,.2), 0 5px 10px rgba(0,0,0,.25), 0 10px 10px rgba(0,0,0,.2), 0 20px 20px rgba(0,0,0,.15)';
+                    textElement.appendChild(h1);
                 }
+            } else if (normalizedAnimationType === 'block') {
+                // Text Block (wipe) animation – loops automatically (no hover)
+                const block = document.createElement('div');
+                block.className = 'text-block';
+                block.style.setProperty('--tb-accent', color1);
+                block.style.setProperty('--tb-secondary', color2 || '#ffffff');
+                // Cycle time: try to be proportional to visible duration (but bounded)
+                const cycle = Math.max(1200, Math.min(4000, Math.floor(duration / 2)));
+                block.style.setProperty('--tb-cycle', `${cycle}ms`);
+
+                const h1 = document.createElement('h1');
+                h1.textContent = displayText;
+                h1.style.fontFamily = cssFontFamily;
+                h1.style.fontSize = `${fontSize}px`;
+                block.appendChild(h1);
+
+                // Use the block as the child of the positioned wrapper
+                textElement.style.fontFamily = 'inherit';
+                textElement.style.color = '#fff';
+                textElement.style.whiteSpace = 'nowrap';
+                textElement.appendChild(block);
+            } else if (normalizedAnimationType === 'custom') {
+                // Create Your Own: plain text (motion handled by animate.css)
+                textElement.className = 'custom-text';
+                textElement.textContent = displayText;
+                textElement.style.fontFamily = cssFontFamily;
+                // Use primary color as text color for custom mode
+                textElement.style.color = color1 || '#ffffff';
+            } else {
+                // Unknown type: fall back to neon so something always shows
+                console.warn('[OBS] Unknown animationType, falling back to neon:', animationType);
+                textElement.className = 'neon-text';
+                textElement.textContent = displayText;
+                textElement.style.textShadow = `0 0 5px ${color1}, 0 0 10px ${color1}, 0 0 20px ${color1}, 0 0 40px ${color1}, 0 0 80px ${color1}`;
+            }
+
+            // If animate.css classes are provided, use them; otherwise use our transition system
+            const hasAnimateIn = !!(customAnimationIn && String(customAnimationIn).trim() !== '');
+            const hasAnimateOut = !!(customAnimationOut && String(customAnimationOut).trim() !== '');
+            const useAnimateCss = hasAnimateIn || hasAnimateOut;
+
+            const transition = useAnimateCss ? null : buildAnimatedTextTransition(commandData);
+            if (transition) {
+                transition.applyInitial(textElement);
             }
 
             container.appendChild(textElement);
-            console.log('[OBS] Animated text element added to container');
+            console.log('[OBS] Animated text element added to container', {
+                useAnimateCss,
+                transitionPreset: transition?.preset,
+                inMs: transition?.inMs,
+                outMs: transition?.outMs,
+                customAnimationIn,
+                customAnimationOut
+            });
 
-            // Remove text after duration
-            setTimeout(() => {
-                console.log('[OBS] Removing animated text after duration');
-                if (textElement.parentNode) {
-                    textElement.parentNode.removeChild(textElement);
-                    console.log('[OBS] Animated text removed');
+            // Play-in after append
+            if (useAnimateCss) {
+                // animate.css uses these CSS variables for timing
+                // https://github.com/animate-css/animate.css
+                textElement.style.setProperty('--animate-duration', `${Math.max(0, parseInt(commandData?.transitionInMs || 250, 10) || 250)}ms`);
+                textElement.classList.add('animate__animated');
+                if (hasAnimateIn) {
+                    textElement.classList.add(String(customAnimationIn).trim());
                 }
-            }, duration);
+            } else {
+                transition.playIn(textElement);
+            }
+
+            // Remove text after duration, but animate out first
+            const outMs = useAnimateCss
+                ? Math.max(0, parseInt(commandData?.transitionOutMs || 400, 10) || 400)
+                : (transition?.outMs || 400);
+
+            setTimeout(() => {
+                console.log('[OBS] Removing animated text after duration (with animation)');
+
+                if (useAnimateCss) {
+                    // swap in -> out (if provided)
+                    textElement.style.setProperty('--animate-duration', `${outMs}ms`);
+
+                    if (hasAnimateIn) {
+                        textElement.classList.remove(String(customAnimationIn).trim());
+                    }
+                    if (hasAnimateOut) {
+                        textElement.classList.add(String(customAnimationOut).trim());
+                    } else {
+                        // fallback if only "in" was provided
+                        textElement.style.transition = `opacity ${outMs}ms ease`;
+                        textElement.style.opacity = '0';
+                    }
+
+                    setTimeout(() => {
+                        if (textElement.parentNode) {
+                            textElement.parentNode.removeChild(textElement);
+                            console.log('[OBS] Animated text removed');
+                        }
+                    }, outMs + 50);
+                    return;
+                }
+
+                const exitDuration = transition?.startExit ? transition.startExit(textElement) : outMs;
+                setTimeout(() => {
+                    if (textElement.parentNode) {
+                        textElement.parentNode.removeChild(textElement);
+                        console.log('[OBS] Animated text removed');
+                    }
+                }, (exitDuration || outMs) + 25);
+            }, Math.max(0, duration - outMs));
         }
 
         // Preload audio files (optional - can be enabled if needed)

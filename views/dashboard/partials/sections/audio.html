@@ -1,11 +1,11 @@
-<!-- Audio Commands Bot Section -->
+<!-- Audio Commands Section -->
                     <div id="audio-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
                         <div class="card-body p-8">
                             <div class="flex items-center justify-between mb-6 responsive-header">
                                 <div>
                                     <h2 class="card-title text-2xl text-white mb-2">
                                         <i class="fas fa-music text-white/80"></i>
-                                        Audio Commands Bot
+                                        Audio Commands
                                     </h2>
                                     <p class="text-white/80">Manage your custom audio commands (Max 500KB per file)</p>
                                 </div>
@@ -413,21 +413,8 @@
                                     </label>
                                 </div>
 
-                                <!-- Animation Type -->
-                                <div class="form-control mb-4">
-                                    <label class="label">
-                                        <span class="label-text text-white/90">Animation Type</span>
-                                    </label>
-                                    <select 
-                                        id="animated-text-animation-type" 
-                                        class="select select-bordered bg-white/10 text-white border-white/20 w-full"
-                                        style="color: white !important;"
-                                        onchange="updateAnimationTypeUI()"
-                                    >
-                                        <option value="neon" selected style="background-color: rgba(31, 41, 55, 0.9); color: white;">Neon Text</option>
-                                        <option value="3d" style="background-color: rgba(31, 41, 55, 0.9); color: white;">3D Animated Text</option>
-                                    </select>
-                                </div>
+                                <!-- Style (set from Animated Text section buttons) -->
+                                <input type="hidden" id="animated-text-animation-type" value="neon" />
 
                                 <!-- Neon Options -->
                                 <div id="animated-text-neon-options">
@@ -457,22 +444,94 @@
                                     </div>
                                 </div>
 
-                                <!-- 3D Options -->
+                                <!-- 3D Options (also used for Custom/Text Block font choice) -->
                                 <div id="animated-text-3d-options" style="display: none;">
                                     <div class="form-control mb-4">
                                         <label class="label">
                                             <span class="label-text text-white/90">Font Family</span>
                                         </label>
-                                        <input 
-                                            type="text" 
-                                            id="animated-text-font-family" 
-                                            class="input input-bordered bg-white/10 text-white border-white/20" 
-                                            placeholder="Nabla, Arial, sans-serif" 
-                                            value="Arial"
-                                        />
+                                        <select
+                                            id="animated-text-font-family"
+                                            class="select select-bordered bg-white/10 text-white border-white/20 w-full"
+                                            style="color: white !important;"
+                                        >
+                                            <option value="Varela Round" selected style="background-color: rgba(31, 41, 55, 0.95); color: white;">Varela Round (App Default)</option>
+                                            <option value="Nabla" style="background-color: rgba(31, 41, 55, 0.95); color: white;">Nabla (Google, color font)</option>
+                                            <option value="Roboto" style="background-color: rgba(31, 41, 55, 0.95); color: white;">Roboto</option>
+                                            <option value="Montserrat" style="background-color: rgba(31, 41, 55, 0.95); color: white;">Montserrat</option>
+                                            <option value="Oswald" style="background-color: rgba(31, 41, 55, 0.95); color: white;">Oswald</option>
+                                            <option value="Bebas Neue" style="background-color: rgba(31, 41, 55, 0.95); color: white;">Bebas Neue</option>
+                                            <option value="Orbitron" style="background-color: rgba(31, 41, 55, 0.95); color: white;">Orbitron</option>
+                                            <option value="Press Start 2P" style="background-color: rgba(31, 41, 55, 0.95); color: white;">Press Start 2P</option>
+                                            <option value="Pacifico" style="background-color: rgba(31, 41, 55, 0.95); color: white;">Pacifico</option>
+                                            <option value="Arial" style="background-color: rgba(31, 41, 55, 0.95); color: white;">System: Arial (fallback)</option>
+                                        </select>
                                         <label class="label">
-                                            <span class="label-text-alt text-white/60">For 3D text, use "Nabla" for best effect (requires Google Fonts)</span>
+                                            <span class="label-text-alt text-white/60">Tip: Nabla looks amazing, but requires a newer OBS/CEF that supports color fonts</span>
                                         </label>
+                                    </div>
+                                </div>
+
+                                <!-- Create Your Own (Animate.css) - shown only in Create Your Own mode -->
+                                <div id="animated-text-custom-options" style="display: none;">
+                                    <div class="glass-card rounded-xl p-4 mb-4">
+                                        <div class="flex items-center gap-2 mb-2 text-white">
+                                            <i class="fas fa-wand-magic-sparkles text-white/80"></i>
+                                            <span class="font-semibold">Create Your Own!</span>
+                                            <span class="text-white/60 text-sm">(animate.css)</span>
+                                        </div>
+                                        <p class="text-white/70 text-sm mb-3">
+                                            Pick an enter/exit animation from <span class="font-semibold">animate.css</span> (classes like
+                                            <code class="bg-black/30 px-2 py-1 rounded">animate__fadeInUp</code>). We’ll run enter immediately and exit near the end.
+                                        </p>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="form-control">
+                                                <label class="label">
+                                                    <span class="label-text text-white/90">Enter animation</span>
+                                                </label>
+                                                <select
+                                                    id="animated-text-custom-animation-in"
+                                                    class="select select-bordered bg-white/10 text-white border-white/20 w-full"
+                                                    style="color: white !important;"
+                                                >
+                                                    <option value="" selected style="background-color: rgba(31, 41, 55, 0.95); color: white;">(none)</option>
+                                                    <option value="animate__fadeIn" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeIn</option>
+                                                    <option value="animate__fadeInUp" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeInUp</option>
+                                                    <option value="animate__fadeInDown" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeInDown</option>
+                                                    <option value="animate__fadeInLeft" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeInLeft</option>
+                                                    <option value="animate__fadeInRight" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeInRight</option>
+                                                    <option value="animate__zoomIn" style="background-color: rgba(31, 41, 55, 0.95); color: white;">zoomIn</option>
+                                                    <option value="animate__bounceIn" style="background-color: rgba(31, 41, 55, 0.95); color: white;">bounceIn</option>
+                                                    <option value="animate__backInUp" style="background-color: rgba(31, 41, 55, 0.95); color: white;">backInUp</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="form-control">
+                                                <label class="label">
+                                                    <span class="label-text text-white/90">Exit animation</span>
+                                                </label>
+                                                <select
+                                                    id="animated-text-custom-animation-out"
+                                                    class="select select-bordered bg-white/10 text-white border-white/20 w-full"
+                                                    style="color: white !important;"
+                                                >
+                                                    <option value="" selected style="background-color: rgba(31, 41, 55, 0.95); color: white;">(none)</option>
+                                                    <option value="animate__fadeOut" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeOut</option>
+                                                    <option value="animate__fadeOutDown" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeOutDown</option>
+                                                    <option value="animate__fadeOutUp" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeOutUp</option>
+                                                    <option value="animate__fadeOutLeft" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeOutLeft</option>
+                                                    <option value="animate__fadeOutRight" style="background-color: rgba(31, 41, 55, 0.95); color: white;">fadeOutRight</option>
+                                                    <option value="animate__zoomOut" style="background-color: rgba(31, 41, 55, 0.95); color: white;">zoomOut</option>
+                                                    <option value="animate__bounceOut" style="background-color: rgba(31, 41, 55, 0.95); color: white;">bounceOut</option>
+                                                    <option value="animate__backOutDown" style="background-color: rgba(31, 41, 55, 0.95); color: white;">backOutDown</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <p class="text-white/60 text-xs mt-3">
+                                            Reference: <a class="text-primary hover:underline" href="https://github.com/animate-css/animate.css" target="_blank" rel="noopener noreferrer">animate.css</a>
+                                        </p>
                                     </div>
                                 </div>
 
@@ -549,6 +608,81 @@
                                         </label>
                                     </div>
                                 </div>
+
+                                <!-- Transition (Fade / Slide) -->
+                                <div id="animated-text-transition-options">
+                                <div class="form-control mb-4">
+                                    <label class="label">
+                                        <span class="label-text text-white/90">Transition</span>
+                                    </label>
+                                    <select
+                                        id="animated-text-transition-preset"
+                                        class="select select-bordered bg-white/10 text-white border-white/20 w-full"
+                                        style="color: white !important;"
+                                    >
+                                        <option value="fade" selected style="background-color: rgba(31, 41, 55, 0.9); color: white;">Fade (recommended)</option>
+                                        <option value="fade-slide-up" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Fade + Slide Up</option>
+                                        <option value="fade-slide-down" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Fade + Slide Down</option>
+                                        <option value="fade-slide-left" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Fade + Slide Left</option>
+                                        <option value="fade-slide-right" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Fade + Slide Right</option>
+                                        <option value="pop" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Pop (fade + slight zoom)</option>
+                                        <option value="slide-up" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Slide Up (no fade)</option>
+                                        <option value="slide-down" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Slide Down (no fade)</option>
+                                        <option value="slide-left" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Slide Left (no fade)</option>
+                                        <option value="slide-right" style="background-color: rgba(31, 41, 55, 0.9); color: white;">Slide Right (no fade)</option>
+                                    </select>
+                                    <label class="label">
+                                        <span class="label-text-alt text-white/60">Suggestion: keep Fade or Fade+Slide for best readability on stream</span>
+                                    </label>
+                                </div>
+
+                                <div class="grid grid-cols-3 gap-4 mb-4">
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text text-white/90">Fade/Move In (ms)</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="animated-text-transition-in-ms"
+                                            class="input input-bordered bg-white/10 text-white border-white/20"
+                                            value="250"
+                                            min="0"
+                                            max="2000"
+                                            step="50"
+                                        />
+                                    </div>
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text text-white/90">Fade/Move Out (ms)</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="animated-text-transition-out-ms"
+                                            class="input input-bordered bg-white/10 text-white border-white/20"
+                                            value="400"
+                                            min="0"
+                                            max="3000"
+                                            step="50"
+                                        />
+                                    </div>
+                                    <div class="form-control">
+                                        <label class="label">
+                                            <span class="label-text text-white/90">Slide Distance (px)</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="animated-text-transition-distance"
+                                            class="input input-bordered bg-white/10 text-white border-white/20"
+                                            value="40"
+                                            min="0"
+                                            max="300"
+                                            step="5"
+                                        />
+                                    </div>
+                                </div>
+                                </div>
+
+                                <!-- (Create Your Own section is shown only in custom mode) -->
 
                                 <!-- Modal Actions -->
                                 <div class="modal-action responsive-buttons">

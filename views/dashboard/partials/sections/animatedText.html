@@ -1,20 +1,51 @@
-<!-- Animated Text Bot Section -->
+<!-- Animated Text Section -->
                     <div id="animated-text-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
                         <div class="card-body p-8">
-                            <div class="flex items-center justify-between mb-4 responsive-header">
-                                <div>
-                                    <h2 class="card-title text-2xl text-white mb-2">
-                                        <i class="fas fa-text-width text-white/80"></i>
-                                        Animated Text Bot
-                                    </h2>
-                                    <p class="text-white/80">Create neon and 3D animated text commands</p>
-                                </div>
-                                <button class="btn btn-primary text-white" onclick="showAddAnimatedTextCommandModal()">
-                                    <i class="fas fa-plus"></i>
-                                    Add Command
+                            <div class="mb-6">
+                                <h2 class="card-title text-2xl text-white mb-2">
+                                    <i class="fas fa-text-width text-white/80"></i>
+                                    Animated Text
+                                </h2>
+                                <p class="text-white/80">Choose a style to add a command. Existing commands show below.</p>
+                            </div>
+
+                            <!-- Big style buttons (dashboard-card style) -->
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+                                <button id="animated-text-style-card-neon" type="button" class="glass-card rounded-3xl shadow-2xl cursor-pointer text-left" onclick="setAnimatedTextSectionMode('neon', true)">
+                                    <div class="card-body p-6 md:p-8 text-center">
+                                        <div class="flex flex-col items-center justify-center min-h-[160px] md:min-h-[180px]">
+                                            <i class="fas fa-bolt text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                            <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Neon</h3>
+                                            <p class="text-white/70 text-xs md:text-sm px-2">Add a glowing neon text command</p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button id="animated-text-style-card-3d" type="button" class="glass-card rounded-3xl shadow-2xl cursor-pointer text-left" onclick="setAnimatedTextSectionMode('3d', true)">
+                                    <div class="card-body p-6 md:p-8 text-center">
+                                        <div class="flex flex-col items-center justify-center min-h-[160px] md:min-h-[180px]">
+                                            <i class="fas fa-cube text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                            <h3 class="text-xl md:text-2xl font-bold text-white mb-2">3D</h3>
+                                            <p class="text-white/70 text-xs md:text-sm px-2">Add a 3D/per-letter animated text command</p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button id="animated-text-style-card-custom" type="button" class="glass-card rounded-3xl shadow-2xl cursor-pointer text-left" onclick="setAnimatedTextSectionMode('custom', true)">
+                                    <div class="card-body p-6 md:p-8 text-center">
+                                        <div class="flex flex-col items-center justify-center min-h-[160px] md:min-h-[180px]">
+                                            <i class="fas fa-wand-magic-sparkles text-5xl md:text-6xl text-white/80 mb-3 md:mb-4"></i>
+                                            <h3 class="text-xl md:text-2xl font-bold text-white mb-2">Create Your Own</h3>
+                                            <p class="text-white/70 text-xs md:text-sm px-2">Use animate.css enter/exit animations</p>
+                                        </div>
+                                    </div>
                                 </button>
                             </div>
                             <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+
+                            <div id="animated-text-commands-filter-label" class="text-white/70 text-sm mb-3">
+                                Showing Neon commands
+                            </div>
                             
                             <!-- Animated Text Commands List -->
                             <div id="animated-text-commands-list" class="space-y-4 mb-6">

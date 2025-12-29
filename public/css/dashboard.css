@@ -4,26 +4,123 @@ body {
     font-family: 'Varela Round', sans-serif;
 }
 
+/* =========================================================
+   Drawer (sidebar) behavior fix
+   ---------------------------------------------------------
+   We load Tailwind/DaisyUI via CDN, but responsive prefixes
+   don't apply to DaisyUI component classes (e.g. drawer-open)
+   and in some environments the drawer styles can be flaky.
+
+   This CSS makes the left sidebar:
+   - Always visible on desktop (>= 1024px)
+   - Toggleable via the checkbox + hamburger on mobile
+   ========================================================= */
+
+.drawer {
+    position: relative;
+}
+
+/* Mobile-first: sidebar is an off-canvas panel */
+.drawer-toggle {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.drawer-content {
+    min-height: 100vh;
+}
+
+.drawer-side {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 18rem; /* wider sidebar: 288px */
+    max-width: 85vw;
+    transform: translateX(-105%);
+    transition: transform 200ms ease;
+    z-index: 50;
+}
+
+.drawer-side > aside {
+    height: 100%;
+    width: 100%;
+}
+
+.drawer-side .drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+}
+
+/* Open state (checkbox checked) */
+.drawer-toggle:checked ~ .drawer-side {
+    transform: translateX(0);
+}
+
+.drawer-toggle:checked ~ .drawer-side .drawer-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Desktop: sidebar is always visible and part of layout */
+@media (min-width: 1024px) {
+    .drawer {
+        display: flex;
+        align-items: stretch;
+    }
+
+    .drawer-toggle {
+        display: none;
+    }
+
+    .drawer-side {
+        position: relative;
+        transform: none !important;
+        height: auto;
+        max-width: none;
+    }
+
+    .drawer-side .drawer-overlay {
+        display: none !important;
+    }
+
+    .drawer-content {
+        flex: 1;
+        min-width: 0;
+    }
+}
+
 .gradient-bg {
-    background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 25%, #14b8a6 50%, #0891b2 75%, #0c4a6e 100%);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%, #f8fafc 100%);
 }
 
 .glass-effect {
-    background: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.95) 0%, rgba(6, 182, 212, 0.95) 50%, rgba(20, 184, 166, 0.95) 100%);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .glass-sidebar {
-    background: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.97) 0%, rgba(6, 182, 212, 0.97) 50%, rgba(20, 184, 166, 0.97) 100%);
     backdrop-filter: blur(15px);
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    border-right: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1),
+                inset -1px 0 2px rgba(255, 255, 255, 0.2);
 }
 
 .glass-card {
-    background: rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.95) 0%, rgba(6, 182, 212, 0.95) 50%, rgba(20, 184, 166, 0.95) 100%);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 
+                0 1px 3px rgba(255, 255, 255, 0.2) inset,
+                0 -1px 3px rgba(0, 0, 0, 0.1) inset;
 }
 
 .animate-float {
@@ -217,11 +314,50 @@ body {
 /* Dashboard Cards */
 #dashboard-cards .glass-card {
     transition: all 0.3s ease;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 
+                0 2px 4px rgba(255, 255, 255, 0.2) inset,
+                0 -2px 4px rgba(0, 0, 0, 0.1) inset;
+    height: 280px;
+}
+
+#dashboard-cards .glass-card .card-body {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 100% !important;
+    padding: 1.5rem !important;
+}
+
+#dashboard-cards .glass-card .card-body > div {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100%;
+}
+
+/* Force white text in dashboard cards */
+#dashboard-cards .glass-card h3,
+#dashboard-cards .glass-card i,
+#dashboard-cards .glass-card p {
+    color: white !important;
+}
+
+#dashboard-cards .glass-card .text-white\/70 {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+#dashboard-cards .glass-card .text-white\/80 {
+    color: rgba(255, 255, 255, 0.8) !important;
 }
 
 #dashboard-cards .glass-card:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+                0 2px 6px rgba(255, 255, 255, 0.3) inset,
+                0 -2px 6px rgba(0, 0, 0, 0.15) inset;
+    border-color: rgba(255, 255, 255, 0.45);
 }
 
 #dashboard-cards .glass-card:active {
@@ -326,5 +462,124 @@ body {
     #dashboard-cards .glass-card h3 {
         font-size: 1rem !important;
     }
+}
+
+/* Enhanced Sidebar Navigation */
+.menu li a {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.25rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.menu li a i {
+    width: 1.25rem;
+    text-align: center;
+    font-size: 1.1rem;
+}
+
+.menu li a:hover {
+    background: rgba(255, 255, 255, 0.25) !important;
+    transform: translateX(4px);
+}
+
+.menu li a.active {
+    background: rgba(255, 255, 255, 0.35) !important;
+    font-weight: 600;
+    border-left: 3px solid white;
+    padding-left: calc(1rem - 3px);
+}
+
+.menu li a.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, #ffffff, rgba(255, 255, 255, 0.7));
+}
+
+/* Sidebar sections */
+.menu-section-divider {
+    margin: 0.75rem 0 0.5rem 0;
+    padding: 0;
+    list-style: none;
+}
+
+.menu-section-divider span {
+    display: block;
+    padding: 0.5rem 1rem;
+    letter-spacing: 0.05em;
+}
+
+/* Smooth scrolling for sections */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Sidebar scrollbar styling */
+.drawer-side aside::-webkit-scrollbar {
+    width: 6px;
+}
+
+.drawer-side aside::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.drawer-side aside::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.drawer-side aside::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Dashboard header text - dark for light background */
+.gradient-bg main h1, 
+.gradient-bg main h2,
+.gradient-bg main p {
+    color: #1e293b !important;
+}
+
+/* Ensure sidebar text stays white */
+.glass-sidebar,
+.glass-sidebar * {
+    color: white !important;
+}
+
+.glass-sidebar .menu li a {
+    color: white !important;
+}
+
+.glass-sidebar .menu li a span,
+.glass-sidebar .menu li a i {
+    color: white !important;
+}
+
+.glass-sidebar .menu li a.active {
+    color: white !important;
+}
+
+.glass-sidebar .menu li a.active span,
+.glass-sidebar .menu li a.active i {
+    color: white !important;
+}
+
+/* Dashboard cards hover effect */
+#dashboard-cards .glass-card {
+    transition: all 0.3s ease;
+}
+
+#dashboard-cards .glass-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 

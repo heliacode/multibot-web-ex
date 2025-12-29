@@ -185,6 +185,12 @@ async function setupCommandHandlers(twitchUserId) {
         color1: cmd.color1 || '#ff005e',
         color2: cmd.color2 || '#00d4ff',
         fontFamily: cmd.font_family || 'Arial',
+        transitionPreset: cmd.transition_preset || 'fade',
+        transitionInMs: cmd.transition_in_ms || 250,
+        transitionOutMs: cmd.transition_out_ms || 400,
+        transitionDistance: cmd.transition_distance || 40,
+        customAnimationIn: cmd.custom_animation_in || null,
+        customAnimationOut: cmd.custom_animation_out || null,
         id: cmd.id
       });
       const textInfo = cmd.text_content ? `"${cmd.text_content}"` : 'dynamic from chat';
@@ -307,6 +313,12 @@ export async function processCommand(twitchUserId, message) {
       color1: handler.color1,
       color2: handler.color2,
       fontFamily: handler.fontFamily,
+      transitionPreset: handler.transitionPreset,
+      transitionInMs: handler.transitionInMs,
+      transitionOutMs: handler.transitionOutMs,
+      transitionDistance: handler.transitionDistance,
+      customAnimationIn: handler.customAnimationIn,
+      customAnimationOut: handler.customAnimationOut,
       id: handler.id
     };
     

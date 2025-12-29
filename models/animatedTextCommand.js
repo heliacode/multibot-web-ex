@@ -17,6 +17,12 @@ export async function createAnimatedTextCommand(animatedTextData) {
     color1 = '#ff005e',
     color2 = '#00d4ff',
     fontFamily = 'Arial',
+    transitionPreset = 'fade',
+    transitionInMs = 250,
+    transitionOutMs = 400,
+    transitionDistance = 40,
+    customAnimationIn = null,
+    customAnimationOut = null,
     isBitsOnly = false
   } = animatedTextData;
 
@@ -24,9 +30,11 @@ export async function createAnimatedTextCommand(animatedTextData) {
     INSERT INTO animated_text_commands (
       user_id, twitch_user_id, command, text_content, animation_type,
       position_x, position_y, font_size, duration, color1, color2,
-      font_family, is_bits_only
+      font_family, transition_preset, transition_in_ms, transition_out_ms, transition_distance,
+      custom_animation_in, custom_animation_out,
+      is_bits_only
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
     RETURNING *
   `;
 
@@ -43,6 +51,12 @@ export async function createAnimatedTextCommand(animatedTextData) {
     color1,
     color2,
     fontFamily,
+    transitionPreset,
+    transitionInMs,
+    transitionOutMs,
+    transitionDistance,
+    customAnimationIn,
+    customAnimationOut,
     isBitsOnly
   ];
 
@@ -131,7 +145,10 @@ export async function getAnimatedTextCommandById(id, userId = null) {
 export async function updateAnimatedTextCommand(id, userId, updateData) {
   const allowedFields = [
     'command', 'text_content', 'animation_type', 'position_x', 'position_y',
-    'font_size', 'duration', 'color1', 'color2', 'font_family', 'is_active'
+    'font_size', 'duration', 'color1', 'color2', 'font_family',
+    'transition_preset', 'transition_in_ms', 'transition_out_ms', 'transition_distance',
+    'custom_animation_in', 'custom_animation_out',
+    'is_active'
   ];
   const updates = [];
   const values = [];

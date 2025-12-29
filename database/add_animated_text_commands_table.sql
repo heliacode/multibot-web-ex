@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS animated_text_commands (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     twitch_user_id VARCHAR(255) NOT NULL,
     command VARCHAR(100) NOT NULL,
-    text_content TEXT NOT NULL,
+    text_content TEXT,
     animation_type VARCHAR(50) NOT NULL DEFAULT 'neon', -- 'neon', '3d', etc.
     position_x INTEGER DEFAULT 960, -- X position (default center of 1920px)
     position_y INTEGER DEFAULT 540, -- Y position (default center of 1080px)
@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS animated_text_commands (
     color1 VARCHAR(7) DEFAULT '#ff005e', -- Primary color (for neon)
     color2 VARCHAR(7) DEFAULT '#00d4ff', -- Secondary color (for neon)
     font_family VARCHAR(255) DEFAULT 'Arial', -- Font family (for 3d text)
+    transition_preset VARCHAR(50) DEFAULT 'fade',
+    transition_in_ms INTEGER DEFAULT 250,
+    transition_out_ms INTEGER DEFAULT 400,
+    transition_distance INTEGER DEFAULT 40,
+    custom_animation_in VARCHAR(100),
+    custom_animation_out VARCHAR(100),
     is_active BOOLEAN DEFAULT true,
     is_bits_only BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

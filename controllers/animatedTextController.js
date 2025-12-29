@@ -42,6 +42,12 @@ export async function createCommand(req, res) {
       color1,
       color2,
       fontFamily,
+      transitionPreset,
+      transitionInMs,
+      transitionOutMs,
+      transitionDistance,
+      customAnimationIn,
+      customAnimationOut,
       isBitsOnly
     } = req.body;
 
@@ -70,6 +76,12 @@ export async function createCommand(req, res) {
       color1: color1 || '#ff005e',
       color2: color2 || '#00d4ff',
       fontFamily: fontFamily || 'Arial',
+      transitionPreset: transitionPreset || 'fade',
+      transitionInMs: transitionInMs || 250,
+      transitionOutMs: transitionOutMs || 400,
+      transitionDistance: transitionDistance || 40,
+      customAnimationIn: (customAnimationIn && String(customAnimationIn).trim() !== '') ? String(customAnimationIn).trim() : null,
+      customAnimationOut: (customAnimationOut && String(customAnimationOut).trim() !== '') ? String(customAnimationOut).trim() : null,
       isBitsOnly: isBitsOnly === true || isBitsOnly === 'true'
     });
 

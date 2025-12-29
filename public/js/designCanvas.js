@@ -16,6 +16,8 @@ let selectedElement = null;
 let elementIdCounter = 0;
 let canvas = null;
 let canvasScale = 1; // Scale factor for display
+let autoSaveTimeout = null;
+let hasUnsavedChanges = false;
 
 // Helper functions to convert between 1080p coordinates and display coordinates
 function toDisplayX(x1080p) {
@@ -115,6 +117,7 @@ function addTextElement() {
         color: white;
         font-size: 24px;
         font-weight: bold;
+        font-family: 'Varela Round', sans-serif;
         cursor: move;
         user-select: none;
         z-index: 10;
@@ -153,6 +156,7 @@ function addTextElement() {
     updateElementCount();
     updateLayersList();
     selectElement(elementId);
+    triggerAutoSave();
 }
 
 function addShapeElement(shape) {
@@ -222,6 +226,7 @@ function addShapeElement(shape) {
     updateElementCount();
     updateLayersList();
     selectElement(elementId);
+    triggerAutoSave();
 }
 
 function setupInteract(element, elementData) {
@@ -262,6 +267,10 @@ function setupInteract(element, elementData) {
                     elementData.y = Math.max(0, Math.min(elementData.y, CANVAS_HEIGHT - fromDisplaySize(height)));
                     
                     updatePropertiesPanel();
+                },
+                end(event) {
+                    // Save when done dragging
+                    triggerAutoSave();
                 }
             },
             modifiers: [
@@ -313,6 +322,10 @@ function setupInteract(element, elementData) {
                     elementData.y = Math.max(0, Math.min(elementData.y, CANVAS_HEIGHT - elementData.height));
                     
                     updatePropertiesPanel();
+                },
+                end(event) {
+                    // Save when done resizing
+                    triggerAutoSave();
                 }
             },
             modifiers: [
@@ -526,6 +539,7 @@ function updateElementProperty(prop, value) {
     }
     
     updatePropertiesPanel();
+    triggerAutoSave();
 }
 
 function deleteSelectedElement() {
@@ -730,6 +744,7 @@ function deleteElementFromLayer(elementId) {
     updatePropertiesPanel();
     updateElementCount();
     updateLayersList();
+    triggerAutoSave();
 }
 
 function clearCanvas() {
@@ -751,9 +766,34 @@ function clearCanvas() {
     updatePropertiesPanel();
     updateElementCount();
     updateLayersList();
+    triggerAutoSave();
 }
 
-async function saveDesign() {
+// Auto-save with debounce
+function triggerAutoSave() {
+    hasUnsavedChanges = true;
+    
+    // Update indicator
+    const indicator = document.getElementById('auto-save-indicator');
+    if (indicator) {
+        indicator.innerHTML = `
+            <i class="fas fa-circle-notch fa-spin text-yellow-400"></i>
+            <span>Saving...</span>
+        `;
+    }
+    
+    // Clear existing timeout
+    if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+    }
+    
+    // Set new timeout to save after 2 seconds of no changes
+    autoSaveTimeout = setTimeout(() => {
+        saveDesign(true); // true = auto-save (silent)
+    }, 2000);
+}
+
+async function saveDesign(isAutoSave = false) {
     try {
         const response = await fetch('/api/design', {
             method: 'POST',
@@ -772,22 +812,51 @@ async function saveDesign() {
         }
 
         const data = await response.json();
+        hasUnsavedChanges = false;
         
-        // Show success message
-        const toast = document.createElement('div');
-        toast.className = 'toast toast-top toast-end';
-        toast.innerHTML = `
-            <div class="alert alert-success">
-                <span>Design saved successfully!</span>
-            </div>
-        `;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3000);
+        // Update indicator
+        const indicator = document.getElementById('auto-save-indicator');
+        if (indicator) {
+            indicator.innerHTML = `
+                <i class="fas fa-check-circle text-green-400"></i>
+                <span>Saved</span>
+            `;
+            
+            // Reset to "Auto-save enabled" after 3 seconds
+            if (isAutoSave) {
+                setTimeout(() => {
+                    if (indicator && !hasUnsavedChanges) {
+                        indicator.innerHTML = `
+                            <i class="fas fa-check-circle text-green-400"></i>
+                            <span>Auto-save enabled</span>
+                        `;
+                    }
+                }, 3000);
+            }
+        }
+        
+        // Show success message (only for manual saves)
+        if (!isAutoSave) {
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-top toast-end';
+            toast.innerHTML = `
+                <div class="alert alert-success">
+                    <span>Design saved successfully!</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        } else {
+            // For auto-save, just log it
+            console.log('Design auto-saved:', data);
+        }
         
         console.log('Design saved:', data);
     } catch (error) {
         console.error('Error saving design:', error);
-        alert('Failed to save design: ' + error.message);
+        if (!isAutoSave) {
+            alert('Failed to save design: ' + error.message);
+        }
     }
 }
 
@@ -878,6 +947,7 @@ function renderDesignElements() {
                 color: ${elementData.color || '#ffffff'};
                 font-size: ${elementData.fontSize || 24}px;
                 font-weight: bold;
+                font-family: 'Varela Round', sans-serif;
                 cursor: move;
                 user-select: none;
                 z-index: ${10 + index};
@@ -1015,6 +1085,7 @@ window.addImageElement = function(imagePath, width, height) {
         updateElementCount();
         updateLayersList();
         selectElement(elementId);
+        triggerAutoSave();
     };
     img.onerror = function() {
         alert('Failed to load image');

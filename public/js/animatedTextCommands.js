@@ -5,6 +5,7 @@
 
 let animatedTextCommands = [];
 let currentAnimatedTextEditingId = null;
+let animatedTextSectionMode = 'neon'; // 'neon' | '3d' | 'custom'
 
 /**
  * Safely get a DOM element with null checking
@@ -134,6 +135,15 @@ ensureDOMReady(() => {
     } catch (e) {
         // Ignore initialization errors
     }
+
+    // Default selection styling for the Animated Text section buttons
+    try {
+        if (window.setAnimatedTextSectionMode) {
+            window.setAnimatedTextSectionMode(animatedTextSectionMode, false);
+        }
+    } catch (e) {
+        // ignore
+    }
 });
 
 // Expose function to be called when section is shown
@@ -171,17 +181,33 @@ function renderAnimatedTextCommands() {
     const container = safeGetElementById('animated-text-commands-list');
     if (!container) return;
 
-    if (animatedTextCommands.length === 0) {
+    const filterMode = animatedTextSectionMode || 'neon';
+    const filterLabel = safeGetElementById('animated-text-commands-filter-label');
+    if (filterLabel?.textContent !== undefined) {
+        filterLabel.textContent =
+            filterMode === '3d'
+                ? 'Showing 3D commands'
+                : (filterMode === 'custom' ? 'Showing Create Your Own commands' : 'Showing Neon commands');
+    }
+    const filtered = animatedTextCommands.filter(cmd => {
+        const t = (cmd?.animation_type || 'neon');
+        if (filterMode === 'custom') return t === 'custom';
+        if (filterMode === '3d') return t === '3d';
+        return t === 'neon';
+    });
+
+    if (filtered.length === 0) {
+        const label = filterMode === '3d' ? '3D' : (filterMode === 'custom' ? 'Create Your Own' : 'Neon');
         container.innerHTML = `
             <div class="text-center py-12 text-white/60">
                 <i class="fas fa-text-width text-6xl mb-4 animate-float"></i>
-                <p>No animated text commands yet. Click "Add Command" to create one.</p>
+                <p>No ${label} commands yet. Click "Add" to create one.</p>
             </div>
         `;
         return;
     }
 
-    container.innerHTML = animatedTextCommands.map(cmd => `
+    container.innerHTML = filtered.map(cmd => `
         <div class="glass-card rounded-xl p-4" data-command-id="${cmd.id}">
             <div class="flex items-center justify-between responsive-command-card">
                 <div class="flex-1">
@@ -213,23 +239,15 @@ function renderAnimatedTextCommands() {
     `).join('');
 }
 
-function showAddAnimatedTextCommandModal() {
+function showAddAnimatedTextCommandModalInternal(mode) {
     currentAnimatedTextEditingId = null;
     
     const modal = safeGetElementById('animated-text-command-modal');
     const form = safeGetElementById('animated-text-command-form');
     
     if (form) {
-        // Set values BEFORE reset to ensure they persist
-        const animationTypeSelect = safeGetElementById('animated-text-animation-type');
-        if (animationTypeSelect) {
-            try {
-                animationTypeSelect.value = 'neon';
-                animationTypeSelect.selectedIndex = 0;
-            } catch (e) {
-                // Ignore extension errors
-            }
-        }
+        const nextMode = (mode && String(mode)) ? String(mode) : (animatedTextSectionMode || 'neon');
+        safeSetValue(safeGetElementById('animated-text-animation-type'), nextMode);
         
         try {
             form.reset();
@@ -245,22 +263,8 @@ function showAddAnimatedTextCommandModal() {
         
         safeSetValue(safeGetElementById('animated-text-text-content'), '');
         
-        if (animationTypeSelect) {
-            try {
-                animationTypeSelect.value = 'neon';
-                animationTypeSelect.selectedIndex = 0;
-                // Force the value multiple ways
-                if (animationTypeSelect.setAttribute) {
-                    animationTypeSelect.setAttribute('value', 'neon');
-                }
-                // Remove any validation attributes
-                if (animationTypeSelect.removeAttribute) {
-                    animationTypeSelect.removeAttribute('required');
-                }
-            } catch (e) {
-                // Ignore extension errors
-            }
-        }
+        // Ensure mode is set after reset
+        safeSetValue(safeGetElementById('animated-text-animation-type'), nextMode);
         
         safeSetValue(safeGetElementById('animated-text-position-x'), '960');
         safeSetValue(safeGetElementById('animated-text-position-y'), '540');
@@ -268,7 +272,13 @@ function showAddAnimatedTextCommandModal() {
         safeSetValue(safeGetElementById('animated-text-duration'), '5');
         safeSetValue(safeGetElementById('animated-text-color1'), '#ff005e');
         safeSetValue(safeGetElementById('animated-text-color2'), '#00d4ff');
-        safeSetValue(safeGetElementById('animated-text-font-family'), 'Arial');
+        safeSetValue(safeGetElementById('animated-text-font-family'), 'Varela Round');
+        safeSetValue(safeGetElementById('animated-text-transition-preset'), 'fade');
+        safeSetValue(safeGetElementById('animated-text-transition-in-ms'), '250');
+        safeSetValue(safeGetElementById('animated-text-transition-out-ms'), '400');
+        safeSetValue(safeGetElementById('animated-text-transition-distance'), '40');
+        safeSetValue(safeGetElementById('animated-text-custom-animation-in'), '');
+        safeSetValue(safeGetElementById('animated-text-custom-animation-out'), '');
         updateAnimationTypeUI();
     }
     
@@ -302,33 +312,7 @@ function editAnimatedTextCommand(id) {
         safeSetValue(safeGetElementById('animated-text-command-input'), command?.command || '');
         safeSetValue(safeGetElementById('animated-text-text-content'), command?.text_content || '');
         
-        const animationTypeSelect = safeGetElementById('animated-text-animation-type');
-        if (animationTypeSelect) {
-            try {
-                const animType = command?.animation_type || 'neon';
-                animationTypeSelect.value = animType;
-                // Ensure the value is properly set
-                if (animationTypeSelect.value !== animType && animationTypeSelect.options) {
-                    // If value didn't set, find and select the option
-                    const options = animationTypeSelect.options;
-                    for (let i = 0; i < options.length; i++) {
-                        if (options[i]?.value === animType) {
-                            animationTypeSelect.selectedIndex = i;
-                            break;
-                        }
-                    }
-                }
-                // Remove any validation attributes
-                if (animationTypeSelect.removeAttribute) {
-                    animationTypeSelect.removeAttribute('required');
-                }
-                if (animationTypeSelect.setAttribute) {
-                    animationTypeSelect.setAttribute('data-validated', 'true');
-                }
-            } catch (e) {
-                // Ignore extension errors
-            }
-        }
+        safeSetValue(safeGetElementById('animated-text-animation-type'), command?.animation_type || 'neon');
         
         safeSetValue(safeGetElementById('animated-text-position-x'), command?.position_x || 960);
         safeSetValue(safeGetElementById('animated-text-position-y'), command?.position_y || 540);
@@ -337,7 +321,13 @@ function editAnimatedTextCommand(id) {
         safeSetValue(safeGetElementById('animated-text-duration'), Math.round((command?.duration || 5000) / 1000));
         safeSetValue(safeGetElementById('animated-text-color1'), command?.color1 || '#ff005e');
         safeSetValue(safeGetElementById('animated-text-color2'), command?.color2 || '#00d4ff');
-        safeSetValue(safeGetElementById('animated-text-font-family'), command?.font_family || 'Arial');
+        safeSetValue(safeGetElementById('animated-text-font-family'), command?.font_family || 'Varela Round');
+        safeSetValue(safeGetElementById('animated-text-transition-preset'), command?.transition_preset || 'fade');
+        safeSetValue(safeGetElementById('animated-text-transition-in-ms'), command?.transition_in_ms || 250);
+        safeSetValue(safeGetElementById('animated-text-transition-out-ms'), command?.transition_out_ms || 400);
+        safeSetValue(safeGetElementById('animated-text-transition-distance'), command?.transition_distance || 40);
+        safeSetValue(safeGetElementById('animated-text-custom-animation-in'), command?.custom_animation_in || '');
+        safeSetValue(safeGetElementById('animated-text-custom-animation-out'), command?.custom_animation_out || '');
         updateAnimationTypeUI();
     }
     
@@ -355,26 +345,60 @@ function editAnimatedTextCommand(id) {
 
 // Make function globally accessible
 window.updateAnimationTypeUI = function() {
-    const animationTypeSelect = safeGetElementById('animated-text-animation-type');
-    const animationType = safeGetValue(animationTypeSelect, 'neon');
+    const animationTypeInput = safeGetElementById('animated-text-animation-type');
+    const animationType = safeGetValue(animationTypeInput, 'neon');
     const neonOptions = safeGetElementById('animated-text-neon-options');
     const threeDOptions = safeGetElementById('animated-text-3d-options');
+    const customOptions = safeGetElementById('animated-text-custom-options');
+    const transitionOptions = safeGetElementById('animated-text-transition-options');
     
     try {
-        if (animationType === 'neon') {
-            if (neonOptions?.style) neonOptions.style.display = 'block';
-            if (threeDOptions?.style) threeDOptions.style.display = 'none';
-        } else if (animationType === '3d') {
-            if (neonOptions?.style) neonOptions.style.display = 'none';
-            if (threeDOptions?.style) threeDOptions.style.display = 'block';
-        }
+        // Toggle panels
+        if (neonOptions?.style) neonOptions.style.display = (animationType === 'neon') ? 'block' : 'none';
+        // Font picker only for 'block' and 'custom' modes - 3D uses Varela Round by default
+        if (threeDOptions?.style) threeDOptions.style.display = (animationType === 'block' || animationType === 'custom') ? 'block' : 'none';
+        if (customOptions?.style) customOptions.style.display = (animationType === 'custom') ? 'block' : 'none';
+
+        // Hide transition preset/distance when in custom mode (animate.css drives motion)
+        if (transitionOptions?.style) transitionOptions.style.display = (animationType === 'custom') ? 'none' : 'block';
     } catch (e) {
         // Ignore extension errors
     }
 };
 
-// Also make other functions globally accessible
-window.showAddAnimatedTextCommandModal = showAddAnimatedTextCommandModal;
+// Section-level mode buttons (Neon / 3D / Create Your Own)
+window.setAnimatedTextSectionMode = function(mode, openAdd = false) {
+    const allowed = new Set(['neon', '3d', 'custom']);
+    const next = allowed.has(String(mode)) ? String(mode) : 'neon';
+    animatedTextSectionMode = next;
+
+    // Update big card visuals
+    const setCard = (id, active) => {
+        const el = safeGetElementById(id);
+        if (!el?.classList) return;
+        if (active) {
+            el.classList.add('ring-2', 'ring-primary');
+        } else {
+            el.classList.remove('ring-2', 'ring-primary');
+        }
+    };
+    setCard('animated-text-style-card-neon', next === 'neon');
+    setCard('animated-text-style-card-3d', next === '3d');
+    setCard('animated-text-style-card-custom', next === 'custom');
+
+    // Re-render list
+    renderAnimatedTextCommands();
+
+    // Optionally open the Add modal (used by the big style cards)
+    if (openAdd === true) {
+        showAddAnimatedTextCommandModalInternal(next);
+    }
+};
+
+// Also make functions globally accessible
+window.showAddAnimatedTextCommandModal = function() {
+    showAddAnimatedTextCommandModalInternal(animatedTextSectionMode);
+};
 window.editAnimatedTextCommand = editAnimatedTextCommand;
 window.saveAnimatedTextCommand = saveAnimatedTextCommand;
 window.deleteAnimatedTextCommand = deleteAnimatedTextCommand;
@@ -448,23 +472,22 @@ async function saveAnimatedTextCommand(event) {
     
     // Validate animation type - ensure it has a value using safe getter
     let animationType = safeGetValue(animationTypeSelect, 'neon');
-    if (!animationType || animationType === '' || (animationType !== 'neon' && animationType !== '3d')) {
+    if (!animationType || animationType === '' || (animationType !== 'neon' && animationType !== '3d' && animationType !== 'block' && animationType !== 'custom')) {
         // Default to neon if invalid
         animationType = 'neon';
         safeSetValue(animationTypeSelect, 'neon');
-        try {
-            if (animationTypeSelect.selectedIndex !== undefined) {
-                animationTypeSelect.selectedIndex = 0;
-            }
-        } catch (e) {
-            // Ignore
-        }
     }
     
     // Get all form values using safe getters
     // Convert seconds to milliseconds for backend (like GIF commands do)
     const durationSeconds = parseInt(safeGetValue(safeGetElementById('animated-text-duration'), '5')) || 5;
     const durationMs = durationSeconds * 1000;
+    const transitionInMs = parseInt(safeGetValue(safeGetElementById('animated-text-transition-in-ms'), '250')) || 250;
+    const transitionOutMs = parseInt(safeGetValue(safeGetElementById('animated-text-transition-out-ms'), '400')) || 400;
+    const transitionDistance = parseInt(safeGetValue(safeGetElementById('animated-text-transition-distance'), '40')) || 40;
+    const transitionPreset = safeGetValue(safeGetElementById('animated-text-transition-preset'), 'fade') || 'fade';
+    const customAnimationIn = safeGetValue(safeGetElementById('animated-text-custom-animation-in'), '').trim() || null;
+    const customAnimationOut = safeGetValue(safeGetElementById('animated-text-custom-animation-out'), '').trim() || null;
     
     const formData = {
         command: commandValue,
@@ -476,7 +499,13 @@ async function saveAnimatedTextCommand(event) {
         duration: durationMs,
         color1: safeGetValue(safeGetElementById('animated-text-color1'), '#ff005e'),
         color2: safeGetValue(safeGetElementById('animated-text-color2'), '#00d4ff'),
-        fontFamily: safeGetValue(safeGetElementById('animated-text-font-family'), 'Arial')
+        fontFamily: safeGetValue(safeGetElementById('animated-text-font-family'), 'Varela Round'),
+        transitionPreset,
+        transitionInMs,
+        transitionOutMs,
+        transitionDistance,
+        customAnimationIn,
+        customAnimationOut
     };
     
     // Validate numeric fields using safe getters
@@ -502,6 +531,23 @@ async function saveAnimatedTextCommand(event) {
     if (isNaN(durationSeconds) || durationSeconds < 1 || durationSeconds > 30) {
         alert('Duration must be between 1 and 30 seconds');
         safeFocus(safeGetElementById('animated-text-duration'));
+        return false;
+    }
+
+    // Validate transition settings (keep reasonable bounds)
+    if (transitionInMs < 0 || transitionInMs > 2000) {
+        alert('Fade/Move In must be between 0 and 2000 ms');
+        safeFocus(safeGetElementById('animated-text-transition-in-ms'));
+        return false;
+    }
+    if (transitionOutMs < 0 || transitionOutMs > 3000) {
+        alert('Fade/Move Out must be between 0 and 3000 ms');
+        safeFocus(safeGetElementById('animated-text-transition-out-ms'));
+        return false;
+    }
+    if (transitionDistance < 0 || transitionDistance > 300) {
+        alert('Slide Distance must be between 0 and 300 px');
+        safeFocus(safeGetElementById('animated-text-transition-distance'));
         return false;
     }
     
