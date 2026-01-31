@@ -97,22 +97,40 @@ router.get('/', requireAuth, async (req, res) => {
         
         // Define critical functions immediately to ensure they're available for onclick handlers
         // These will be replaced/overridden when the full scripts load
-        window.showAddAudioCommandModal = function() {
-          console.log('[Dashboard] showAddAudioCommandModal called (stub)');
-          // If the real function exists, use it; otherwise wait for script to load
-          if (typeof window._showAddAudioCommandModal === 'function') {
-            return window._showAddAudioCommandModal();
-          }
-          // Wait a bit for script to load, then retry
-          setTimeout(() => {
-            if (typeof window._showAddAudioCommandModal === 'function') {
-              window._showAddAudioCommandModal();
-            } else {
-              console.error('[Dashboard] showAddAudioCommandModal still not available');
-              alert('Page is still loading. Please wait a moment and try again.');
+        (function() {
+          const stubFunction = function() {
+            console.log('[Dashboard] showAddAudioCommandModal called (stub)');
+            // Check if the real function exists - audioCommands.js replaces window.showAddAudioCommandModal directly
+            // So check if it's been replaced first, then check _showAddAudioCommandModal as fallback
+            const realFunction = (window.showAddAudioCommandModal !== stubFunction ? window.showAddAudioCommandModal : null) ||
+                                 window._showAddAudioCommandModal;
+            
+            if (typeof realFunction === 'function' && realFunction !== stubFunction) {
+              return realFunction();
             }
-          }, 100);
-        };
+            
+            // Wait a bit for script to load, then retry with multiple attempts
+            let attempts = 0;
+            const maxAttempts = 10;
+            const checkFunction = () => {
+              attempts++;
+              // Check if showAddAudioCommandModal has been replaced first (most likely case)
+              const fn = (window.showAddAudioCommandModal !== stubFunction ? window.showAddAudioCommandModal : null) ||
+                         window._showAddAudioCommandModal;
+              
+              if (typeof fn === 'function' && fn !== stubFunction) {
+                fn();
+              } else if (attempts < maxAttempts) {
+                setTimeout(checkFunction, 200);
+              } else {
+                console.error('[Dashboard] showAddAudioCommandModal still not available after', maxAttempts, 'attempts');
+                alert('Page is still loading. Please wait a moment and try again.');
+              }
+            };
+            setTimeout(checkFunction, 200);
+          };
+          window.showAddAudioCommandModal = stubFunction;
+        })();
       </script></head>`
     );
     
