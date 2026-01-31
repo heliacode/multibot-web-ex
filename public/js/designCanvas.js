@@ -17,7 +17,7 @@ let elementIdCounter = 0;
 let canvas = null;
 let canvasScale = 1; // Scale factor for display
 let autoSaveTimeout = null;
-let hasUnsavedChanges = false;
+// Note: hasUnsavedChanges is declared in navigation.js to avoid duplicate declaration
 
 // Helper functions to convert between 1080p coordinates and display coordinates
 function toDisplayX(x1080p) {
@@ -771,7 +771,16 @@ function clearCanvas() {
 
 // Auto-save with debounce
 function triggerAutoSave() {
-    hasUnsavedChanges = true;
+    // Use window.hasUnsavedChanges from navigation.js or declare if not available
+    if (typeof window.setUnsavedChanges === 'function') {
+        window.setUnsavedChanges(true);
+    } else {
+        // Fallback if navigation.js hasn't loaded yet
+        if (typeof window.hasUnsavedChanges === 'undefined') {
+            window.hasUnsavedChanges = false;
+        }
+        window.hasUnsavedChanges = true;
+    }
     
     // Update indicator
     const indicator = document.getElementById('auto-save-indicator');
@@ -812,7 +821,12 @@ async function saveDesign(isAutoSave = false) {
         }
 
         const data = await response.json();
-        hasUnsavedChanges = false;
+        // Use window.hasUnsavedChanges from navigation.js
+        if (typeof window.setUnsavedChanges === 'function') {
+            window.setUnsavedChanges(false);
+        } else if (typeof window.hasUnsavedChanges !== 'undefined') {
+            window.hasUnsavedChanges = false;
+        }
         
         // Update indicator
         const indicator = document.getElementById('auto-save-indicator');
@@ -825,7 +839,8 @@ async function saveDesign(isAutoSave = false) {
             // Reset to "Auto-save enabled" after 3 seconds
             if (isAutoSave) {
                 setTimeout(() => {
-                    if (indicator && !hasUnsavedChanges) {
+                    const hasChanges = typeof window.hasUnsavedChanges !== 'undefined' ? window.hasUnsavedChanges : false;
+                    if (indicator && !hasChanges) {
                         indicator.innerHTML = `
                             <i class="fas fa-check-circle text-green-400"></i>
                             <span>Auto-save enabled</span>

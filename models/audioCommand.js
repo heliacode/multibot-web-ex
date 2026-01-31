@@ -15,18 +15,19 @@ export async function createAudioCommand(audioCommandData) {
     isBitsOnly = false
   } = audioCommandData;
 
-  const query = `
+  // Remove ! prefix if present (commands should be stored without !)
+  const cleanCommand = command.toLowerCase().replace(/^!/, '');
+
+  // Try with is_bits_only first, fallback to without it if column doesn't exist
+  let query = `
     INSERT INTO audio_commands (
       user_id, twitch_user_id, command, file_path, file_url, file_size, volume, is_bits_only
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING *
   `;
-
-  // Remove ! prefix if present (commands should be stored without !)
-  const cleanCommand = command.toLowerCase().replace(/^!/, '');
   
-  const values = [
+  let values = [
     userId,
     twitchUserId,
     cleanCommand,
@@ -43,6 +44,39 @@ export async function createAudioCommand(audioCommandData) {
     console.log('[AUDIO CMD MODEL] Insert successful:', result.rows[0]?.id);
     return result.rows[0];
   } catch (error) {
+    // If column doesn't exist, retry without is_bits_only
+    if (error.message && error.message.includes('column "is_bits_only" does not exist')) {
+      console.log('[AUDIO CMD MODEL] is_bits_only column not found, retrying without it');
+      query = `
+        INSERT INTO audio_commands (
+          user_id, twitch_user_id, command, file_path, file_url, file_size, volume
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING *
+      `;
+      values = [
+        userId,
+        twitchUserId,
+        cleanCommand,
+        filePath,
+        fileUrl || null,
+        fileSize,
+        volume
+      ];
+      
+      try {
+        const result = await pool.query(query, values);
+        console.log('[AUDIO CMD MODEL] Insert successful (without is_bits_only):', result.rows[0]?.id);
+        return result.rows[0];
+      } catch (retryError) {
+        console.error('[AUDIO CMD MODEL] Retry failed:', retryError.message);
+        if (retryError.code === '23505') {
+          throw new Error(`Command "${command}" already exists`);
+        }
+        throw new Error(`Database error: ${retryError.message}`);
+      }
+    }
+    
     console.error('[AUDIO CMD MODEL] Database error:', {
       code: error.code,
       message: error.message,
