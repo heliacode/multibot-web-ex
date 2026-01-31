@@ -86,9 +86,15 @@ router.get('/', requireAuth, async (req, res) => {
     dashboardHtml = dashboardHtml.replace(/\{\{USER_INITIAL\}\}/g, userInitial);
     
     // Inject USER_ID into JavaScript for WebSocket connections
+    // Escape userId to prevent XSS and ensure it's a valid JavaScript string
+    const escapedUserId = (userId || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
     dashboardHtml = dashboardHtml.replace(
       '</head>',
-      `<script>window.USER_ID = '${userId}';</script></head>`
+      `<script>
+        // Set USER_ID for WebSocket connections
+        window.USER_ID = '${escapedUserId}';
+        console.log('[Dashboard] USER_ID set:', window.USER_ID ? 'Present' : 'Missing');
+      </script></head>`
     );
     
     res.send(dashboardHtml);
