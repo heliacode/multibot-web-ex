@@ -21,10 +21,19 @@ const { Pool } = pg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Check if DATABASE_URL is set
+if (!process.env.DATABASE_URL) {
+  console.error('❌ DATABASE_URL environment variable is not set');
+  console.error('   Please ensure Railway Postgres plugin is added and connected');
+  process.exit(1);
+}
+
 // Database connection with Railway-compatible SSL settings
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  connectionTimeoutMillis: 10000, // 10 second timeout
+  query_timeout: 30000 // 30 second query timeout
 });
 
 // Migration files in order of execution

@@ -13,7 +13,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 async function initializeDatabase() {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
+    // Check if DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      console.log('⚠️  DATABASE_URL not set - skipping database initialization');
+      console.log('   Server will start, but database features may not work\n');
+      resolve();
+      return;
+    }
+
     console.log('🔍 Checking database initialization...');
     
     const initScript = spawn('node', [join(__dirname, 'init-db-railway.js')], {
@@ -21,23 +29,29 @@ async function initializeDatabase() {
       env: process.env
     });
 
+    // Set a timeout to prevent hanging (30 seconds max)
+    const timeout = setTimeout(() => {
+      console.error('⏱️  Database initialization timeout (30s) - continuing with server startup...\n');
+      initScript.kill('SIGTERM');
+      resolve(); // Resolve anyway to allow server to start
+    }, 30000);
+
     initScript.on('close', (code) => {
+      clearTimeout(timeout);
       if (code === 0) {
         console.log('✅ Database check complete\n');
-        resolve();
       } else {
         console.error(`❌ Database initialization failed with code ${code}`);
-        // Don't fail startup - let the app try to start anyway
-        // Database might be in a partial state that's still usable
         console.log('⚠️  Continuing with server startup...\n');
-        resolve(); // Resolve anyway to allow server to start
       }
+      resolve(); // Always resolve to allow server to start
     });
 
     initScript.on('error', (error) => {
+      clearTimeout(timeout);
       console.error('❌ Error running database initialization:', error.message);
       console.log('⚠️  Continuing with server startup...\n');
-      resolve(); // Resolve anyway to allow server to start
+      resolve(); // Always resolve to allow server to start
     });
   });
 }
@@ -78,6 +92,14 @@ function startServer() {
 // Main execution
 async function main() {
   try {
+    console.log('='.repeat(60));
+    console.log('🚀 MultiBot Web - Railway Startup');
+    console.log('='.repeat(60));
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Port: ${process.env.PORT || '3000'}`);
+    console.log(`Database URL: ${process.env.DATABASE_URL ? 'Set ✓' : 'Not set ✗'}`);
+    console.log('='.repeat(60) + '\n');
+    
     // Initialize database first (idempotent - safe to run every time)
     await initializeDatabase();
     

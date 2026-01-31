@@ -207,7 +207,9 @@ global.wss = wss;
 setWebSocketServer(wss);
 
 // Start server
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Bind to 0.0.0.0 to accept connections from Railway's proxy
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT} (accessible on port ${PORT})`);
+  console.log(`Health check available at http://0.0.0.0:${PORT}/healthz`);
 });
 
