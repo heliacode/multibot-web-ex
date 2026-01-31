@@ -108,26 +108,56 @@ async function connectToChat() {
         chatWebSocket = new WebSocket(wsUrl);
 
         chatWebSocket.onopen = () => {
-            // Get userId from session or use a placeholder that server will handle
-            const userId = window.USER_ID || '{{USER_ID}}';
-            chatWebSocket.send(JSON.stringify({ 
-                type: 'subscribe',
-                userId: userId
-            }));
-            updateChatStatus(true, data.status?.channel || null);
+            console.log('[Chat Debug] WebSocket opened, sending subscribe message');
+            // Get userId from window (injected by server) or try to get from session
+            const userId = window.USER_ID;
+            if (!userId || userId === '{{USER_ID}}') {
+                console.error('[Chat Debug] USER_ID not available, WebSocket may not work properly');
+                updateChatStatus(false);
+                chatWebSocket.close();
+                return;
+            }
+            
+            console.log('[Chat Debug] Subscribing with userId:', userId);
+            try {
+                chatWebSocket.send(JSON.stringify({ 
+                    type: 'subscribe',
+                    userId: String(userId)
+                }));
+                updateChatStatus(true, data.status?.channel || null);
+            } catch (error) {
+                console.error('[Chat Debug] Error sending subscribe message:', error);
+                updateChatStatus(false);
+            }
         };
 
         chatWebSocket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'chat_message') {
-                addChatMessage(data.message);
-            } else if (data.type === 'command_trigger') {
-                handleCommandTrigger(data.command);
+            try {
+                const data = JSON.parse(event.data);
+                console.log('[Chat Debug] WebSocket message received:', data.type);
+                
+                if (data.type === 'subscribed') {
+                    console.log('[Chat Debug] Successfully subscribed to chat updates');
+                    // Status already updated in onopen
+                } else if (data.type === 'chat_message') {
+                    addChatMessage(data.message);
+                } else if (data.type === 'command_trigger') {
+                    handleCommandTrigger(data.command);
+                } else if (data.type === 'error') {
+                    console.error('[Chat Debug] WebSocket error:', data.message);
+                    if (data.message && data.message.includes('Invalid user ID')) {
+                        // Refresh page to get new USER_ID
+                        console.log('[Chat Debug] Invalid user ID, page may need refresh');
+                    }
+                }
+            } catch (error) {
+                console.error('[Chat Debug] Error parsing WebSocket message:', error);
             }
         };
 
         chatWebSocket.onerror = (error) => {
-            console.error('WebSocket error:', error);
+            console.error('[Chat Debug] WebSocket error:', error);
+            console.error('[Chat Debug] WebSocket readyState:', chatWebSocket.readyState);
         };
 
         chatWebSocket.onclose = () => {
@@ -196,30 +226,91 @@ document.addEventListener('DOMContentLoaded', async () => {
                     chatWebSocket = new WebSocket(wsUrl);
                     
                     chatWebSocket.onopen = () => {
-                        const userId = window.USER_ID || '{{USER_ID}}';
-                        chatWebSocket.send(JSON.stringify({ 
-                            type: 'subscribe',
-                            userId: userId
-                        }));
-                        console.log('[Dashboard] WebSocket connected for chat updates');
+                        const userId = window.USER_ID;
+                        if (!userId || userId === '{{USER_ID}}') {
+                            console.error('[Dashboard] USER_ID not available for WebSocket subscription');
+                            chatWebSocket.close();
+                            return;
+                        }
+                        
+                        console.log('[Dashboard] WebSocket opened, subscribing with userId:', userId);
+                        try {
+                            chatWebSocket.send(JSON.stringify({ 
+                                type: 'subscribe',
+                                userId: String(userId)
+                            }));
+                            console.log('[Dashboard] WebSocket connected for chat updates');
+                        } catch (error) {
+                            console.error('[Dashboard] Error sending WebSocket subscribe:', error);
+                        }
                     };
                     
                     chatWebSocket.onmessage = (event) => {
-                        const data = JSON.parse(event.data);
-                        if (data.type === 'chat_message') {
-                            addChatMessage(data.message);
-                        } else if (data.type === 'command_trigger') {
-                            handleCommandTrigger(data.command);
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log('[Dashboard] WebSocket message:', data.type);
+                            
+                            if (data.type === 'subscribed') {
+                                console.log('[Dashboard] Successfully subscribed to chat updates');
+                            } else if (data.type === 'chat_message') {
+                                addChatMessage(data.message);
+                            } else if (data.type === 'command_trigger') {
+                                handleCommandTrigger(data.command);
+                            } else if (data.type === 'error') {
+                                console.error('[Dashboard] WebSocket error:', data.message);
+                            }
+                        } catch (error) {
+                            console.error('[Dashboard] Error parsing WebSocket message:', error);
                         }
                     };
                     
                     chatWebSocket.onerror = (error) => {
                         console.error('[Dashboard] WebSocket error:', error);
+                        console.error('[Dashboard] WebSocket readyState:', chatWebSocket.readyState);
                     };
                     
-                    chatWebSocket.onclose = () => {
-                        console.log('[Dashboard] WebSocket disconnected');
-                        // Don't update status to disconnected here - server connection might still be active
+                    chatWebSocket.onclose = (event) => {
+                        console.log('[Dashboard] WebSocket disconnected', {
+                            code: event.code,
+                            reason: event.reason,
+                            wasClean: event.wasClean
+                        });
+                        
+                        // Check if it was an unexpected disconnect
+                        if (!event.wasClean && event.code !== 1000) {
+                            console.warn('[Dashboard] WebSocket closed unexpectedly, will retry');
+                            // Retry connection after a delay
+                            setTimeout(() => {
+                                if (document.getElementById('chat-debug-section')) {
+                                    console.log('[Dashboard] Retrying WebSocket connection...');
+                                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                                    const wsUrl = `${protocol}//${window.location.host}`;
+                                    chatWebSocket = new WebSocket(wsUrl);
+                                    // Re-attach handlers (same as above)
+                                    chatWebSocket.onopen = () => {
+                                        const userId = window.USER_ID;
+                                        if (userId && userId !== '{{USER_ID}}') {
+                                            chatWebSocket.send(JSON.stringify({ 
+                                                type: 'subscribe',
+                                                userId: String(userId)
+                                            }));
+                                        }
+                                    };
+                                    chatWebSocket.onmessage = (event) => {
+                                        try {
+                                            const data = JSON.parse(event.data);
+                                            if (data.type === 'chat_message') {
+                                                addChatMessage(data.message);
+                                            } else if (data.type === 'command_trigger') {
+                                                handleCommandTrigger(data.command);
+                                            }
+                                        } catch (error) {
+                                            console.error('[Dashboard] Error parsing WebSocket message:', error);
+                                        }
+                                    };
+                                }
+                            }, 3000);
+                        }
                     };
                 }
             } catch (error) {

@@ -276,21 +276,46 @@ wss.on('connection', (ws, req) => {
       // Handle regular dashboard WebSocket subscription
       else if (data.type === 'subscribe') {
         // Store user ID with WebSocket connection (for dashboard)
-        ws.userId = data.userId;
+        const userId = data.userId;
+        console.log(`[WebSocket] Dashboard subscription request from userId: ${userId}`);
+        
+        // Validate userId is not a placeholder
+        if (!userId || userId === '{{USER_ID}}' || userId.trim() === '') {
+          console.error('[WebSocket] Invalid userId in subscribe message:', userId);
+          ws.send(JSON.stringify({ 
+            type: 'error', 
+            message: 'Invalid user ID. Please refresh the page.' 
+          }));
+          // Don't close - let them retry
+          return;
+        }
+        
+        ws.userId = String(userId);
         ws.isAuthenticated = true;
         ws.isObsSource = false;
+        
+        console.log(`[WebSocket] Dashboard client subscribed for user ${ws.userId}`);
         ws.send(JSON.stringify({ 
           type: 'subscribed', 
-          message: 'Subscribed to chat updates' 
+          message: 'Subscribed to chat updates',
+          userId: ws.userId
         }));
+      } else {
+        console.warn(`[WebSocket] Unknown message type: ${data.type}`);
       }
     } catch (error) {
-      console.error('WebSocket error:', error);
-      if (!ws.isObsSource) {
-        ws.send(JSON.stringify({ 
-          type: 'error', 
-          message: 'WebSocket error occurred' 
-        }));
+      console.error('[WebSocket] Error processing message:', error);
+      console.error('[WebSocket] Error stack:', error.stack);
+      try {
+        if (!ws.isObsSource) {
+          ws.send(JSON.stringify({ 
+            type: 'error', 
+            message: 'WebSocket error occurred',
+            error: error.message
+          }));
+        }
+      } catch (sendError) {
+        console.error('[WebSocket] Failed to send error message:', sendError);
       }
     }
   });
