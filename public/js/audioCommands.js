@@ -172,7 +172,7 @@ function renderAudioCommands() {
                 </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // Function is already defined at the top of the file for immediate availability
