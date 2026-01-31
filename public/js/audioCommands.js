@@ -10,6 +10,7 @@ let uploadMethod = 'file';
 let audioPreviewElement = null;
 
 // Expose functions globally IMMEDIATELY (before DOMContentLoaded) so onclick handlers can access them
+// Store in both locations for compatibility
 window.showAddAudioCommandModal = function showAddAudioCommandModal() {
     currentEditingId = null;
     const modal = document.getElementById('audio-command-modal');
@@ -80,6 +81,9 @@ window.showAddAudioCommandModal = function showAddAudioCommandModal() {
         }
     }, 100);
 };
+
+// Also store as _showAddAudioCommandModal for the stub function to find
+window._showAddAudioCommandModal = window.showAddAudioCommandModal;
 
 // Load audio commands on page load
 document.addEventListener('DOMContentLoaded', async () => {
