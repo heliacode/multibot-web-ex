@@ -9,6 +9,32 @@ let selectedFile = null;
 let uploadMethod = 'file';
 let audioPreviewElement = null;
 
+/**
+ * Construct proper audio URL from file_path or file_url
+ * Converts relative paths to absolute URLs
+ */
+function getAudioUrl(cmd) {
+    if (!cmd) return null;
+    
+    // Prefer file_url if available (persists across deployments)
+    let audioSrc = cmd.file_url || cmd.file_path;
+    
+    if (!audioSrc) return null;
+    
+    // If it's already a full URL (http/https), use it as-is
+    if (audioSrc.startsWith('http://') || audioSrc.startsWith('https://')) {
+        return audioSrc;
+    }
+    
+    // If it's a relative path starting with /, construct absolute URL
+    if (audioSrc.startsWith('/')) {
+        return window.location.origin + audioSrc;
+    }
+    
+    // Otherwise return as-is (might be a data URL or other format)
+    return audioSrc;
+}
+
 // Expose functions globally IMMEDIATELY (before DOMContentLoaded) so onclick handlers can access them
 // Store in both locations for compatibility
 window.showAddAudioCommandModal = function showAddAudioCommandModal() {
@@ -134,8 +160,8 @@ function renderAudioCommands() {
     }
 
     container.innerHTML = audioCommands.map(cmd => {
-        // Prefer file_url if available (persists across deployments), fallback to file_path
-        const audioSrc = cmd.file_url || cmd.file_path;
+        // Get proper audio URL (handles relative paths)
+        const audioSrc = getAudioUrl(cmd);
         // Escape JavaScript string for use in HTML attribute
         const escapedAudioSrc = audioSrc ? audioSrc.replace(/'/g, "\\'").replace(/"/g, '\\"') : '';
         return `
@@ -409,8 +435,9 @@ function editAudioCommand(id) {
 
     // Set up preview with existing file
     const audioPreview = document.getElementById('audio-preview');
-    // Prefer file_url if available, fallback to file_path
-    audioPreview.src = cmd.file_url || cmd.file_path;
+    // Get proper audio URL (handles relative paths)
+    const audioSrc = getAudioUrl(cmd);
+    audioPreview.src = audioSrc || '';
     document.getElementById('audio-preview-section').classList.remove('hidden');
 
     // Show modal
@@ -468,12 +495,23 @@ function handleAudioError(audioId, src) {
     const cmd = audioCommands.find(c => c.id === audioId);
     if (cmd) {
         // Try file_url if file_path failed
-        if (cmd.file_url && src === cmd.file_path) {
+        if (cmd.file_url && (src === cmd.file_path || src.includes(cmd.file_path))) {
             console.log(`[Audio] Trying file_url as fallback: ${cmd.file_url}`);
             const audio = document.getElementById(`audio-${audioId}`);
             if (audio) {
                 audio.src = cmd.file_url;
                 audio.load();
+            }
+        } else if (cmd.file_path && !cmd.file_url) {
+            // Try constructing absolute URL from file_path
+            const absolutePath = window.location.origin + cmd.file_path;
+            console.log(`[Audio] Trying absolute path: ${absolutePath}`);
+            const audio = document.getElementById(`audio-${audioId}`);
+            if (audio && src !== absolutePath) {
+                audio.src = absolutePath;
+                audio.load();
+            } else {
+                alert(`Audio file not found at ${cmd.file_path}. The file may have been deleted. Please re-upload the audio file.`);
             }
         } else {
             alert(`Audio file not found. ${cmd.file_url ? 'The file may have been deleted.' : 'Please re-upload the audio file.'}`);
@@ -488,7 +526,8 @@ function playAudioCommand(id, volume) {
         if (!audio.src || audio.src === window.location.href) {
             const cmd = audioCommands.find(c => c.id === id);
             if (cmd) {
-                const audioSrc = cmd.file_url || cmd.file_path;
+                // Get proper audio URL (handles relative paths)
+                const audioSrc = getAudioUrl(cmd);
                 if (audioSrc) {
                     audio.src = audioSrc;
                     audio.load();
