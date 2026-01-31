@@ -42,6 +42,7 @@ async function initializeDatabase() {
         console.log('✅ Database check complete\n');
       } else {
         console.error(`❌ Database initialization failed with code ${code}`);
+        console.error('⚠️  Check the logs above for detailed error information');
         console.log('⚠️  Continuing with server startup...\n');
       }
       resolve(); // Always resolve to allow server to start

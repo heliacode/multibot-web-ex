@@ -138,10 +138,26 @@ async function initializeDatabase() {
   console.log('='.repeat(60));
   
   try {
+    // Check if DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL environment variable is not set');
+    }
+    
+    console.log('📋 Environment check:');
+    console.log(`   DATABASE_URL: ${process.env.DATABASE_URL ? 'Set ✓' : 'Not set ✗'}`);
+    console.log(`   NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
+    
     // Test database connection
     console.log('\n1️⃣  Testing database connection...');
-    await pool.query('SELECT 1');
-    console.log('   ✅ Database connection successful');
+    try {
+      await pool.query('SELECT 1');
+      console.log('   ✅ Database connection successful');
+    } catch (connError) {
+      console.error('   ❌ Database connection failed:', connError.message || connError);
+      console.error('   Error code:', connError.code);
+      console.error('   Error detail:', connError.detail);
+      throw connError;
+    }
     
     // Check if core schema exists
     console.log('\n2️⃣  Checking existing tables...');
@@ -222,6 +238,9 @@ async function initializeDatabase() {
     console.error('❌ Database initialization failed!');
     console.error('='.repeat(60));
     console.error('\nError:', error.message);
+    console.error('Error code:', error.code);
+    console.error('Error detail:', error.detail);
+    console.error('Error stack:', error.stack);
     
     if (error.message.includes('password') || error.message.includes('authentication')) {
       console.error('\n💡 Tip: Check your DATABASE_URL environment variable.');
@@ -232,6 +251,12 @@ async function initializeDatabase() {
     } else if (error.message.includes('ECONNREFUSED')) {
       console.error('\n💡 Tip: Cannot connect to database.');
       console.error('   Ensure DATABASE_URL is set correctly in Railway.');
+    } else if (error.message.includes('ENCRYPTION_KEY')) {
+      console.error('\n💡 Tip: Encryption key issue detected.');
+      console.error('   Check if ENCRYPTION_KEY is set in Railway environment variables.');
+    } else if (!error.message || error.message.trim() === '') {
+      console.error('\n💡 Tip: Empty error message - this might be a connection timeout.');
+      console.error('   Check if DATABASE_URL is set and the database is accessible.');
     }
     
     // Exit with error code so startup script knows it failed
