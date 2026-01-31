@@ -174,9 +174,29 @@ export async function createCommand(req, res) {
   } catch (error) {
     console.error('[AUDIO CMD DEBUG] Error creating audio command:', error);
     console.error('[AUDIO CMD DEBUG] Error stack:', error.stack);
+    console.error('[AUDIO CMD DEBUG] Error code:', error.code);
+    console.error('[AUDIO CMD DEBUG] Error detail:', error.detail);
+    
+    // Clean up uploaded file if it exists and there was an error
+    if (req.file && req.file.path) {
+      try {
+        const fs = await import('fs');
+        if (fs.existsSync(req.file.path)) {
+          fs.unlinkSync(req.file.path);
+          console.log('[AUDIO CMD DEBUG] Cleaned up uploaded file due to error');
+        }
+      } catch (cleanupError) {
+        console.error('[AUDIO CMD DEBUG] Error cleaning up file:', cleanupError);
+      }
+    }
+    
     // Ensure we always return JSON, even on errors
     const errorMessage = error.message || 'Unknown error';
-    res.status(500).json({
+    const statusCode = error.code === '23505' ? 409 : // Unique violation
+                       error.code === '23503' ? 400 : // Foreign key violation
+                       500;
+    
+    res.status(statusCode).json({
       error: 'Failed to create audio command',
       message: errorMessage,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
