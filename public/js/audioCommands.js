@@ -97,9 +97,14 @@ function renderAudioCommands() {
     `).join('');
 }
 
-function showAddAudioCommandModal() {
+// Expose function globally for onclick handlers
+window.showAddAudioCommandModal = function showAddAudioCommandModal() {
     currentEditingId = null;
     const modal = document.getElementById('audio-command-modal');
+    if (!modal) {
+        console.error('[Audio Commands] Modal not found');
+        return;
+    }
     const form = document.getElementById('audio-command-form');
     const fileSection = document.getElementById('file-upload-section');
     const urlSection = document.getElementById('url-upload-section');
@@ -557,5 +562,21 @@ async function testAudioCommand(command) {
     }
 }
 
+// Expose all functions used in onclick handlers to global scope
 window.testAudioCommand = testAudioCommand;
+window.editAudioCommand = editAudioCommand;
+window.deleteAudioCommand = deleteAudioCommand;
+window.playAudioCommand = playAudioCommand;
+window.stopAudioCommand = stopAudioCommand;
+window.switchUploadMethod = switchUploadMethod;
+window.handleDrop = handleDrop;
+window.handleDragOver = handleDragOver;
+window.handleDragLeave = handleDragLeave;
+window.handleFileSelect = handleFileSelect;
+window.clearFile = clearFile;
+window.updateVolumeDisplay = updateVolumeDisplay;
+window.playPreview = playPreview;
+window.stopPreview = stopPreview;
+window.closeAudioCommandModal = closeAudioCommandModal;
+window.saveAudioCommand = saveAudioCommand;
 
