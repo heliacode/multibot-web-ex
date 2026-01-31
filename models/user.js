@@ -55,40 +55,66 @@ export async function createUser(userData) {
 }
 
 export async function getUserByTwitchId(twitchUserId) {
-  const query = 'SELECT * FROM users WHERE twitch_user_id = $1';
-  const result = await pool.query(query, [twitchUserId]);
-  
-  if (result.rows.length === 0) {
-    return null;
-  }
-
-  const user = result.rows[0];
-  
-  // Parse scopes - handle both JSON string and plain string formats
-  let scopes = [];
   try {
-    if (typeof user.scopes === 'string') {
-      // Try parsing as JSON first
-      try {
-        scopes = JSON.parse(user.scopes);
-      } catch (e) {
-        // If not valid JSON, treat as space-separated string
-        scopes = user.scopes.split(' ').filter(s => s.trim());
-      }
-    } else if (Array.isArray(user.scopes)) {
-      scopes = user.scopes;
+    console.log('[USER MODEL] Looking up user with twitchUserId:', twitchUserId, 'Type:', typeof twitchUserId);
+    const query = 'SELECT * FROM users WHERE twitch_user_id = $1';
+    const result = await pool.query(query, [String(twitchUserId)]);
+    
+    console.log('[USER MODEL] Query result:', result.rows.length > 0 ? `Found ${result.rows.length} user(s)` : 'No users found');
+    
+    if (result.rows.length === 0) {
+      return null;
     }
+
+    const user = result.rows[0];
+    console.log('[USER MODEL] Found user id:', user.id);
+    
+    // Parse scopes - handle both JSON string and plain string formats
+    let scopes = [];
+    try {
+      if (typeof user.scopes === 'string') {
+        // Try parsing as JSON first
+        try {
+          scopes = JSON.parse(user.scopes);
+        } catch (e) {
+          // If not valid JSON, treat as space-separated string
+          scopes = user.scopes.split(' ').filter(s => s.trim());
+        }
+      } else if (Array.isArray(user.scopes)) {
+        scopes = user.scopes;
+      }
+    } catch (error) {
+      console.warn('[USER MODEL] Error parsing scopes:', error);
+      scopes = [];
+    }
+    
+    // Decrypt tokens with error handling
+    let accessToken, refreshToken;
+    try {
+      accessToken = decrypt(user.access_token);
+      refreshToken = decrypt(user.refresh_token);
+    } catch (error) {
+      console.error('[USER MODEL] Error decrypting tokens:', error.message);
+      // Return user without decrypted tokens if decryption fails
+      // This allows the user to be found even if tokens can't be decrypted
+      return {
+        ...user,
+        access_token: null,
+        refresh_token: null,
+        scopes: scopes
+      };
+    }
+    
+    return {
+      ...user,
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      scopes: scopes
+    };
   } catch (error) {
-    console.warn('Error parsing scopes:', error);
-    scopes = [];
+    console.error('[USER MODEL] Error in getUserByTwitchId:', error);
+    throw error;
   }
-  
-  return {
-    ...user,
-    access_token: decrypt(user.access_token),
-    refresh_token: decrypt(user.refresh_token),
-    scopes: scopes
-  };
 }
 
 export async function getUserById(id) {

@@ -19,9 +19,13 @@ const __dirname = path.dirname(__filename);
  */
 async function getUserIdFromTwitchId(twitchUserId) {
   try {
-    const user = await getUserByTwitchId(twitchUserId);
+    console.log('[AUDIO CMD DEBUG] getUserIdFromTwitchId called with:', twitchUserId, 'Type:', typeof twitchUserId);
+    const user = await getUserByTwitchId(String(twitchUserId));
+    console.log('[AUDIO CMD DEBUG] getUserByTwitchId returned:', user ? `user id ${user.id}` : 'null');
     return user ? user.id : null;
   } catch (error) {
+    console.error('[AUDIO CMD DEBUG] Error in getUserIdFromTwitchId:', error);
+    console.error('[AUDIO CMD DEBUG] Error stack:', error.stack);
     return null;
   }
 }
