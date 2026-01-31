@@ -3,6 +3,7 @@ import session from 'express-session';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import authRoutes from './routes/auth.js';
 import indexRoutes from './routes/index.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -22,6 +23,15 @@ import { setWebSocketServer } from './services/twitchChat.js';
 import { getObsTokenByToken } from './models/obsToken.js';
 
 dotenv.config();
+
+// Ensure upload directories exist
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDir = path.join(__dirname, 'public', 'uploads', 'audio');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log(`[Server] Created uploads directory: ${uploadsDir}`);
+}
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
