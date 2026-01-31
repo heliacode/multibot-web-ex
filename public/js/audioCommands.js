@@ -60,6 +60,8 @@ function renderAudioCommands() {
     container.innerHTML = audioCommands.map(cmd => {
         // Prefer file_url if available (persists across deployments), fallback to file_path
         const audioSrc = cmd.file_url || cmd.file_path;
+        // Escape JavaScript string for use in HTML attribute
+        const escapedAudioSrc = audioSrc ? audioSrc.replace(/'/g, "\\'").replace(/"/g, '\\"') : '';
         return `
         <div class="glass-card rounded-xl p-4" data-command-id="${cmd.id}">
             <div class="flex items-center justify-between responsive-command-card">
@@ -75,7 +77,7 @@ function renderAudioCommands() {
                     </div>
                 </div>
                 <div class="flex items-center gap-2 responsive-command-buttons">
-                    <audio id="audio-${cmd.id}" src="${audioSrc}" preload="metadata" onerror="handleAudioError(${cmd.id}, '${escapeHtml(audioSrc)}')"></audio>
+                    <audio id="audio-${cmd.id}" src="${audioSrc}" preload="metadata" onerror="handleAudioError(${cmd.id}, '${escapedAudioSrc}')"></audio>
                     <button class="btn btn-sm btn-info text-white" onclick="testAudioCommand('${escapeHtml(cmd.command)}')" title="Test command in chat">
                         <i class="fas fa-vial"></i> Test
                     </button>
