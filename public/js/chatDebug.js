@@ -5,6 +5,8 @@
 
 let chatWebSocket = null;
 let chatConnected = false;
+let chatInitialized = false; // Prevent multiple initializations
+let receivedMessageIds = new Set(); // Track received messages to prevent duplicates
 
 function updateChatStatus(connected, channel = null) {
     const indicator = document.getElementById('status-indicator');
@@ -54,6 +56,25 @@ function updateChatStatus(connected, channel = null) {
 }
 
 function addChatMessage(message) {
+    // Create a unique ID for this message to prevent duplicates
+    // Use timestamp, username, and message content to create ID
+    const messageId = `${message.timestamp}-${message.displayName}-${message.message}`;
+    
+    // Check if we've already processed this message
+    if (receivedMessageIds.has(messageId)) {
+        console.log('[Chat Debug] Duplicate message detected, skipping:', messageId);
+        return;
+    }
+    
+    // Mark this message as received
+    receivedMessageIds.add(messageId);
+    
+    // Clean up old message IDs (keep only last 1000 to prevent memory issues)
+    if (receivedMessageIds.size > 1000) {
+        const idsArray = Array.from(receivedMessageIds);
+        receivedMessageIds = new Set(idsArray.slice(-500)); // Keep last 500
+    }
+    
     const messagesContainer = document.getElementById('chat-messages');
     
     // Remove empty state if present
@@ -64,6 +85,7 @@ function addChatMessage(message) {
 
     const messageDiv = document.createElement('div');
     messageDiv.className = 'mb-3 p-3 glass-card rounded-lg';
+    messageDiv.setAttribute('data-message-id', messageId); // Store ID for potential future use
     messageDiv.innerHTML = `
         <div class="flex items-start gap-3">
             <div class="flex-shrink-0">
@@ -100,6 +122,19 @@ async function connectToChat() {
         
         if (!response.ok) {
             throw new Error(data.error || 'Failed to connect');
+        }
+
+        // Always close existing connection before creating a new one to prevent duplicates
+        if (chatWebSocket) {
+            console.log('[Chat Debug] Closing existing WebSocket connection (state:', chatWebSocket.readyState, ')');
+            chatWebSocket.onmessage = null; // Remove old handlers
+            chatWebSocket.onopen = null;
+            chatWebSocket.onerror = null;
+            chatWebSocket.onclose = null;
+            if (chatWebSocket.readyState !== WebSocket.CLOSED) {
+                chatWebSocket.close();
+            }
+            chatWebSocket = null;
         }
 
         // Connect WebSocket for real-time updates
@@ -195,8 +230,15 @@ async function connectToChat() {
 
 // Auto-connect to chat on page load
 document.addEventListener('DOMContentLoaded', async () => {
+    // Prevent multiple initializations
+    if (chatInitialized) {
+        console.log('[Chat Debug] Already initialized, skipping');
+        return;
+    }
+    
     // Check if chat section exists
     if (document.getElementById('chat-debug-section')) {
+        chatInitialized = true; // Mark as initialized
         // Wait a bit for page to fully load, then auto-connect
         setTimeout(async () => {
             try {
@@ -214,6 +256,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     console.log('[Dashboard] Chat already connected');
                     // Update status first
                     updateChatStatus(true, statusData.status.channel);
+                    
+                    // Always close existing connection before creating a new one to prevent duplicates
+                    if (chatWebSocket) {
+                        console.log('[Dashboard] Closing existing WebSocket connection (state:', chatWebSocket.readyState, ')');
+                        chatWebSocket.onmessage = null; // Remove old handlers
+                        chatWebSocket.onopen = null;
+                        chatWebSocket.onerror = null;
+                        chatWebSocket.onclose = null;
+                        if (chatWebSocket.readyState !== WebSocket.CLOSED) {
+                            chatWebSocket.close();
+                        }
+                        chatWebSocket = null;
+                    }
                     
                     // Load recent messages before connecting WebSocket
                     if (statusData.history && statusData.history.length > 0) {
@@ -282,6 +337,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                             // Retry connection after a delay
                             setTimeout(() => {
                                 if (document.getElementById('chat-debug-section')) {
+                                    // Always close and clean up existing connection before retrying
+                                    if (chatWebSocket) {
+                                        chatWebSocket.onmessage = null;
+                                        chatWebSocket.onopen = null;
+                                        chatWebSocket.onerror = null;
+                                        chatWebSocket.onclose = null;
+                                        if (chatWebSocket.readyState !== WebSocket.CLOSED) {
+                                            chatWebSocket.close();
+                                        }
+                                        chatWebSocket = null;
+                                    }
+                                    
                                     console.log('[Dashboard] Retrying WebSocket connection...');
                                     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                                     const wsUrl = `${protocol}//${window.location.host}`;
