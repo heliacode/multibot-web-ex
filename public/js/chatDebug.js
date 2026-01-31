@@ -7,6 +7,7 @@ let chatWebSocket = null;
 let chatConnected = false;
 let chatInitialized = false; // Prevent multiple initializations
 let receivedMessageIds = new Set(); // Track received messages to prevent duplicates
+let isConnecting = false; // Prevent multiple simultaneous connection attempts
 
 function updateChatStatus(connected, channel = null) {
     const indicator = document.getElementById('status-indicator');
@@ -57,17 +58,18 @@ function updateChatStatus(connected, channel = null) {
 
 function addChatMessage(message) {
     // Create a unique ID for this message to prevent duplicates
-    // Use timestamp, username, and message content to create ID
-    const messageId = `${message.timestamp}-${message.displayName}-${message.message}`;
+    // Prefer Twitch message ID if available (most reliable), otherwise use timestamp + username + content
+    const messageId = message.id || `${message.timestamp}-${message.displayName}-${message.message}`;
     
     // Check if we've already processed this message
     if (receivedMessageIds.has(messageId)) {
-        console.log('[Chat Debug] Duplicate message detected, skipping:', messageId);
+        console.log('[Chat Debug] Duplicate message detected, skipping. ID:', messageId, 'Message:', message.message);
         return;
     }
     
     // Mark this message as received
     receivedMessageIds.add(messageId);
+    console.log('[Chat Debug] Adding new message. ID:', messageId, 'From:', message.displayName, 'Content:', message.message);
     
     // Clean up old message IDs (keep only last 1000 to prevent memory issues)
     if (receivedMessageIds.size > 1000) {
@@ -108,7 +110,21 @@ function addChatMessage(message) {
 }
 
 async function connectToChat() {
+    // Prevent multiple simultaneous connection attempts
+    if (isConnecting) {
+        console.log('[Chat Debug] Connection already in progress, skipping');
+        return;
+    }
+    
+    // If WebSocket is already connected, don't create another
+    if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) {
+        console.log('[Chat Debug] WebSocket already connected, skipping');
+        return;
+    }
+    
     try {
+        isConnecting = true;
+        
         // Start chat connection
         const response = await fetch('/api/chat/start', {
             method: 'POST',
@@ -140,6 +156,7 @@ async function connectToChat() {
         // Connect WebSocket for real-time updates
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${protocol}//${window.location.host}`;
+        console.log('[Chat Debug] Creating new WebSocket connection');
         chatWebSocket = new WebSocket(wsUrl);
 
         chatWebSocket.onopen = () => {
@@ -197,6 +214,7 @@ async function connectToChat() {
 
         chatWebSocket.onclose = () => {
             console.log('[Chat Debug] WebSocket closed');
+            isConnecting = false; // Reset connection flag
             // Only update status if we're sure the connection is lost
             // Check server status before marking as disconnected
             fetch('/api/chat/status', { credentials: 'include' })
@@ -211,6 +229,11 @@ async function connectToChat() {
                     updateChatStatus(false);
                 });
         };
+        
+        chatWebSocket.onerror = (error) => {
+            console.error('[Chat Debug] WebSocket error:', error);
+            isConnecting = false; // Reset connection flag on error
+        };
 
         // Load recent messages
         const statusResponse = await fetch('/api/chat/status', {
@@ -223,6 +246,7 @@ async function connectToChat() {
 
     } catch (error) {
         console.error('Error connecting to chat:', error);
+        isConnecting = false; // Reset connection flag on error
         // Don't show alert - chat auto-connects in background
         updateChatStatus(false, null);
     }
@@ -254,6 +278,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await connectToChat();
                 } else {
                     console.log('[Dashboard] Chat already connected');
+                    
+                    // Prevent multiple simultaneous connection attempts
+                    if (isConnecting) {
+                        console.log('[Dashboard] Connection already in progress, skipping');
+                        return;
+                    }
+                    
+                    // If WebSocket is already connected, don't create another
+                    if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) {
+                        console.log('[Dashboard] WebSocket already connected, skipping');
+                        return;
+                    }
+                    
                     // Update status first
                     updateChatStatus(true, statusData.status.channel);
                     
@@ -276,8 +313,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                     
                     // Connect WebSocket for real-time updates
+                    isConnecting = true;
                     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                     const wsUrl = `${protocol}//${window.location.host}`;
+                    console.log('[Dashboard] Creating new WebSocket connection');
                     chatWebSocket = new WebSocket(wsUrl);
                     
                     chatWebSocket.onopen = () => {
@@ -322,6 +361,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     chatWebSocket.onerror = (error) => {
                         console.error('[Dashboard] WebSocket error:', error);
                         console.error('[Dashboard] WebSocket readyState:', chatWebSocket.readyState);
+                        isConnecting = false; // Reset connection flag on error
                     };
                     
                     chatWebSocket.onclose = (event) => {
@@ -330,6 +370,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                             reason: event.reason,
                             wasClean: event.wasClean
                         });
+                        isConnecting = false; // Reset connection flag
                         
                         // Check if it was an unexpected disconnect
                         if (!event.wasClean && event.code !== 1000) {
@@ -337,6 +378,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                             // Retry connection after a delay
                             setTimeout(() => {
                                 if (document.getElementById('chat-debug-section')) {
+                                    // Prevent multiple simultaneous connection attempts
+                                    if (isConnecting) {
+                                        console.log('[Dashboard] Connection already in progress, skipping retry');
+                                        return;
+                                    }
+                                    
                                     // Always close and clean up existing connection before retrying
                                     if (chatWebSocket) {
                                         chatWebSocket.onmessage = null;
@@ -349,6 +396,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                                         chatWebSocket = null;
                                     }
                                     
+                                    isConnecting = true;
                                     console.log('[Dashboard] Retrying WebSocket connection...');
                                     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                                     const wsUrl = `${protocol}//${window.location.host}`;
@@ -375,6 +423,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                                             console.error('[Dashboard] Error parsing WebSocket message:', error);
                                         }
                                     };
+                                    
+                                    chatWebSocket.onerror = (error) => {
+                                        console.error('[Dashboard] WebSocket retry error:', error);
+                                        isConnecting = false; // Reset connection flag on error
+                                    };
+                                    
+                                    chatWebSocket.onclose = () => {
+                                        isConnecting = false; // Reset connection flag
+                                    };
                                 }
                             }, 3000);
                         }
@@ -382,6 +439,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             } catch (error) {
                 console.error('[Dashboard] Auto-connect error:', error);
+                isConnecting = false; // Reset connection flag on error
                 // Silently fail - will retry on manual connect
             }
         }, 500);
