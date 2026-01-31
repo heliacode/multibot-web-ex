@@ -29,12 +29,25 @@ if (!process.env.DATABASE_URL) {
 }
 
 // Database connection with Railway-compatible SSL settings
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-  connectionTimeoutMillis: 10000, // 10 second timeout
-  query_timeout: 30000 // 30 second query timeout
-});
+let pool;
+try {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    connectionTimeoutMillis: 10000, // 10 second timeout
+    query_timeout: 30000 // 30 second query timeout
+  });
+  
+  // Handle pool errors
+  pool.on('error', (err) => {
+    console.error('[DB POOL] Unexpected error on idle client:', err);
+  });
+} catch (poolError) {
+  console.error('❌ Failed to create database pool:', poolError);
+  console.error('   Error message:', poolError.message || 'Unknown error');
+  console.error('   Error stack:', poolError.stack);
+  process.exit(1);
+}
 
 // Migration files in order of execution
 const MIGRATIONS = [
@@ -237,10 +250,26 @@ async function initializeDatabase() {
     console.error('\n' + '='.repeat(60));
     console.error('❌ Database initialization failed!');
     console.error('='.repeat(60));
-    console.error('\nError:', error.message);
-    console.error('Error code:', error.code);
-    console.error('Error detail:', error.detail);
-    console.error('Error stack:', error.stack);
+    
+    // Log all available error properties
+    console.error('\nError details:');
+    console.error('  Message:', error.message || '(no message)');
+    console.error('  Code:', error.code || '(no code)');
+    console.error('  Detail:', error.detail || '(no detail)');
+    console.error('  Name:', error.name || '(no name)');
+    console.error('  Type:', error.constructor?.name || typeof error);
+    
+    if (error.stack) {
+      console.error('\nStack trace:');
+      console.error(error.stack);
+    }
+    
+    // Also try to stringify the error
+    try {
+      console.error('\nFull error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    } catch (e) {
+      console.error('\nCould not stringify error object');
+    }
     
     if (error.message.includes('password') || error.message.includes('authentication')) {
       console.error('\n💡 Tip: Check your DATABASE_URL environment variable.');
