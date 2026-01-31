@@ -25,10 +25,21 @@
           userCount: data.database.userCount
         });
       } else {
-        console.warn('[Dashboard] ⚠️ Database health check failed:', data.database.error || 'Unknown error');
+        const errorMsg = data.database?.message || data.database?.error || 'Unknown error';
+        const errorCode = data.database?.code || '';
+        
+        console.warn('[Dashboard] ⚠️ Database health check failed:', errorMsg);
+        
+        if (errorCode === 'ECONNREFUSED' || errorMsg.includes('localhost')) {
+          console.warn('[Dashboard] 💡 Fix: Add Postgres database in Railway → New → Database → PostgreSQL');
+          console.warn('[Dashboard] 💡 Then link it to your service in Railway → Variables → Add Reference');
+        } else if (errorMsg.includes('DATABASE_URL')) {
+          console.warn('[Dashboard] 💡 Fix: Set DATABASE_URL in Railway → Variables');
+        }
       }
     } catch (error) {
-      console.error('[Dashboard] ❌ Database health check error:', error);
+      console.error('[Dashboard] ❌ Database health check error:', error.message || error);
+      console.warn('[Dashboard] 💡 This usually means the database is not configured in Railway');
     }
   }
 

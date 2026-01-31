@@ -82,11 +82,60 @@ app.get('/healthz', (req, res) => {
 // Database health check endpoint
 app.get('/api/health/database', async (req, res) => {
   try {
+    // Check if DATABASE_URL is set
+    if (!process.env.DATABASE_URL) {
+      return res.status(503).json({
+        ok: false,
+        database: {
+          connected: false,
+          error: 'DATABASE_URL not configured',
+          message: 'Please add a Postgres database in Railway and link it to this service'
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Check if pointing to localhost
+    const dbUrl = process.env.DATABASE_URL;
+    if (dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1') || dbUrl.includes('::1')) {
+      return res.status(503).json({
+        ok: false,
+        database: {
+          connected: false,
+          error: 'DATABASE_URL points to localhost',
+          message: 'Railway Postgres should provide a remote database URL. Check Railway → Postgres Plugin → Connection Variables'
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
     const pool = (await import('./config/database.js')).default;
     
-    // Test basic connection
+    // Test basic connection with timeout
     const startTime = Date.now();
-    await pool.query('SELECT 1');
+    try {
+      await Promise.race([
+        pool.query('SELECT 1'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 5000))
+      ]);
+    } catch (connError) {
+      const errorMsg = connError.message || 'Connection failed';
+      const errorCode = connError.code || 'UNKNOWN';
+      
+      return res.status(503).json({
+        ok: false,
+        database: {
+          connected: false,
+          error: errorMsg,
+          code: errorCode,
+          message: errorCode === 'ECONNREFUSED' 
+            ? 'Cannot connect to database. Check if Railway Postgres plugin is added and DATABASE_URL is set correctly.'
+            : 'Database connection failed. Check Railway logs for details.'
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     const queryTime = Date.now() - startTime;
     
     // Check if users table exists and get count
@@ -117,7 +166,9 @@ app.get('/api/health/database', async (req, res) => {
       ok: false,
       database: {
         connected: false,
-        error: error.message
+        error: error.message || 'Unknown error',
+        code: error.code || 'UNKNOWN',
+        message: 'Database health check failed. Check Railway logs for details.'
       },
       timestamp: new Date().toISOString()
     });
