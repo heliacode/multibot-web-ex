@@ -10,8 +10,32 @@
     // Ignore
   }
 
+  // Update LED indicator
+  function updateDbLed(status) {
+    const led = document.getElementById('db-status-led');
+    if (!led) return;
+    
+    // Remove all status classes
+    led.classList.remove('db-led-red', 'db-led-green', 'db-led-yellow');
+    
+    // Add appropriate class and update title
+    if (status === 'connected') {
+      led.classList.add('db-led-green');
+      led.title = 'Database: Connected ✓';
+    } else if (status === 'checking') {
+      led.classList.add('db-led-yellow');
+      led.title = 'Database: Checking...';
+    } else {
+      led.classList.add('db-led-red');
+      led.title = 'Database: Not Connected ✗';
+    }
+  }
+
   // Check database health on dashboard load
   async function checkDatabaseHealth() {
+    // Set LED to checking state
+    updateDbLed('checking');
+    
     try {
       const response = await fetch('/api/health/database', {
         credentials: 'include'
@@ -19,12 +43,14 @@
       const data = await response.json();
       
       if (data.ok && data.database.connected) {
+        updateDbLed('connected');
         console.log('[Dashboard] ✅ Database health check passed:', {
           queryTime: data.database.queryTime,
           usersTableExists: data.database.usersTableExists,
           userCount: data.database.userCount
         });
       } else {
+        updateDbLed('disconnected');
         const errorMsg = data.database?.message || data.database?.error || 'Unknown error';
         const errorCode = data.database?.code || '';
         
@@ -38,6 +64,7 @@
         }
       }
     } catch (error) {
+      updateDbLed('disconnected');
       console.error('[Dashboard] ❌ Database health check error:', error.message || error);
       console.warn('[Dashboard] 💡 This usually means the database is not configured in Railway');
     }
