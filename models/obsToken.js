@@ -15,9 +15,12 @@ function generateToken() {
  */
 export async function getOrCreateObsToken(userId, twitchUserId) {
   try {
+    console.log('[OBS TOKEN MODEL] Getting or creating token for userId:', userId, 'twitchUserId:', twitchUserId);
+    
     // Check if user already has a token
     const existingQuery = 'SELECT * FROM obs_tokens WHERE user_id = $1';
     const existingResult = await pool.query(existingQuery, [userId]);
+    console.log('[OBS TOKEN MODEL] Existing token check:', existingResult.rows.length > 0 ? 'Found existing token' : 'No existing token');
     
     if (existingResult.rows.length > 0) {
       return existingResult.rows[0];
@@ -25,6 +28,7 @@ export async function getOrCreateObsToken(userId, twitchUserId) {
     
     // Create new token
     const token = generateToken();
+    console.log('[OBS TOKEN MODEL] Generating new token');
     const insertQuery = `
       INSERT INTO obs_tokens (user_id, twitch_user_id, token)
       VALUES ($1, $2, $3)
@@ -32,9 +36,15 @@ export async function getOrCreateObsToken(userId, twitchUserId) {
     `;
     
     const insertResult = await pool.query(insertQuery, [userId, twitchUserId, token]);
+    console.log('[OBS TOKEN MODEL] Token created successfully:', insertResult.rows[0]?.id);
     return insertResult.rows[0];
   } catch (error) {
-    console.error('Error getting/creating OBS token:', error);
+    console.error('[OBS TOKEN MODEL] Database error:', {
+      code: error.code,
+      message: error.message,
+      detail: error.detail,
+      constraint: error.constraint
+    });
     throw new Error(`Database error: ${error.message}`);
   }
 }
