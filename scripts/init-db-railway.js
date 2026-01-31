@@ -25,8 +25,23 @@ const __dirname = dirname(__filename);
 if (!process.env.DATABASE_URL) {
   console.error('❌ DATABASE_URL environment variable is not set');
   console.error('   Please ensure Railway Postgres plugin is added and connected');
+  console.error('   In Railway: Go to your service → Variables → Add DATABASE_URL');
   process.exit(1);
 }
+
+// Validate DATABASE_URL is not pointing to localhost (common mistake)
+const dbUrl = process.env.DATABASE_URL;
+if (dbUrl.includes('localhost') || dbUrl.includes('127.0.0.1') || dbUrl.includes('::1')) {
+  console.error('❌ DATABASE_URL appears to point to localhost:', dbUrl.replace(/:[^:@]+@/, ':****@'));
+  console.error('   Railway Postgres should provide a remote database URL');
+  console.error('   Check Railway → Postgres Plugin → Connection Variables');
+  console.error('   The URL should look like: postgresql://user:pass@hostname:5432/dbname');
+  process.exit(1);
+}
+
+console.log('📋 DATABASE_URL validation:');
+console.log('   URL format: ✓ (not localhost)');
+console.log('   URL preview:', dbUrl.replace(/:[^:@]+@/, ':****@').substring(0, 50) + '...');
 
 // Database connection with Railway-compatible SSL settings
 let pool;
