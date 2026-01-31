@@ -110,7 +110,16 @@ export async function getDesign(req, res) {
       design: design || { design_data: [] }
     });
   } catch (error) {
-    console.error('Error getting design:', error);
+    console.error('[DESIGN] Error getting design:', error);
+    // If database error, return empty design instead of failing
+    if (error.code === 'ECONNREFUSED' || error.message?.includes('connect') || error.message?.includes('database')) {
+      console.warn('[DESIGN] Database not available, returning empty design');
+      return res.json({
+        success: true,
+        design: { design_data: [] },
+        warning: 'Database not available'
+      });
+    }
     res.status(500).json({
       error: 'Failed to get design',
       message: error.message

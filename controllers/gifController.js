@@ -84,7 +84,11 @@ export async function getCommands(req, res) {
 
     const user = await getUserByTwitchId(twitchUserId);
     if (!user || !user.id) {
-      return res.status(404).json({ error: 'User not found' });
+      // Return empty array instead of error - user might not exist yet
+      return res.json({
+        success: true,
+        commands: []
+      });
     }
 
     const commands = await getGifCommandsByUserId(user.id);
@@ -94,7 +98,16 @@ export async function getCommands(req, res) {
       commands
     });
   } catch (error) {
-    console.error('Error getting GIF commands:', error);
+    console.error('[GIF CMD] Error getting GIF commands:', error);
+    // If database error, return empty array instead of failing
+    if (error.code === 'ECONNREFUSED' || error.message?.includes('connect') || error.message?.includes('database')) {
+      console.warn('[GIF CMD] Database not available, returning empty commands list');
+      return res.json({
+        success: true,
+        commands: [],
+        warning: 'Database not available'
+      });
+    }
     res.status(500).json({
       error: 'Failed to get GIF commands',
       message: error.message
