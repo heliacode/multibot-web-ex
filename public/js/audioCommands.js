@@ -9,6 +9,78 @@ let selectedFile = null;
 let uploadMethod = 'file';
 let audioPreviewElement = null;
 
+// Expose functions globally IMMEDIATELY (before DOMContentLoaded) so onclick handlers can access them
+window.showAddAudioCommandModal = function showAddAudioCommandModal() {
+    currentEditingId = null;
+    const modal = document.getElementById('audio-command-modal');
+    if (!modal) {
+        console.error('[Audio Commands] Modal not found - page may still be loading');
+        // Retry after a short delay
+        setTimeout(() => {
+            const retryModal = document.getElementById('audio-command-modal');
+            if (retryModal) {
+                window.showAddAudioCommandModal();
+            } else {
+                alert('Page is still loading. Please wait a moment and try again.');
+            }
+        }, 500);
+        return;
+    }
+    const form = document.getElementById('audio-command-form');
+    const fileSection = document.getElementById('file-upload-section');
+    const urlSection = document.getElementById('url-upload-section');
+    
+    // Reset form
+    document.getElementById('modal-title').textContent = 'Add Audio Command';
+    form.reset();
+    document.getElementById('volume-slider').value = 50;
+    if (typeof updateVolumeDisplay === 'function') {
+        updateVolumeDisplay(50);
+    }
+    if (typeof clearFile === 'function') {
+        clearFile();
+    }
+    
+    // Ensure sections are visible/hidden correctly using both class and style
+    fileSection.classList.remove('hidden');
+    fileSection.style.display = 'block';
+    urlSection.classList.add('hidden');
+    urlSection.style.display = 'none';
+    
+    // Reset tabs to show "Upload File" as active
+    const tabs = modal.querySelectorAll('.tab');
+    tabs.forEach((tab, index) => {
+        tab.classList.remove('tab-active');
+        if (index === 0) {
+            tab.classList.add('tab-active');
+        }
+    });
+    
+    // Hide preview section
+    const previewSection = document.getElementById('audio-preview-section');
+    if (previewSection) {
+        previewSection.classList.add('hidden');
+    }
+    
+    // Set upload method
+    uploadMethod = 'file';
+    
+    // Show modal
+    modal.showModal();
+    
+    // Double-check visibility after modal opens (small delay to ensure rendering)
+    setTimeout(() => {
+        if (fileSection.classList.contains('hidden') || fileSection.style.display === 'none') {
+            fileSection.classList.remove('hidden');
+            fileSection.style.display = 'block';
+        }
+        if (!urlSection.classList.contains('hidden') || urlSection.style.display !== 'none') {
+            urlSection.classList.add('hidden');
+            urlSection.style.display = 'none';
+        }
+    }, 100);
+};
+
 // Load audio commands on page load
 document.addEventListener('DOMContentLoaded', async () => {
     if (document.getElementById('audio-section')) {
@@ -99,61 +171,7 @@ function renderAudioCommands() {
     `).join('');
 }
 
-// Expose function globally for onclick handlers
-window.showAddAudioCommandModal = function showAddAudioCommandModal() {
-    currentEditingId = null;
-    const modal = document.getElementById('audio-command-modal');
-    if (!modal) {
-        console.error('[Audio Commands] Modal not found');
-        return;
-    }
-    const form = document.getElementById('audio-command-form');
-    const fileSection = document.getElementById('file-upload-section');
-    const urlSection = document.getElementById('url-upload-section');
-    
-    // Reset form
-    document.getElementById('modal-title').textContent = 'Add Audio Command';
-    form.reset();
-    document.getElementById('volume-slider').value = 50;
-    updateVolumeDisplay(50);
-    clearFile();
-    
-    // Ensure sections are visible/hidden correctly using both class and style
-    fileSection.classList.remove('hidden');
-    fileSection.style.display = 'block';
-    urlSection.classList.add('hidden');
-    urlSection.style.display = 'none';
-    
-    // Reset tabs to show "Upload File" as active
-    const tabs = modal.querySelectorAll('.tab');
-    tabs.forEach((tab, index) => {
-        tab.classList.remove('tab-active');
-        if (index === 0) {
-            tab.classList.add('tab-active');
-        }
-    });
-    
-    // Hide preview section
-    document.getElementById('audio-preview-section').classList.add('hidden');
-    
-    // Set upload method
-    uploadMethod = 'file';
-    
-    // Show modal
-    modal.showModal();
-    
-    // Double-check visibility after modal opens (small delay to ensure rendering)
-    setTimeout(() => {
-        if (fileSection.classList.contains('hidden') || fileSection.style.display === 'none') {
-            fileSection.classList.remove('hidden');
-            fileSection.style.display = 'block';
-        }
-        if (!urlSection.classList.contains('hidden') || urlSection.style.display !== 'none') {
-            urlSection.classList.add('hidden');
-            urlSection.style.display = 'none';
-        }
-    }, 100);
-}
+// Function is already defined at the top of the file for immediate availability
 
 function switchUploadMethod(method) {
     uploadMethod = method;
@@ -565,6 +583,7 @@ async function testAudioCommand(command) {
 }
 
 // Expose all functions used in onclick handlers to global scope
+// Note: showAddAudioCommandModal is already exposed at the top of the file
 window.testAudioCommand = testAudioCommand;
 window.editAudioCommand = editAudioCommand;
 window.deleteAudioCommand = deleteAudioCommand;
@@ -581,4 +600,11 @@ window.playPreview = playPreview;
 window.stopPreview = stopPreview;
 window.closeAudioCommandModal = closeAudioCommandModal;
 window.saveAudioCommand = saveAudioCommand;
+
+// Ensure functions are available immediately (not waiting for DOMContentLoaded)
+console.log('[Audio Commands] Functions exposed to window:', {
+    showAddAudioCommandModal: typeof window.showAddAudioCommandModal,
+    editAudioCommand: typeof window.editAudioCommand,
+    deleteAudioCommand: typeof window.deleteAudioCommand
+});
 
