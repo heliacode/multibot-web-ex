@@ -11,6 +11,7 @@ function updateChatStatus(connected, channel = null) {
     const statusText = document.getElementById('status-text');
     const connectBtn = document.getElementById('chat-connect-btn');
     const disconnectBtn = document.getElementById('chat-disconnect-btn');
+    const messagesContainer = document.getElementById('chat-messages');
 
     if (connected) {
         indicator.className = 'w-3 h-3 rounded-full bg-green-500';
@@ -18,12 +19,37 @@ function updateChatStatus(connected, channel = null) {
         connectBtn.style.display = 'none';
         disconnectBtn.style.display = 'block';
         chatConnected = true;
+        
+        // Clear disconnected message if present
+        const emptyState = messagesContainer.querySelector('.text-center');
+        if (emptyState && emptyState.textContent.includes('Disconnected')) {
+            emptyState.remove();
+            // Show "No messages yet" if container is empty
+            if (messagesContainer.children.length === 0) {
+                messagesContainer.innerHTML = `
+                    <div class="text-center text-white/50 py-8">
+                        <i class="fas fa-comments text-4xl mb-2"></i>
+                        <p>No messages yet. Waiting for chat messages...</p>
+                    </div>
+                `;
+            }
+        }
     } else {
         indicator.className = 'w-3 h-3 rounded-full bg-gray-500';
         statusText.textContent = 'Not connected';
         connectBtn.style.display = 'block';
         disconnectBtn.style.display = 'none';
         chatConnected = false;
+        
+        // Show disconnected message if messages container is empty
+        if (!messagesContainer.querySelector('.text-center') || messagesContainer.children.length === 0) {
+            messagesContainer.innerHTML = `
+                <div class="text-center text-white/50 py-8">
+                    <i class="fas fa-comments text-4xl mb-2"></i>
+                    <p>Disconnected from chat.</p>
+                </div>
+            `;
+        }
     }
 }
 
@@ -82,11 +108,13 @@ async function connectToChat() {
         chatWebSocket = new WebSocket(wsUrl);
 
         chatWebSocket.onopen = () => {
+            // Get userId from session or use a placeholder that server will handle
+            const userId = window.USER_ID || '{{USER_ID}}';
             chatWebSocket.send(JSON.stringify({ 
                 type: 'subscribe',
-                userId: '{{USER_ID}}' // This will be replaced by server
+                userId: userId
             }));
-            updateChatStatus(true, data.status.channel);
+            updateChatStatus(true, data.status?.channel || null);
         };
 
         chatWebSocket.onmessage = (event) => {
@@ -103,7 +131,20 @@ async function connectToChat() {
         };
 
         chatWebSocket.onclose = () => {
-            updateChatStatus(false);
+            console.log('[Chat Debug] WebSocket closed');
+            // Only update status if we're sure the connection is lost
+            // Check server status before marking as disconnected
+            fetch('/api/chat/status', { credentials: 'include' })
+                .then(res => res.json())
+                .then(statusData => {
+                    if (!statusData.status || !statusData.status.connected) {
+                        updateChatStatus(false);
+                    }
+                })
+                .catch(() => {
+                    // If status check fails, assume disconnected
+                    updateChatStatus(false);
+                });
         };
 
         // Load recent messages
@@ -135,22 +176,34 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 const statusData = await statusResponse.json();
                 
-                if (!statusData.connected) {
+                if (!statusData.status || !statusData.status.connected) {
                     console.log('[Dashboard] Auto-connecting to chat...');
+                    updateChatStatus(false); // Ensure status is set to disconnected first
                     await connectToChat();
                 } else {
                     console.log('[Dashboard] Chat already connected');
-                    updateChatStatus(true, statusData.channel);
-                    // Still connect WebSocket for updates
+                    // Update status first
+                    updateChatStatus(true, statusData.status.channel);
+                    
+                    // Load recent messages before connecting WebSocket
+                    if (statusData.history && statusData.history.length > 0) {
+                        statusData.history.forEach(msg => addChatMessage(msg));
+                    }
+                    
+                    // Connect WebSocket for real-time updates
                     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                     const wsUrl = `${protocol}//${window.location.host}`;
                     chatWebSocket = new WebSocket(wsUrl);
+                    
                     chatWebSocket.onopen = () => {
+                        const userId = window.USER_ID || '{{USER_ID}}';
                         chatWebSocket.send(JSON.stringify({ 
                             type: 'subscribe',
-                            userId: '{{USER_ID}}'
+                            userId: userId
                         }));
+                        console.log('[Dashboard] WebSocket connected for chat updates');
                     };
+                    
                     chatWebSocket.onmessage = (event) => {
                         const data = JSON.parse(event.data);
                         if (data.type === 'chat_message') {
@@ -159,10 +212,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                             handleCommandTrigger(data.command);
                         }
                     };
-                    // Load recent messages
-                    if (statusData.history) {
-                        statusData.history.forEach(msg => addChatMessage(msg));
-                    }
+                    
+                    chatWebSocket.onerror = (error) => {
+                        console.error('[Dashboard] WebSocket error:', error);
+                    };
+                    
+                    chatWebSocket.onclose = () => {
+                        console.log('[Dashboard] WebSocket disconnected');
+                        // Don't update status to disconnected here - server connection might still be active
+                    };
                 }
             } catch (error) {
                 console.error('[Dashboard] Auto-connect error:', error);

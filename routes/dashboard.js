@@ -85,6 +85,12 @@ router.get('/', requireAuth, async (req, res) => {
     dashboardHtml = dashboardHtml.replace(/\{\{PROFILE_IMAGE_URL\}\}/g, profileImageUrl || '');
     dashboardHtml = dashboardHtml.replace(/\{\{USER_INITIAL\}\}/g, userInitial);
     
+    // Inject USER_ID into JavaScript for WebSocket connections
+    dashboardHtml = dashboardHtml.replace(
+      '</head>',
+      `<script>window.USER_ID = '${userId}';</script></head>`
+    );
+    
     res.send(dashboardHtml);
   } catch (error) {
     console.error('Error loading dashboard:', error);
