@@ -10,6 +10,31 @@
     // Ignore
   }
 
+  // Check database health on dashboard load
+  async function checkDatabaseHealth() {
+    try {
+      const response = await fetch('/api/health/database', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      
+      if (data.ok && data.database.connected) {
+        console.log('[Dashboard] ✅ Database health check passed:', {
+          queryTime: data.database.queryTime,
+          usersTableExists: data.database.usersTableExists,
+          userCount: data.database.userCount
+        });
+      } else {
+        console.warn('[Dashboard] ⚠️ Database health check failed:', data.database.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('[Dashboard] ❌ Database health check error:', error);
+    }
+  }
+
+  // Run health check after a short delay to not block page load
+  setTimeout(checkDatabaseHealth, 1000);
+
   // Protect input fields from extension interference
   document.addEventListener('DOMContentLoaded', function() {
     const protectInput = function(input) {

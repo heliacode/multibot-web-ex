@@ -47,6 +47,19 @@ export async function handleCallback(req, res) {
     // Handle OAuth callback
     const userData = await handleOAuthCallback(code);
     console.log('[OAUTH CALLBACK] User authenticated', { twitchUserId: userData.twitchUserId, username: userData.username });
+    
+    // Verify database connection and user was saved
+    try {
+      const dbUser = await getUserByTwitchId(userData.twitchUserId);
+      if (dbUser && dbUser.id) {
+        console.log('[OAUTH CALLBACK] ✅ Database health check passed - User found in database:', dbUser.id);
+      } else {
+        console.warn('[OAUTH CALLBACK] ⚠️ Database health check - User not found in database after creation');
+      }
+    } catch (dbError) {
+      console.error('[OAUTH CALLBACK] ❌ Database health check failed:', dbError.message);
+      // Don't block login, but log the error
+    }
 
     // Regenerate session to prevent session fixation attacks
     req.session.regenerate((err) => {

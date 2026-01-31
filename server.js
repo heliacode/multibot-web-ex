@@ -79,6 +79,51 @@ app.get('/healthz', (req, res) => {
   });
 });
 
+// Database health check endpoint
+app.get('/api/health/database', async (req, res) => {
+  try {
+    const pool = (await import('./config/database.js')).default;
+    
+    // Test basic connection
+    const startTime = Date.now();
+    await pool.query('SELECT 1');
+    const queryTime = Date.now() - startTime;
+    
+    // Check if users table exists and get count
+    let userCount = 0;
+    let tableExists = false;
+    try {
+      const result = await pool.query('SELECT COUNT(*) as count FROM users');
+      userCount = parseInt(result.rows[0].count);
+      tableExists = true;
+    } catch (error) {
+      // Table might not exist yet
+      console.warn('[DB HEALTH] Users table check failed:', error.message);
+    }
+    
+    res.json({
+      ok: true,
+      database: {
+        connected: true,
+        queryTime: `${queryTime}ms`,
+        usersTableExists: tableExists,
+        userCount: userCount
+      },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('[DB HEALTH] Database health check failed:', error);
+    res.status(503).json({
+      ok: false,
+      database: {
+        connected: false,
+        error: error.message
+      },
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // API Routes - MUST come before static files to avoid 404s
 app.use('/api/chat', chatRoutes);
 app.use('/api/audio-commands', (req, res, next) => {
