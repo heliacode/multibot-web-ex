@@ -63,8 +63,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check (used by Railway and uptime monitors)
+// Keep it simple and fast - Railway needs quick responses
 app.get('/healthz', (req, res) => {
-  res.status(200).json({ ok: true });
+  res.status(200).json({ 
+    ok: true, 
+    timestamp: new Date().toISOString()
+  });
 });
 
 // API Routes - MUST come before static files to avoid 404s
