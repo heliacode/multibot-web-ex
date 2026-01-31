@@ -92,13 +92,13 @@
                         <p class="text-white/80 text-sm">Published on {{FORMATTED_DATE}}</p>
                     </div>
                     <div class="flex gap-4">
-                        <a href="#" class="text-white/80 hover:text-white">
+                        <a href="#" data-share="twitter" data-text="{{EXCERPT}}" data-url="https://multibot.com/blog/posts/{{FILENAME}}" class="text-white/80 hover:text-white" title="Share on Twitter">
                             <i class="fab fa-twitter text-xl"></i>
                         </a>
-                        <a href="#" class="text-white/80 hover:text-white">
+                        <a href="#" data-share="facebook" data-url="https://multibot.com/blog/posts/{{FILENAME}}" class="text-white/80 hover:text-white" title="Share on Facebook">
                             <i class="fab fa-facebook text-xl"></i>
                         </a>
-                        <a href="#" class="text-white/80 hover:text-white">
+                        <a href="#" data-share="copy" data-url="https://multibot.com/blog/posts/{{FILENAME}}" class="text-white/80 hover:text-white" title="Copy link">
                             <i class="fas fa-link text-xl"></i>
                         </a>
                     </div>
@@ -113,5 +113,6 @@
     <!-- Scripts -->
     <script src="/assets/js/header-component.js"></script>
     <script src="/assets/js/footer-component.js"></script>
+    <script src="/assets/js/share-utils.js"></script>
 </body>
 </html>

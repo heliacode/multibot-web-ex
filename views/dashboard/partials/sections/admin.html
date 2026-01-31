@@ -1,0 +1,120 @@
+<!-- Admin Section -->
+<div id="admin-section" class="glass-card rounded-3xl shadow-2xl" style="display: none;">
+    <div class="card-body p-8">
+        <div class="flex items-center justify-between mb-6 responsive-header">
+            <div>
+                <h2 class="card-title text-2xl text-white mb-2">
+                    <i class="fas fa-cog text-white/80"></i>
+                    Admin Panel
+                </h2>
+                <p class="text-white/80">Manage cronjobs for automated article creation</p>
+            </div>
+        </div>
+        <div class="divider my-4" style="border-color: rgba(255,255,255,0.2);"></div>
+        
+        <!-- Cronjobs List -->
+        <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-white">Scheduled Article Creation</h3>
+                <button class="btn btn-primary text-white" onclick="showAddCronjobModal()">
+                    <i class="fas fa-plus"></i>
+                    Add Cronjob
+                </button>
+            </div>
+            
+            <div id="cronjobs-list" class="space-y-4">
+                <div class="text-center py-12 text-white/60">
+                    <i class="fas fa-clock text-6xl mb-4 animate-float"></i>
+                    <p>No cronjobs configured yet. Click "Add Cronjob" to create one.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Cronjob Modal -->
+<dialog id="cronjob-modal" class="modal">
+    <div class="modal-box glass-effect max-w-2xl">
+        <h3 class="font-bold text-2xl text-white mb-4" id="modal-title">Add Cronjob</h3>
+        
+        <form id="cronjob-form" class="space-y-4">
+            <input type="hidden" id="cronjob-id" value="">
+            
+            <!-- Title -->
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text text-white">Article Title</span>
+                </label>
+                <input type="text" id="article-title" class="input input-bordered bg-white/10 text-white border-white/20" placeholder="Enter article title" required>
+            </div>
+            
+            <!-- Schedule (Cron Expression) -->
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text text-white">Schedule (Cron Expression)</span>
+                    <span class="label-text-alt text-white/60">e.g., 0 9 * * * (daily at 9 AM)</span>
+                </label>
+                <input type="text" id="cron-expression" class="input input-bordered bg-white/10 text-white border-white/20" placeholder="0 9 * * *" required>
+                <div class="label">
+                    <span class="label-text-alt text-white/60">
+                        Format: minute hour day month weekday<br>
+                        Examples: <code class="text-cyan-400">0 9 * * *</code> (daily 9 AM), 
+                        <code class="text-cyan-400">0 0 * * 1</code> (weekly Monday), 
+                        <code class="text-cyan-400">0 0 1 * *</code> (monthly 1st)
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Content Template -->
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text text-white">Content Template</span>
+                </label>
+                <textarea id="content-template" class="textarea textarea-bordered bg-white/10 text-white border-white/20 h-32" placeholder="Enter article content template. Use {{DATE}}, {{TITLE}}, etc. for dynamic content."></textarea>
+            </div>
+            
+            <!-- Keywords -->
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text text-white">Keywords (comma-separated)</span>
+                </label>
+                <input type="text" id="keywords" class="input input-bordered bg-white/10 text-white border-white/20" placeholder="twitch bot, stream management, multibot">
+            </div>
+            
+            <!-- Topic Detection -->
+            <div class="form-control">
+                <label class="label">
+                    <span class="label-text text-white">Primary Topic</span>
+                </label>
+                <select id="topic" class="select select-bordered bg-white/10 text-white border-white/20">
+                    <option value="">Auto-detect</option>
+                    <option value="magic the gathering">Magic the Gathering</option>
+                    <option value="mtg">MTG</option>
+                    <option value="pokemon">Pokemon</option>
+                    <option value="twitch">Twitch</option>
+                    <option value="streaming">Streaming</option>
+                    <option value="gaming">Gaming</option>
+                    <option value="tech">Technology</option>
+                    <option value="web development">Web Development</option>
+                </select>
+            </div>
+            
+            <!-- Active Status -->
+            <div class="form-control">
+                <label class="label cursor-pointer">
+                    <span class="label-text text-white">Active</span>
+                    <input type="checkbox" id="is-active" class="toggle toggle-primary" checked>
+                </label>
+            </div>
+            
+            <!-- Actions -->
+            <div class="modal-action">
+                <button type="button" class="btn btn-ghost text-white" onclick="closeCronjobModal()">Cancel</button>
+                <button type="submit" class="btn btn-primary text-white">Save Cronjob</button>
+            </div>
+        </form>
+    </div>
+    <form method="dialog" class="modal-backdrop">
+        <button>close</button>
+    </form>
+</dialog>

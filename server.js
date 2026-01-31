@@ -17,10 +17,12 @@ import imageRoutes from './routes/images.js';
 import designRoutes from './routes/design.js';
 import testRoutes from './routes/test.js';
 import bitTriggerRoutes from './routes/bitTriggers.js';
+import adminRoutes from './routes/admin.js';
 import { WebSocketServer } from 'ws';
 import http from 'http';
 import { setWebSocketServer } from './services/twitchChat.js';
 import { getObsTokenByToken } from './models/obsToken.js';
+import { runMigrations } from './services/migrations.js';
 
 dotenv.config();
 
@@ -190,6 +192,7 @@ app.use('/api/obs-token', (req, res, next) => {
 app.use('/api/images', imageRoutes);
 app.use('/api/design', designRoutes);
 app.use('/api/test', testRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/bit-triggers', bitTriggerRoutes);
 app.use('/auth', authRoutes);
 app.use('/obs-source', obsSourceRoutes);
@@ -335,10 +338,22 @@ app.locals.wss = wss;
 global.wss = wss;
 setWebSocketServer(wss);
 
-// Start server
-// Bind to 0.0.0.0 to accept connections from Railway's proxy
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT} (accessible on port ${PORT})`);
-  console.log(`Health check available at http://0.0.0.0:${PORT}/healthz`);
+// Run database migrations automatically on startup
+// This ensures the database is always up-to-date without manual intervention
+runMigrations().then(() => {
+  // Start server after migrations complete
+  // Bind to 0.0.0.0 to accept connections from Railway's proxy
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT} (accessible on port ${PORT})`);
+    console.log(`Health check available at http://0.0.0.0:${PORT}/healthz`);
+  });
+}).catch((error) => {
+  console.error('[Server] Failed to run migrations, starting server anyway:', error);
+  // Start server even if migrations fail - they'll be retried on next startup
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT} (accessible on port ${PORT})`);
+    console.log(`Health check available at http://0.0.0.0:${PORT}/healthz`);
+    console.warn('[Server] ⚠️  Migrations failed - database may not be up-to-date');
+  });
 });
 
