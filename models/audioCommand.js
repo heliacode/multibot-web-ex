@@ -94,7 +94,8 @@ export async function createAudioCommand(audioCommandData) {
  * Get all audio commands for a user
  */
 export async function getAudioCommandsByUserId(userId) {
-  const query = `
+  // Try with is_bits_only filter, fallback to without if column doesn't exist
+  let query = `
     SELECT * FROM audio_commands
     WHERE user_id = $1 AND (is_bits_only = false OR is_bits_only IS NULL)
     ORDER BY created_at DESC
@@ -104,6 +105,16 @@ export async function getAudioCommandsByUserId(userId) {
     const result = await pool.query(query, [userId]);
     return result.rows;
   } catch (error) {
+    // If column doesn't exist, retry without the filter
+    if (error.message && error.message.includes('column "is_bits_only" does not exist')) {
+      query = `
+        SELECT * FROM audio_commands
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+      `;
+      const result = await pool.query(query, [userId]);
+      return result.rows;
+    }
     throw new Error(`Database error: ${error.message}`);
   }
 }
@@ -112,7 +123,8 @@ export async function getAudioCommandsByUserId(userId) {
  * Get all active audio commands for a Twitch user
  */
 export async function getActiveAudioCommandsByTwitchUserId(twitchUserId) {
-  const query = `
+  // Try with is_bits_only filter, fallback to without if column doesn't exist
+  let query = `
     SELECT * FROM audio_commands
     WHERE twitch_user_id = $1 AND is_active = true AND (is_bits_only = false OR is_bits_only IS NULL)
     ORDER BY command ASC
@@ -122,6 +134,16 @@ export async function getActiveAudioCommandsByTwitchUserId(twitchUserId) {
     const result = await pool.query(query, [twitchUserId]);
     return result.rows;
   } catch (error) {
+    // If column doesn't exist, retry without the filter
+    if (error.message && error.message.includes('column "is_bits_only" does not exist')) {
+      query = `
+        SELECT * FROM audio_commands
+        WHERE twitch_user_id = $1 AND is_active = true
+        ORDER BY command ASC
+      `;
+      const result = await pool.query(query, [twitchUserId]);
+      return result.rows;
+    }
     throw new Error(`Database error: ${error.message}`);
   }
 }
