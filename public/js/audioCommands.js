@@ -57,13 +57,17 @@ function renderAudioCommands() {
         return;
     }
 
-    container.innerHTML = audioCommands.map(cmd => `
+    container.innerHTML = audioCommands.map(cmd => {
+        // Prefer file_url if available (persists across deployments), fallback to file_path
+        const audioSrc = cmd.file_url || cmd.file_path;
+        return `
         <div class="glass-card rounded-xl p-4" data-command-id="${cmd.id}">
             <div class="flex items-center justify-between responsive-command-card">
                 <div class="flex-1">
                     <div class="flex items-center gap-3 mb-2 flex-wrap">
                         <span class="font-bold text-white text-lg break-words">${escapeHtml(cmd.command)}</span>
                         <span class="badge ${cmd.is_active ? 'badge-success' : 'badge-error'}">${cmd.is_active ? 'Active' : 'Inactive'}</span>
+                        ${!cmd.file_url && cmd.file_path ? '<span class="badge badge-warning" title="File may not persist across deployments">Local File</span>' : ''}
                     </div>
                     <div class="flex items-center gap-4 text-sm text-white/70 flex-wrap">
                         <span><i class="fas fa-volume-up"></i> ${Math.round(cmd.volume * 100)}%</span>
@@ -71,7 +75,7 @@ function renderAudioCommands() {
                     </div>
                 </div>
                 <div class="flex items-center gap-2 responsive-command-buttons">
-                    <audio id="audio-${cmd.id}" src="${cmd.file_path}" preload="metadata"></audio>
+                    <audio id="audio-${cmd.id}" src="${audioSrc}" preload="metadata" onerror="handleAudioError(${cmd.id}, '${escapeHtml(audioSrc)}')"></audio>
                     <button class="btn btn-sm btn-info text-white" onclick="testAudioCommand('${escapeHtml(cmd.command)}')" title="Test command in chat">
                         <i class="fas fa-vial"></i> Test
                     </button>
@@ -376,7 +380,8 @@ function editAudioCommand(id) {
 
     // Set up preview with existing file
     const audioPreview = document.getElementById('audio-preview');
-    audioPreview.src = cmd.file_path;
+    // Prefer file_url if available, fallback to file_path
+    audioPreview.src = cmd.file_url || cmd.file_path;
     document.getElementById('audio-preview-section').classList.remove('hidden');
 
     // Show modal
@@ -429,11 +434,53 @@ async function deleteAudioCommand(id) {
     }
 }
 
+function handleAudioError(audioId, src) {
+    console.error(`[Audio] Failed to load audio file: ${src}`);
+    const cmd = audioCommands.find(c => c.id === audioId);
+    if (cmd) {
+        // Try file_url if file_path failed
+        if (cmd.file_url && src === cmd.file_path) {
+            console.log(`[Audio] Trying file_url as fallback: ${cmd.file_url}`);
+            const audio = document.getElementById(`audio-${audioId}`);
+            if (audio) {
+                audio.src = cmd.file_url;
+                audio.load();
+            }
+        } else {
+            alert(`Audio file not found. ${cmd.file_url ? 'The file may have been deleted.' : 'Please re-upload the audio file.'}`);
+        }
+    }
+}
+
 function playAudioCommand(id, volume) {
     const audio = document.getElementById(`audio-${id}`);
     if (audio) {
+        // Check if audio has valid source
+        if (!audio.src || audio.src === window.location.href) {
+            const cmd = audioCommands.find(c => c.id === id);
+            if (cmd) {
+                const audioSrc = cmd.file_url || cmd.file_path;
+                if (audioSrc) {
+                    audio.src = audioSrc;
+                    audio.load();
+                } else {
+                    alert('Audio file not available. Please re-upload the audio file.');
+                    return;
+                }
+            }
+        }
+        
         audio.volume = volume;
-        audio.play();
+        audio.play().catch(error => {
+            console.error(`[Audio] Playback error for command ${id}:`, error);
+            // Try to reload and play again
+            audio.load();
+            setTimeout(() => {
+                audio.play().catch(err => {
+                    alert('Failed to play audio. The file may be missing or corrupted.');
+                });
+            }, 100);
+        });
     }
 }
 
