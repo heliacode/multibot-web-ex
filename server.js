@@ -24,18 +24,16 @@ import { getObsTokenByToken } from './models/obsToken.js';
 
 dotenv.config();
 
-// Ensure upload directories exist
+const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Ensure upload directories exist
 const uploadsDir = path.join(__dirname, 'public', 'uploads', 'audio');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
   console.log(`[Server] Created uploads directory: ${uploadsDir}`);
 }
-
-const app = express();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const PORT = process.env.PORT || 3000;
 const IS_PROD = process.env.NODE_ENV === 'production';
 
