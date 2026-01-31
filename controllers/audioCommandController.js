@@ -220,7 +220,11 @@ export async function getCommands(req, res) {
 
     const userId = await getUserIdFromTwitchId(twitchUserId);
     if (!userId) {
-      return res.status(404).json({ error: 'User not found' });
+      // Return empty array instead of error - user might not exist yet
+      return res.json({
+        success: true,
+        commands: []
+      });
     }
 
     const commands = await getAudioCommandsByUserId(userId);
@@ -229,7 +233,16 @@ export async function getCommands(req, res) {
       commands
     });
   } catch (error) {
-    console.error('Error getting audio commands:', error);
+    console.error('[AUDIO CMD DEBUG] Error getting audio commands:', error);
+    // If database error, return empty array instead of failing
+    if (error.code === 'ECONNREFUSED' || error.message?.includes('connect') || error.message?.includes('database')) {
+      console.warn('[AUDIO CMD DEBUG] Database not available, returning empty commands list');
+      return res.json({
+        success: true,
+        commands: [],
+        warning: 'Database not available'
+      });
+    }
     res.status(500).json({
       error: 'Failed to get audio commands',
       message: error.message

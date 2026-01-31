@@ -67,6 +67,16 @@ export async function getToken(req, res) {
   } catch (error) {
     console.error('[OBS TOKEN DEBUG] Error getting OBS token:', error);
     console.error('[OBS TOKEN DEBUG] Error stack:', error.stack);
+    
+    // If database error, return helpful message instead of generic error
+    if (error.code === 'ECONNREFUSED' || error.message?.includes('connect') || error.message?.includes('database')) {
+      return res.status(503).json({
+        error: 'Database not available',
+        message: 'Please configure the database in Railway. Add Postgres plugin and link it to your service.',
+        code: error.code
+      });
+    }
+    
     res.status(500).json({
       error: 'Failed to get OBS token',
       message: error.message,
